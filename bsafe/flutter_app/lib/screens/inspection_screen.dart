@@ -476,7 +476,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '如果標籤位置顯示在錯誤的基站附近，可以交換距離對應關係。',
+                                '可同時選擇多組交換。例如：選 D0↔D1 再選 D2↔D3。',
                                 style: TextStyle(fontSize: 12, color: Colors.orange.shade800),
                               ),
                               const SizedBox(height: 8),
@@ -489,15 +489,15 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         ),
                         const SizedBox(height: 8),
                         Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
+                          spacing: 8,
+                          runSpacing: 8,
                           children: [
-                            _buildDistanceSwapButton(uwbService, 'D0↔D1', [1, 0, 2, 3]),
-                            _buildDistanceSwapButton(uwbService, 'D0↔D2', [2, 1, 0, 3]),
-                            _buildDistanceSwapButton(uwbService, 'D0↔D3', [3, 1, 2, 0]),
-                            _buildDistanceSwapButton(uwbService, 'D1↔D2', [0, 2, 1, 3]),
-                            _buildDistanceSwapButton(uwbService, 'D1↔D3', [0, 3, 2, 1]),
-                            _buildDistanceSwapButton(uwbService, 'D2↔D3', [0, 1, 3, 2]),
+                            _buildDistanceSwapButton(uwbService, 'D0↔D1', 0, 1),
+                            _buildDistanceSwapButton(uwbService, 'D0↔D2', 0, 2),
+                            _buildDistanceSwapButton(uwbService, 'D0↔D3', 0, 3),
+                            _buildDistanceSwapButton(uwbService, 'D1↔D2', 1, 2),
+                            _buildDistanceSwapButton(uwbService, 'D1↔D3', 1, 3),
+                            _buildDistanceSwapButton(uwbService, 'D2↔D3', 2, 3),
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -510,9 +510,10 @@ class _InspectionScreenState extends State<InspectionScreen> {
                                   distanceIndexMap: const [0, 1, 2, 3],
                                 ),
                               );
+                              setState(() {});
                             },
                             icon: const Icon(Icons.restore, size: 16),
-                            label: const Text('重置為預設'),
+                            label: const Text('重置為預設 [0,1,2,3]'),
                           ),
                         ),
                       ],
@@ -2085,9 +2086,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '修正硬體距離順序與基站編號不匹配。\n'
-                          '例如：站在基站2旁但顯示在基站3，\n'
-                          '可交換 D2↔D3 的映射。',
+                          '可同時選擇多組交換。\n'
+                          '例如：選 D0↔D1 再選 D2↔D3。',
                           style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
                         ),
                         const SizedBox(height: 6),
@@ -2109,15 +2109,15 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   ),
                   const SizedBox(height: 8),
                   Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      _buildDistanceSwapButton(uwbService, 'D0↔D1', [1, 0, 2, 3]),
-                      _buildDistanceSwapButton(uwbService, 'D0↔D2', [2, 1, 0, 3]),
-                      _buildDistanceSwapButton(uwbService, 'D0↔D3', [3, 1, 2, 0]),
-                      _buildDistanceSwapButton(uwbService, 'D1↔D2', [0, 2, 1, 3]),
-                      _buildDistanceSwapButton(uwbService, 'D1↔D3', [0, 3, 2, 1]),
-                      _buildDistanceSwapButton(uwbService, 'D2↔D3', [0, 1, 3, 2]),
+                      _buildDistanceSwapButton(uwbService, 'D0↔D1', 0, 1),
+                      _buildDistanceSwapButton(uwbService, 'D0↔D2', 0, 2),
+                      _buildDistanceSwapButton(uwbService, 'D0↔D3', 0, 3),
+                      _buildDistanceSwapButton(uwbService, 'D1↔D2', 1, 2),
+                      _buildDistanceSwapButton(uwbService, 'D1↔D3', 1, 3),
+                      _buildDistanceSwapButton(uwbService, 'D2↔D3', 2, 3),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -2159,50 +2159,80 @@ class _InspectionScreenState extends State<InspectionScreen> {
     if (map[0] == 0 && map[1] == 1 && map[2] == 2 && map[3] == 3) {
       return '預設順序（無交換）';
     }
+    // Detect active swaps
     final swaps = <String>[];
+    final visited = <int>{};
     for (int i = 0; i < 4; i++) {
+      if (visited.contains(i)) continue;
       if (map[i] != i) {
-        swaps.add('硬體D$i → 基站${map[i]}');
+        final j = map[i];
+        if (j < 4 && map[j] == i) {
+          swaps.add('D$i↔D$j');
+          visited.addAll([i, j]);
+        } else {
+          swaps.add('D$i→基站$j');
+          visited.add(i);
+        }
       }
     }
-    return swaps.join('，');
+    return '已交換: ${swaps.join('、')}';
+  }
+
+  /// Check if a specific pair (a, b) is currently swapped in the mapping
+  bool _isSwapActive(List<int> map, int a, int b) {
+    return map.length == 4 && map[a] == b && map[b] == a;
+  }
+
+  /// Toggle a swap pair on the current mapping
+  void _toggleSwap(UwbService uwbService, int a, int b) {
+    final current = List<int>.from(uwbService.config.distanceIndexMap);
+    if (_isSwapActive(current, a, b)) {
+      // Undo this swap
+      current[a] = a;
+      current[b] = b;
+    } else {
+      // First restore any existing swaps involving a or b
+      for (int i = 0; i < 4; i++) {
+        if (current[i] == a && i != a) {
+          current[i] = i; // undo old swap partner of a
+        }
+        if (current[i] == b && i != b) {
+          current[i] = i; // undo old swap partner of b
+        }
+      }
+      current[a] = a;
+      current[b] = b;
+      // Apply the new swap
+      current[a] = b;
+      current[b] = a;
+    }
+    uwbService.updateConfig(
+      uwbService.config.copyWith(distanceIndexMap: current),
+    );
+    setState(() {});
   }
 
   Widget _buildDistanceSwapButton(
-      UwbService uwbService, String label, List<int> mapping) {
+      UwbService uwbService, String label, int a, int b) {
     final current = uwbService.config.distanceIndexMap;
-    final isActive = current.length == 4 &&
-        current[0] == mapping[0] &&
-        current[1] == mapping[1] &&
-        current[2] == mapping[2] &&
-        current[3] == mapping[3];
+    final isActive = _isSwapActive(current, a, b);
 
     return SizedBox(
-      height: 32,
+      height: 36,
       child: isActive
           ? ElevatedButton(
-              onPressed: () {
-                uwbService.updateConfig(
-                  uwbService.config.copyWith(distanceIndexMap: [0, 1, 2, 3]),
-                );
-                setState(() {});
-              },
+              onPressed: () => _toggleSwap(uwbService, a, b),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                textStyle: const TextStyle(fontSize: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
               ),
-              child: Text(label),
+              child: Text('✓ $label'),
             )
           : OutlinedButton(
-              onPressed: () {
-                uwbService.updateConfig(
-                  uwbService.config.copyWith(distanceIndexMap: mapping),
-                );
-                setState(() {});
-              },
+              onPressed: () => _toggleSwap(uwbService, a, b),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                textStyle: const TextStyle(fontSize: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                textStyle: const TextStyle(fontSize: 13),
               ),
               child: Text(label),
             ),
