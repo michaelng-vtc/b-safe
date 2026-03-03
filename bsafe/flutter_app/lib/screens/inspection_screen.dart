@@ -958,7 +958,16 @@ class _InspectionScreenState extends State<InspectionScreen> {
           canvasSize.height - offsetYCanvas - (pin.y - minY) * scale;
       final dist = (tapPos - Offset(pinCanvasX, pinCanvasY)).distance;
       if (dist < 20) {
-        inspection.selectPin(pin);
+        // 如果點擊的是已選中的 pin，打開詳細對話框
+        if (inspection.selectedPin?.id == pin.id) {
+          if (pin.isAnalyzed || pin.imageBase64 != null) {
+            _showPinDetailDialog(pin);
+          } else {
+            _showPhotoCaptureDialog(pin);
+          }
+        } else {
+          inspection.selectPin(pin);
+        }
         return;
       }
     }
@@ -1212,7 +1221,15 @@ class _InspectionScreenState extends State<InspectionScreen> {
         ),
       ),
       child: InkWell(
-        onTap: () => inspection.selectPin(pin),
+        onTap: () {
+          inspection.selectPin(pin);
+          // 已分析的 pin → 打開詳細資訊; 未分析的 → 打開拍照對話框
+          if (pin.isAnalyzed || pin.imageBase64 != null) {
+            _showPinDetailDialog(pin);
+          } else {
+            _showPhotoCaptureDialog(pin);
+          }
+        },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -1415,6 +1432,30 @@ class _InspectionScreenState extends State<InspectionScreen> {
           imagePicker: _imagePicker,
           onComplete: (updatedPin) {
             context.read<InspectionProvider>().updatePin(updatedPin);
+          },
+        );
+      },
+    );
+  }
+
+  // ===== 巡檢點詳細資訊 / 編輯對話框 =====
+  void _showPinDetailDialog(InspectionPin pin) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return _PinDetailDialog(
+          pin: pin,
+          imagePicker: _imagePicker,
+          onUpdate: (updatedPin) {
+            context.read<InspectionProvider>().updatePin(updatedPin);
+          },
+          onRetakePhoto: () {
+            Navigator.pop(dialogContext);
+            _showPhotoCaptureDialog(pin);
+          },
+          onDelete: () {
+            Navigator.pop(dialogContext);
+            context.read<InspectionProvider>().removePin(pin.id);
           },
         );
       },
@@ -2509,6 +2550,649 @@ class _InspectionScreenState extends State<InspectionScreen> {
       default:
         return Colors.grey;
     }
+  }
+}
+
+// ===== 巡檢點詳細 / 編輯對話框 Widget =====
+class _PinDetailDialog extends StatefulWidget {
+  final InspectionPin pin;
+  final ImagePicker imagePicker;
+  final ValueChanged<InspectionPin> onUpdate;
+  final VoidCallback onRetakePhoto;
+  final VoidCallback onDelete;
+
+  const _PinDetailDialog({
+    required this.pin,
+    required this.imagePicker,
+    required this.onUpdate,
+    required this.onRetakePhoto,
+    required this.onDelete,
+  });
+
+  @override
+  State<_PinDetailDialog> createState() => _PinDetailDialogState();
+}
+
+class _PinDetailDialogState extends State<_PinDetailDialog> {
+  late TextEditingController _noteController;
+  late String _riskLevel;
+  late int _riskScore;
+  bool _isEditing = false;
+  bool _hasChanges = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController(text: widget.pin.note ?? '');
+    _riskLevel = widget.pin.riskLevel;
+    _riskScore = widget.pin.riskScore;
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Color get _riskColor {
+    switch (_riskLevel) {
+      case 'high':
+        return Colors.red;
+      case 'medium':
+        return Colors.orange;
+      default:
+        return Colors.green;
+    }
+  }
+
+  String get _riskLevelLabel {
+    switch (_riskLevel) {
+      case 'high':
+        return '高風險';
+      case 'medium':
+        return '中風險';
+      case 'low':
+        return '低風險';
+      default:
+        return '未評估';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pin = widget.pin;
+    final hasPhoto = pin.imageBase64 != null;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 520,
+        constraints: const BoxConstraints(maxHeight: 700),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ===== 標題欄 =====
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: _riskColor.withValues(alpha: 0.9),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    pin.isAnalyzed ? Icons.analytics : Icons.location_on,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '巡檢點詳情',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                          ),
+                        ),
+                        Text(
+                          '座標: (${pin.x.toStringAsFixed(2)}, ${pin.y.toStringAsFixed(2)})  |  ${pin.createdAt.toString().substring(0, 16)}',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 編輯 / 完成切換
+                  IconButton(
+                    icon: Icon(
+                      _isEditing ? Icons.check_circle : Icons.edit,
+                      color: Colors.white,
+                    ),
+                    tooltip: _isEditing ? '完成編輯' : '編輯',
+                    onPressed: () {
+                      if (_isEditing && _hasChanges) {
+                        _saveChanges();
+                      }
+                      setState(() => _isEditing = !_isEditing);
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () {
+                      if (_hasChanges) {
+                        _saveChanges();
+                      }
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            // ===== 內容區 =====
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // --- 照片區 ---
+                    if (hasPhoto)
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(
+                              base64Decode(pin.imageBase64!),
+                              width: double.infinity,
+                              height: 220,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 8,
+                            right: 8,
+                            child: Material(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(20),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: widget.onRetakePhoto,
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.camera_alt,
+                                          color: Colors.white, size: 16),
+                                      SizedBox(width: 4),
+                                      Text('重新拍照',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      GestureDetector(
+                        onTap: widget.onRetakePhoto,
+                        child: Container(
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo,
+                                  size: 36, color: Colors.grey.shade400),
+                              const SizedBox(height: 6),
+                              Text('點擊拍照',
+                                  style:
+                                      TextStyle(color: Colors.grey.shade500)),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 16),
+
+                    // --- 風險評估區 ---
+                    _buildRiskSection(),
+
+                    const SizedBox(height: 16),
+
+                    // --- AI 分析結果 ---
+                    if (pin.isAnalyzed && pin.description != null)
+                      _buildAiAnalysisSection(),
+
+                    // --- YOLO 偵測結果 ---
+                    if (pin.aiResult != null &&
+                        pin.aiResult!['yolo_detections'] != null)
+                      _buildYoloSection(),
+
+                    // --- 建議 ---
+                    if (pin.recommendations.isNotEmpty)
+                      _buildRecommendationsSection(),
+
+                    const SizedBox(height: 16),
+
+                    // --- 備註編輯 ---
+                    _buildNoteSection(),
+                  ],
+                ),
+              ),
+            ),
+
+            // ===== 底部操作按鈕 =====
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border(top: BorderSide(color: Colors.grey.shade200)),
+              ),
+              child: Row(
+                children: [
+                  // 刪除
+                  TextButton.icon(
+                    onPressed: () => _confirmDelete(),
+                    icon: const Icon(Icons.delete_outline,
+                        size: 18, color: Colors.red),
+                    label: const Text('刪除',
+                        style: TextStyle(color: Colors.red)),
+                  ),
+                  const Spacer(),
+                  // 重新分析
+                  OutlinedButton.icon(
+                    onPressed: widget.onRetakePhoto,
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('重新分析'),
+                  ),
+                  const SizedBox(width: 8),
+                  // 關閉
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_hasChanges) {
+                        _saveChanges();
+                      }
+                      Navigator.pop(context);
+                    },
+                    child: const Text('確定'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- 風險評估區 ---
+  Widget _buildRiskSection() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _riskColor.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _riskColor.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.shield, color: _riskColor, size: 20),
+              const SizedBox(width: 8),
+              const Text('風險評估',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const Spacer(),
+              // 風險等級標籤
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _riskColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _riskLevelLabel,
+                  style: TextStyle(
+                    color: _riskColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          // 風險分數條
+          Row(
+            children: [
+              const Text('風險分數', style: TextStyle(fontSize: 13)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _isEditing
+                    ? Slider(
+                        value: _riskScore.toDouble(),
+                        min: 0,
+                        max: 100,
+                        divisions: 20,
+                        activeColor: _riskColor,
+                        label: '$_riskScore',
+                        onChanged: (v) {
+                          setState(() {
+                            _riskScore = v.round();
+                            _hasChanges = true;
+                            // 自動調整風險等級
+                            if (_riskScore >= 70) {
+                              _riskLevel = 'high';
+                            } else if (_riskScore >= 40) {
+                              _riskLevel = 'medium';
+                            } else {
+                              _riskLevel = 'low';
+                            }
+                          });
+                        },
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          LinearProgressIndicator(
+                            value: _riskScore / 100,
+                            backgroundColor: Colors.grey.shade200,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(_riskColor),
+                            minHeight: 8,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          const SizedBox(height: 4),
+                        ],
+                      ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '$_riskScore',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: _riskColor,
+                ),
+              ),
+            ],
+          ),
+          // 編輯模式下可以選風險等級
+          if (_isEditing) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text('風險等級', style: TextStyle(fontSize: 13)),
+                const SizedBox(width: 12),
+                _buildRiskChip('low', '低', Colors.green),
+                const SizedBox(width: 6),
+                _buildRiskChip('medium', '中', Colors.orange),
+                const SizedBox(width: 6),
+                _buildRiskChip('high', '高', Colors.red),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRiskChip(String level, String label, Color color) {
+    final selected = _riskLevel == level;
+    return ChoiceChip(
+      label: Text(label,
+          style: TextStyle(
+            fontSize: 12,
+            color: selected ? Colors.white : color,
+            fontWeight: FontWeight.w600,
+          )),
+      selected: selected,
+      selectedColor: color,
+      backgroundColor: color.withValues(alpha: 0.1),
+      onSelected: (val) {
+        if (val) {
+          setState(() {
+            _riskLevel = level;
+            _hasChanges = true;
+          });
+        }
+      },
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+
+  // --- AI 分析結果 ---
+  Widget _buildAiAnalysisSection() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.blue.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.auto_awesome, color: Colors.blue, size: 18),
+                SizedBox(width: 8),
+                Text('AI 分析',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.pin.description!,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- YOLO 偵測結果 ---
+  Widget _buildYoloSection() {
+    final yoloDetections =
+        widget.pin.aiResult!['yolo_detections'] as List<dynamic>;
+    final yoloAnalysis =
+        widget.pin.aiResult!['yolo_analysis'] as String? ?? '';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.deepPurple.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(12),
+          border:
+              Border.all(color: Colors.deepPurple.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.smart_toy,
+                    color: Colors.deepPurple, size: 18),
+                const SizedBox(width: 8),
+                const Text('YOLO 物件偵測',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                const Spacer(),
+                Text('${yoloDetections.length} 物件',
+                    style: const TextStyle(
+                        fontSize: 12, color: Colors.deepPurple)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (yoloAnalysis.isNotEmpty)
+              Text(
+                yoloAnalysis,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: _groupDetections(yoloDetections).entries.map((e) {
+                return Chip(
+                  label: Text('${e.key} ×${e.value}',
+                      style: const TextStyle(fontSize: 11)),
+                  backgroundColor:
+                      Colors.deepPurple.withValues(alpha: 0.08),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: EdgeInsets.zero,
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Map<String, int> _groupDetections(List<dynamic> detections) {
+    final map = <String, int>{};
+    for (final d in detections) {
+      final cls = (d as Map)['class'] as String? ?? 'unknown';
+      map[cls] = (map[cls] ?? 0) + 1;
+    }
+    return map;
+  }
+
+  // --- 建議 ---
+  Widget _buildRecommendationsSection() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.amber.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.lightbulb_outline, color: Colors.amber, size: 18),
+                SizedBox(width: 8),
+                Text('建議',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ...widget.pin.recommendations.map((r) => Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('• ',
+                          style: TextStyle(
+                              fontSize: 13, color: Colors.grey.shade600)),
+                      Expanded(
+                        child: Text(r,
+                            style: TextStyle(
+                                fontSize: 13, color: Colors.grey.shade700)),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- 備註區 ---
+  Widget _buildNoteSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.note_alt_outlined, size: 18, color: Colors.grey),
+            SizedBox(width: 6),
+            Text('備註',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _noteController,
+          decoration: InputDecoration(
+            hintText: '輸入備註...',
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          ),
+          maxLines: 3,
+          onChanged: (_) => _hasChanges = true,
+        ),
+      ],
+    );
+  }
+
+  void _saveChanges() {
+    final updatedPin = widget.pin.copyWith(
+      note: _noteController.text.isEmpty ? null : _noteController.text,
+      riskLevel: _riskLevel,
+      riskScore: _riskScore,
+    );
+    widget.onUpdate(updatedPin);
+    _hasChanges = false;
+  }
+
+  void _confirmDelete() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('刪除巡檢點'),
+        content: Text(
+          '確定要刪除座標 (${widget.pin.x.toStringAsFixed(2)}, ${widget.pin.y.toStringAsFixed(2)}) 的巡檢點嗎？',
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onDelete();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('刪除', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 }
 
