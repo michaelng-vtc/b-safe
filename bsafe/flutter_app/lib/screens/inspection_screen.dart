@@ -2577,8 +2577,13 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
   late TextEditingController _noteController;
   late String _riskLevel;
   late int _riskScore;
+  late String? _description;
+  late List<String> _recommendations;
+  late Map<String, dynamic>? _aiResult;
+  late String _status;
   bool _isEditing = false;
   bool _hasChanges = false;
+  bool _isAnalyzing = false;
 
   @override
   void initState() {
@@ -2586,6 +2591,12 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     _noteController = TextEditingController(text: widget.pin.note ?? '');
     _riskLevel = widget.pin.riskLevel;
     _riskScore = widget.pin.riskScore;
+    _description = widget.pin.description;
+    _recommendations = List<String>.from(widget.pin.recommendations);
+    _aiResult = widget.pin.aiResult != null
+        ? Map<String, dynamic>.from(widget.pin.aiResult!)
+        : null;
+    _status = widget.pin.status;
   }
 
   @override
@@ -2771,22 +2782,54 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
 
                     const SizedBox(height: 16),
 
+                    // --- AI 分析按鈕 (有照片但未分析) ---
+                    if (hasPhoto && !_isAnalyzing && _status != 'analyzed')
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: ElevatedButton.icon(
+                          onPressed: _runAiAnalysis,
+                          icon: const Icon(Icons.auto_awesome, size: 18),
+                          label: const Text('AI 分析此照片'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 44),
+                          ),
+                        ),
+                      ),
+
+                    // AI 分析中
+                    if (_isAnalyzing)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              CircularProgressIndicator(),
+                              SizedBox(height: 8),
+                              Text('AI 正在分析...',
+                                  style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ),
+
                     // --- 風險評估區 ---
                     _buildRiskSection(),
 
                     const SizedBox(height: 16),
 
                     // --- AI 分析結果 ---
-                    if (pin.isAnalyzed && pin.description != null)
+                    if (_description != null)
                       _buildAiAnalysisSection(),
 
                     // --- YOLO 偵測結果 ---
-                    if (pin.aiResult != null &&
-                        pin.aiResult!['yolo_detections'] != null)
+                    if (_aiResult != null &&
+                        _aiResult!['yolo_detections'] != null)
                       _buildYoloSection(),
 
                     // --- 建議 ---
-                    if (pin.recommendations.isNotEmpty)
+                    if (_recommendations.isNotEmpty)
                       _buildRecommendationsSection(),
 
                     const SizedBox(height: 16),
@@ -2815,16 +2858,30 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                         style: TextStyle(color: Colors.red)),
                   ),
                   const Spacer(),
-                  // 重新分析
+                  // AI 分析 (有照片但未分析時顯示)
+                  if (hasPhoto && _status != 'analyzed' && !_isAnalyzing)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ElevatedButton.icon(
+                        onPressed: _runAiAnalysis,
+                        icon: const Icon(Icons.auto_awesome, size: 18),
+                        label: const Text('AI 分析'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                  // 重新拍照
                   OutlinedButton.icon(
-                    onPressed: widget.onRetakePhoto,
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('重新分析'),
+                    onPressed: _isAnalyzing ? null : widget.onRetakePhoto,
+                    icon: const Icon(Icons.camera_alt, size: 18),
+                    label: const Text('重新拍照'),
                   ),
                   const SizedBox(width: 8),
                   // 關閉
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: _isAnalyzing ? null : () {
                       if (_hasChanges) {
                         _saveChanges();
                       }
@@ -3005,7 +3062,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
             ),
             const SizedBox(height: 8),
             Text(
-              widget.pin.description!,
+              _description!,
               style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
             ),
           ],
@@ -3017,9 +3074,9 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
   // --- YOLO 偵測結果 ---
   Widget _buildYoloSection() {
     final yoloDetections =
-        widget.pin.aiResult!['yolo_detections'] as List<dynamic>;
+        _aiResult!['yolo_detections'] as List<dynamic>;
     final yoloAnalysis =
-        widget.pin.aiResult!['yolo_analysis'] as String? ?? '';
+        _aiResult!['yolo_analysis'] as String? ?? '';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -3109,7 +3166,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
               ],
             ),
             const SizedBox(height: 8),
-            ...widget.pin.recommendations.map((r) => Padding(
+            ..._recommendations.map((r) => Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -3166,9 +3223,51 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
       note: _noteController.text.isEmpty ? null : _noteController.text,
       riskLevel: _riskLevel,
       riskScore: _riskScore,
+      description: _description,
+      recommendations: _recommendations,
+      aiResult: _aiResult,
+      status: _status,
     );
     widget.onUpdate(updatedPin);
     _hasChanges = false;
+  }
+
+  /// 對已有照片執行 AI 分析
+  Future<void> _runAiAnalysis() async {
+    if (widget.pin.imageBase64 == null) return;
+
+    setState(() => _isAnalyzing = true);
+
+    try {
+      final provider = context.read<InspectionProvider>();
+      final updatedPin = await provider.analyzePin(
+        widget.pin,
+        imageBase64: widget.pin.imageBase64!,
+        imagePath: widget.pin.imagePath,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _aiResult = updatedPin.aiResult ?? {
+          'risk_level': updatedPin.riskLevel,
+          'risk_score': updatedPin.riskScore,
+          'analysis': updatedPin.description,
+          'recommendations': updatedPin.recommendations,
+        };
+        _riskLevel = updatedPin.riskLevel;
+        _riskScore = updatedPin.riskScore;
+        _description = updatedPin.description;
+        _recommendations = updatedPin.recommendations;
+        _status = 'analyzed';
+        _isAnalyzing = false;
+        _hasChanges = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isAnalyzing = false);
+      debugPrint('AI 分析錯誤: $e');
+    }
   }
 
   void _confirmDelete() {
@@ -3229,6 +3328,15 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
   @override
   void initState() {
     super.initState();
+    // 預載入已有的照片資料
+    if (widget.pin.imageBase64 != null) {
+      _imageBase64 = widget.pin.imageBase64;
+      _imagePath = widget.pin.imagePath;
+      _photoTaken = true;
+    }
+    if (widget.pin.note != null && widget.pin.note!.isNotEmpty) {
+      _noteController.text = widget.pin.note!;
+    }
     _initYolo();
   }
 
