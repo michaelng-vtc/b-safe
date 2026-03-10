@@ -459,6 +459,72 @@ class _InspectionScreenState extends State<InspectionScreen> {
                             }),
                           ],
                         ),
+                        // 平面圖透明度滑桿（已載入平面圖時顯示）
+                        if (uwbService.config.floorPlanImagePath != null) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.layers, size: 16, color: Colors.blue.shade700),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '平面圖透明度',
+                                      style: TextStyle(
+                                        color: Colors.blue.shade700,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade100,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        '${(uwbService.config.floorPlanOpacity * 100).round()}%',
+                                        style: TextStyle(
+                                          color: Colors.blue.shade800,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Icon(Icons.opacity, size: 14, color: Colors.blue.shade300),
+                                    Expanded(
+                                      child: Slider(
+                                        value: uwbService.config.floorPlanOpacity,
+                                        min: 0.1,
+                                        max: 1.0,
+                                        divisions: 18,
+                                        activeColor: Colors.blue.shade600,
+                                        inactiveColor: Colors.blue.shade100,
+                                        onChanged: (v) {
+                                          uwbService.updateFloorPlanOpacity(v);
+                                        },
+                                      ),
+                                    ),
+                                    Icon(Icons.opacity, size: 20, color: Colors.blue.shade600),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         // 操作按鈕
                         Row(

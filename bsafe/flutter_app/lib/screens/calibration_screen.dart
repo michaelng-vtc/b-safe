@@ -56,10 +56,47 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   // 互動鍵
   final GlobalKey _canvasKey = GlobalKey();
 
+  // 縮放/平移控制
+  final TransformationController _transformController = TransformationController();
+  double _currentZoom = 1.0;
+  int _activePointers = 0; // 追蹤同時按下的手指數量，防止縮放時誤放基站
+
+  void _zoomIn() {
+    final zoom = (_currentZoom * 1.3).clamp(1.0, 8.0);
+    _setZoom(zoom);
+  }
+
+  void _zoomOut() {
+    final zoom = (_currentZoom / 1.3).clamp(1.0, 8.0);
+    _setZoom(zoom);
+  }
+
+  void _resetZoom() {
+    _transformController.value = Matrix4.identity();
+    setState(() => _currentZoom = 1.0);
+  }
+
+  void _setZoom(double zoom) {
+    // 取得畫布中心
+    final RenderBox? box = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final center = box.size.center(Offset.zero);
+    final oldMatrix = _transformController.value.clone();
+    final scale = zoom / _currentZoom;
+    // 以中心點為基準縮放
+    final newMatrix = oldMatrix
+      ..translate(center.dx, center.dy)
+      ..scale(scale)
+      ..translate(-center.dx, -center.dy);
+    _transformController.value = newMatrix;
+    setState(() => _currentZoom = zoom);
+  }
+
   @override
   void dispose() {
     _roomWidthController.dispose();
     _roomHeightController.dispose();
+    _transformController.dispose();
     super.dispose();
   }
 
@@ -214,32 +251,9 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
             children: [
               // 工具欄
               _buildToolBar(),
-              // 畫布
+              // 畫布（支援雙指縮放和拖動）
               Expanded(
-                child: Container(
-                  color: Colors.grey.shade200,
-                  child: ClipRect(
-                    child: GestureDetector(
-                      onTapDown: _handleCanvasTap,
-                      child: CustomPaint(
-                        key: _canvasKey,
-                        painter: _CalibrationPainter(
-                          mode: _mode,
-                          floorPlanImage: _floorPlanImage,
-                          roomWidth: _roomWidth,
-                          roomHeight: _roomHeight,
-                          anchors: _placedAnchors,
-                          distancePairs: _distancePairs,
-                          selectedIndex: _selectedAnchorIndex,
-                          secondIndex: _secondAnchorIndex,
-                          calculatedScale: _calculatedScale,
-                          referencePoints: _referencePoints,
-                        ),
-                        size: Size.infinite,
-                      ),
-                    ),
-                  ),
-                ),
+                child: _buildZoomableCanvas(),
               ),
             ],
           ),
@@ -259,33 +273,10 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       children: [
         // 簡化工具欄
         _buildMobileToolBar(),
-        // 畫布（佔上半部分）
+        // 畫布（支援雙指縮放和拖動，佔上半部分）
         Expanded(
           flex: 3,
-          child: Container(
-            color: Colors.grey.shade200,
-            child: ClipRect(
-              child: GestureDetector(
-                onTapDown: _handleCanvasTap,
-                child: CustomPaint(
-                  key: _canvasKey,
-                  painter: _CalibrationPainter(
-                    mode: _mode,
-                    floorPlanImage: _floorPlanImage,
-                    roomWidth: _roomWidth,
-                    roomHeight: _roomHeight,
-                    anchors: _placedAnchors,
-                    distancePairs: _distancePairs,
-                    selectedIndex: _selectedAnchorIndex,
-                    secondIndex: _secondAnchorIndex,
-                    calculatedScale: _calculatedScale,
-                    referencePoints: _referencePoints,
-                  ),
-                  size: Size.infinite,
-                ),
-              ),
-            ),
-          ),
+          child: _buildZoomableCanvas(),
         ),
         // 底部設定面板（可滑動）
         Expanded(
@@ -380,6 +371,102 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   }
 
   // ===== 手機版工具欄 =====
+  /// 可縮放的畫布區域（含 InteractiveViewer + 縮放按鈕）
+  Widget _buildZoomableCanvas() {
+    return Stack(
+      children: [
+        Container(
+          color: Colors.grey.shade200,
+          child: ClipRect(
+            child: Listener(
+              onPointerDown: (_) => _activePointers++,
+              onPointerUp: (_) => _activePointers--,
+              onPointerCancel: (_) => _activePointers--,
+              child: InteractiveViewer(
+                transformationController: _transformController,
+                minScale: 1.0,
+                maxScale: 8.0,
+                panEnabled: true,
+                scaleEnabled: true,
+                onInteractionEnd: (details) {
+                  // 更新當前縮放倍率
+                  final scale = _transformController.value.getMaxScaleOnAxis();
+                  setState(() => _currentZoom = scale);
+                },
+                child: GestureDetector(
+                  onTapDown: _handleCanvasTap,
+                child: CustomPaint(
+                  key: _canvasKey,
+                  painter: _CalibrationPainter(
+                    mode: _mode,
+                    floorPlanImage: _floorPlanImage,
+                    roomWidth: _roomWidth,
+                    roomHeight: _roomHeight,
+                    anchors: _placedAnchors,
+                    distancePairs: _distancePairs,
+                    selectedIndex: _selectedAnchorIndex,
+                    secondIndex: _secondAnchorIndex,
+                    calculatedScale: _calculatedScale,
+                    referencePoints: _referencePoints,
+                  ),
+                  size: Size.infinite,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+        // 縮放控制按鈕
+        Positioned(
+          right: 8,
+          bottom: 8,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 縮放倍率顯示
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${_currentZoom.toStringAsFixed(1)}x',
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 4),
+              // 放大
+              _zoomButton(Icons.add, _zoomIn),
+              const SizedBox(height: 4),
+              // 縮小
+              _zoomButton(Icons.remove, _zoomOut),
+              const SizedBox(height: 4),
+              // 重置
+              _zoomButton(Icons.fit_screen, _resetZoom),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _zoomButton(IconData icon, VoidCallback onPressed) {
+    return Material(
+      elevation: 2,
+      shape: const CircleBorder(),
+      color: Colors.white,
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const CircleBorder(),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Icon(icon, size: 20, color: Colors.grey.shade700),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMobileToolBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1393,6 +1480,11 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
         _canvasKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
 
+    // 如果有超過 1 根手指（縮放手勢），忽略此次點擊，不放置基站
+    if (_activePointers > 1) return;
+
+    // InteractiveViewer 的 Transform 已自動將 hit test 座標轉為畫布座標
+    // 因此 details.localPosition 已經是正確的畫布座標，無需再反向轉換
     final localPosition = details.localPosition;
     final size = box.size;
 
@@ -1641,7 +1733,9 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   }
 
   void _resetCalibration() {
+    _transformController.value = Matrix4.identity();
     setState(() {
+      _currentZoom = 1.0;
       _placedAnchors.clear();
       _distancePairs.clear();
       _referencePoints.clear();
