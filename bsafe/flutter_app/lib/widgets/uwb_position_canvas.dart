@@ -230,7 +230,7 @@ class UwbCanvasPainter extends CustomPainter {
   void _drawEmptyState(Canvas canvas, Size size) {
     final textPainter = TextPainter(
       text: const TextSpan(
-        text: '等待连接UWB设备...',
+        text: 'Waiting for UWB device...',
         style: TextStyle(
           color: Colors.grey,
           fontSize: 16,

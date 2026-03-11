@@ -26,7 +26,7 @@ class AnalysisScreen extends StatelessWidget {
               children: [
                 // Risk Distribution Pie Chart
                 const Text(
-                  '📊 風險分佈',
+                  '📊 Risk Distribution',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -57,17 +57,17 @@ class AnalysisScreen extends StatelessWidget {
                         children: [
                           _LegendItem(
                             color: AppTheme.riskHigh,
-                            label: '高風險',
+                            label: 'High Risk',
                             value: stats['highRisk'] ?? 0,
                           ),
                           _LegendItem(
                             color: AppTheme.riskMedium,
-                            label: '中風險',
+                            label: 'Medium Risk',
                             value: stats['mediumRisk'] ?? 0,
                           ),
                           _LegendItem(
                             color: AppTheme.riskLow,
-                            label: '低風險',
+                            label: 'Low Risk',
                             value: stats['lowRisk'] ?? 0,
                           ),
                         ],
@@ -80,7 +80,7 @@ class AnalysisScreen extends StatelessWidget {
 
                 // Trend Line Chart
                 const Text(
-                  '📈 近7天趨勢',
+                  '📈 Last 7 Days Trend',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -109,11 +109,11 @@ class AnalysisScreen extends StatelessWidget {
                       const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _ChartLegend(color: AppTheme.riskHigh, label: '高'),
+                          _ChartLegend(color: AppTheme.riskHigh, label: 'High'),
                           SizedBox(width: 20),
-                          _ChartLegend(color: AppTheme.riskMedium, label: '中'),
+                          _ChartLegend(color: AppTheme.riskMedium, label: 'Medium'),
                           SizedBox(width: 20),
-                          _ChartLegend(color: AppTheme.riskLow, label: '低'),
+                          _ChartLegend(color: AppTheme.riskLow, label: 'Low'),
                         ],
                       ),
                     ],
@@ -124,7 +124,7 @@ class AnalysisScreen extends StatelessWidget {
 
                 // Status Bar Chart
                 const Text(
-                  '📋 處理狀態',
+                  '📋 Status Overview',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -153,7 +153,7 @@ class AnalysisScreen extends StatelessWidget {
 
                 // Summary Cards
                 const Text(
-                  '📌 重點數據',
+                  '📌 Key Metrics',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -164,7 +164,7 @@ class AnalysisScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _SummaryCard(
-                        title: '需緊急處理',
+                        title: 'Urgent',
                         value: '${stats['urgent'] ?? 0}',
                         icon: Icons.warning_amber_rounded,
                         color: AppTheme.riskHigh,
@@ -173,7 +173,7 @@ class AnalysisScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _SummaryCard(
-                        title: '本月新增',
+                        title: 'This Month',
                         value: '${stats['total'] ?? 0}',
                         icon: Icons.add_chart,
                         color: AppTheme.primaryColor,
@@ -188,7 +188,7 @@ class AnalysisScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _SummaryCard(
-                        title: '處理中',
+                        title: 'In Progress',
                         value:
                             '${(stats['total'] ?? 0) - (stats['pending'] ?? 0) - (stats['resolved'] ?? 0)}',
                         icon: Icons.autorenew,
@@ -198,7 +198,7 @@ class AnalysisScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _SummaryCard(
-                        title: '完成率',
+                        title: 'Resolution Rate',
                         value: _calculateCompletionRate(stats),
                         icon: Icons.check_circle,
                         color: AppTheme.riskLow,
@@ -232,7 +232,7 @@ class AnalysisScreen extends StatelessWidget {
     if (total == 0) {
       return const Center(
         child: Text(
-          '暫無數據',
+          'No Data',
           style: TextStyle(color: Colors.grey),
         ),
       );
@@ -288,7 +288,7 @@ class AnalysisScreen extends StatelessWidget {
     if (trendData.isEmpty) {
       return const Center(
         child: Text(
-          '暫無數據',
+          'No Data',
           style: TextStyle(color: Colors.grey),
         ),
       );
@@ -466,7 +466,7 @@ class AnalysisScreen extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                final titles = ['待處理', '處理中', '已解決'];
+                final titles = ['Pending', 'In Progress', 'Resolved'];
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(

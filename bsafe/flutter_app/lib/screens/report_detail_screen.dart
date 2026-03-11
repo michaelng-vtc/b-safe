@@ -13,7 +13,7 @@ class ReportDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('報告詳情'),
+        title: const Text('Report Details'),
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
@@ -100,7 +100,7 @@ class ReportDetailScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '未同步',
+                          'Not Synced',
                           style: TextStyle(
                             color: Colors.orange.shade600,
                             fontSize: 14,
@@ -153,7 +153,7 @@ class ReportDetailScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                '風險評分',
+                                'Risk Score',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey,
@@ -180,7 +180,7 @@ class ReportDetailScreen extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: const Text(
-                                    '⚠️ 需緊急處理',
+                                    '⚠️ Urgent Action Required',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 12,
@@ -199,33 +199,33 @@ class ReportDetailScreen extends StatelessWidget {
 
                   // Details Section
                   _DetailSection(
-                    title: '問題類別',
+                    title: 'Issue Category',
                     icon: Icons.category,
                     content: ReportModel.getCategoryLabel(report.category),
                   ),
 
                   _DetailSection(
-                    title: '嚴重程度',
+                    title: 'Severity',
                     icon: Icons.warning_amber,
                     content: ReportModel.getSeverityLabel(report.severity),
                   ),
 
                   _DetailSection(
-                    title: '詳細描述',
+                    title: 'Description',
                     icon: Icons.description,
                     content: report.description,
                   ),
 
                   if (report.location != null && report.location!.isNotEmpty)
                     _DetailSection(
-                      title: '位置資訊',
+                      title: 'Location',
                       icon: Icons.location_on,
                       content: report.location!,
                     ),
 
                   if (report.aiAnalysis != null && report.aiAnalysis!.isNotEmpty)
                     _DetailSection(
-                      title: 'AI 分析結果',
+                      title: 'AI Analysis Results',
                       icon: Icons.auto_awesome,
                       content: report.aiAnalysis!,
                     ),
@@ -234,7 +234,7 @@ class ReportDetailScreen extends StatelessWidget {
 
                   // Status Section
                   const Text(
-                    '處理狀態',
+                    'Status',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -261,7 +261,7 @@ class ReportDetailScreen extends StatelessWidget {
                     // TODO: Edit report
                   },
                   icon: const Icon(Icons.edit),
-                  label: const Text('編輯'),
+                  label: const Text('Edit'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -271,7 +271,7 @@ class ReportDetailScreen extends StatelessWidget {
                     // TODO: Update status
                   },
                   icon: const Icon(Icons.update),
-                  label: const Text('更新狀態'),
+                  label: const Text('Update Status'),
                 ),
               ),
             ],
@@ -366,9 +366,9 @@ class _StatusStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statuses = [
-      {'key': 'pending', 'label': '待處理', 'icon': Icons.pending_actions},
-      {'key': 'in_progress', 'label': '處理中', 'icon': Icons.autorenew},
-      {'key': 'resolved', 'label': '已解決', 'icon': Icons.check_circle},
+      {'key': 'pending', 'label': 'Pending', 'icon': Icons.pending_actions},
+      {'key': 'in_progress', 'label': 'In Progress', 'icon': Icons.autorenew},
+      {'key': 'resolved', 'label': 'Resolved', 'icon': Icons.check_circle},
     ];
 
     final currentIndex = statuses.indexWhere((s) => s['key'] == status);

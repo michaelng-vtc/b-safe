@@ -115,7 +115,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                 const Icon(Icons.settings, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
                 const Text(
-                  '設置',
+                  'Settings',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -147,10 +147,10 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
               labelStyle:
                   const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               tabs: const [
-                Tab(text: '功能設置'),
-                Tab(text: '平面圖設置'),
-                Tab(text: '網格設置'),
-                Tab(text: '串口配置'),
+                Tab(text: 'Features'),
+                Tab(text: 'Floor Plan'),
+                Tab(text: 'Grid'),
+                Tab(text: 'Serial Config'),
               ],
             ),
           ),
@@ -182,34 +182,34 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 功能选择
-          _buildSectionTitle('功能選擇'),
-          _buildCheckboxRow('顯示基站列表', config.showAnchorList, (v) {
+          _buildSectionTitle('Feature Selection'),
+          _buildCheckboxRow('Show Anchor List', config.showAnchorList, (v) {
             _updateConfig(config.copyWith(showAnchorList: v));
           }),
-          _buildCheckboxRow('自動獲取基站坐標', config.autoGetAnchorCoords, (v) {
+          _buildCheckboxRow('Auto Get Anchor Coords', config.autoGetAnchorCoords, (v) {
             _updateConfig(config.copyWith(autoGetAnchorCoords: v));
           }),
-          _buildCheckboxRow('顯示標籤列表', config.showTagList, (v) {
+          _buildCheckboxRow('Show Tag List', config.showTagList, (v) {
             _updateConfig(config.copyWith(showTagList: v));
           }),
-          _buildCheckboxRow('顯示歷史軌跡', config.showHistoryTrajectory, (v) {
+          _buildCheckboxRow('Show History Trajectory', config.showHistoryTrajectory, (v) {
             _updateConfig(config.copyWith(showHistoryTrajectory: v));
           }),
-          _buildCheckboxRow('軌跡/導航模式', config.showTrajectory, (v) {
+          _buildCheckboxRow('Trajectory/Navigation Mode', config.showTrajectory, (v) {
             _updateConfig(config.copyWith(showTrajectory: v));
           }),
-          _buildCheckboxRow('區域圍欄模式', config.showFence, (v) {
+          _buildCheckboxRow('Geofence Mode', config.showFence, (v) {
             _updateConfig(config.copyWith(showFence: v));
           }),
 
           const SizedBox(height: 16),
 
           // 区域围栏模式
-          _buildSectionTitle('區域圍欄模式'),
-          _buildNumberInputRow('區域1 (m)', _area1Controller, (v) {
+          _buildSectionTitle('Geofence Mode'),
+          _buildNumberInputRow('Zone 1 (m)', _area1Controller, (v) {
             _updateConfig(config.copyWith(areaRadius1: v));
           }),
-          _buildNumberInputRow('區域2 (m)', _area2Controller, (v) {
+          _buildNumberInputRow('Zone 2 (m)', _area2Controller, (v) {
             _updateConfig(config.copyWith(areaRadius2: v));
           }),
           RadioGroup<bool>(
@@ -220,7 +220,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
               children: [
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text('外圍報警', style: TextStyle(fontSize: 12)),
+                    title: Text('Outer Fence Alarm', style: TextStyle(fontSize: 12)),
                     value: false,
                     dense: true,
                     contentPadding: EdgeInsets.zero,
@@ -228,7 +228,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                 ),
                 Expanded(
                   child: RadioListTile<bool>(
-                    title: Text('內圍報警', style: TextStyle(fontSize: 12)),
+                    title: Text('Inner Fence Alarm', style: TextStyle(fontSize: 12)),
                     value: true,
                     dense: true,
                     contentPadding: EdgeInsets.zero,
@@ -241,20 +241,20 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
           const SizedBox(height: 16),
 
           // 轨迹/导航模式
-          _buildSectionTitle('軌跡/導航模式'),
-          _buildDropdownRow('定位模式', config.positioningMode, ['二維定位', '三維定位'],
+          _buildSectionTitle('Trajectory/Navigation Mode'),
+          _buildDropdownRow('Positioning Mode', config.positioningMode, ['2D Positioning', '3D Positioning'],
               (v) {
             _updateConfig(config.copyWith(positioningMode: v));
           }),
           _buildDropdownRow(
-              '定位算法', config.algorithm, ['卡爾曼/平均算法', '最小二乘法', '三邊定位'], (v) {
+              'Algorithm', config.algorithm, ['Kalman/Average', 'Least Squares', 'Trilateration'], (v) {
             _updateConfig(config.copyWith(algorithm: v));
           }),
 
           const SizedBox(height: 16),
 
           // 距离校正设置
-          _buildSectionTitle('距離校正設置'),
+          _buildSectionTitle('Distance Correction'),
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -267,10 +267,10 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
             ),
           ),
           const SizedBox(height: 8),
-          _buildNumberInputRow('係數 a', _correctionAController, (v) {
+          _buildNumberInputRow('Coefficient a', _correctionAController, (v) {
             _updateConfig(config.copyWith(correctionA: v));
           }),
-          _buildNumberInputRow('係數 b', _correctionBController, (v) {
+          _buildNumberInputRow('Coefficient b', _correctionBController, (v) {
             _updateConfig(config.copyWith(correctionB: v));
           }),
           const SizedBox(height: 8),
@@ -279,17 +279,17 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
             child: ElevatedButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('校正係數已設置')),
+                  const SnackBar(content: Text('Correction coefficients set')),
                 );
               },
-              child: const Text('設置校正係數'),
+              child: const Text('Set Correction Coefficients'),
             ),
           ),
 
           const SizedBox(height: 16),
 
           // 距離索引映射設置
-          _buildSectionTitle('距離索引映射'),
+          _buildSectionTitle('Distance Index Mapping'),
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -301,14 +301,14 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '修正硬體距離順序與基站編號不匹配的問題。\n'
-                  '例如：如果站在基站2旁但顯示在基站3，\n'
-                  '可交換 D2↔D3 的映射。',
+                  'Fix hardware distance order mismatch with anchor IDs.\n'
+                  'E.g.: If standing at Anchor2 but showing Anchor3,\n'
+                  'swap D2↔D3 mapping.',
                   style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '目前映射: ${config.distanceIndexMap}',
+                  'Current Mapping: ${config.distanceIndexMap}',
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: 'monospace',
@@ -348,7 +348,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                 setState(() {});
               },
               icon: const Icon(Icons.restore, size: 16),
-              label: const Text('重置為預設 [0,1,2,3]'),
+              label: const Text('Reset to Default [0,1,2,3]'),
             ),
           ),
         ],
@@ -365,7 +365,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('平面地圖'),
+          _buildSectionTitle('Floor Plan'),
           
           // 顯示當前載入的地圖
           if (config.floorPlanImagePath != null) ...[
@@ -382,7 +382,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '已載入地圖',
+                      'Map Loaded',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.green.shade700,
@@ -398,7 +398,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                     },
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    tooltip: '清除地圖',
+                    tooltip: 'Clear Map',
                   ),
                 ],
               ),
@@ -418,7 +418,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.folder_open, size: 16),
-                  label: Text(widget.uwbService.isLoadingFloorPlan ? '載入中...' : '打開'),
+                  label: Text(widget.uwbService.isLoadingFloorPlan ? 'Loading...' : 'Open'),
                 ),
               ),
               const SizedBox(width: 8),
@@ -428,12 +428,12 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                       ? () {
                           // 保存配置到本地（未來可實現）
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('配置已自動保存')),
+                            const SnackBar(content: Text('Configuration auto-saved')),
                           );
                         }
                       : null,
                   icon: const Icon(Icons.save, size: 16),
-                  label: const Text('保存'),
+                  label: const Text('Save'),
                 ),
               ),
             ],
@@ -442,7 +442,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
           const SizedBox(height: 12),
           
           // 顯示/隱藏平面圖
-          _buildCheckboxRow('顯示平面圖', config.showFloorPlan, (v) {
+          _buildCheckboxRow('Show Floor Plan', config.showFloorPlan, (v) {
             widget.uwbService.toggleFloorPlan(v);
             setState(() {});
           }),
@@ -454,7 +454,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
               children: [
                 const SizedBox(
                   width: 60,
-                  child: Text('透明度', style: TextStyle(fontSize: 13)),
+                  child: Text('Opacity', style: TextStyle(fontSize: 13)),
                 ),
                 Expanded(
                   child: Slider(
@@ -482,30 +482,30 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
           ],
           
           const SizedBox(height: 16),
-          _buildSectionTitle('偏移設置'),
-          _buildNumberInputRowWithUnit('X 偏移', _xOffsetController, '米', (v) {
+          _buildSectionTitle('Offset Settings'),
+          _buildNumberInputRowWithUnit('X Offset', _xOffsetController, 'm', (v) {
             _updateConfig(config.copyWith(xOffset: v));
           }),
-          _buildNumberInputRowWithUnit('Y 偏移', _yOffsetController, '米', (v) {
+          _buildNumberInputRowWithUnit('Y Offset', _yOffsetController, 'm', (v) {
             _updateConfig(config.copyWith(yOffset: v));
           }),
           const SizedBox(height: 16),
-          _buildSectionTitle('比例設置'),
-          _buildNumberInputRowWithUnit('X 比例', _xScaleController, '像素/米', (v) {
+          _buildSectionTitle('Scale Settings'),
+          _buildNumberInputRowWithUnit('X Scale', _xScaleController, 'px/m', (v) {
             _updateConfig(config.copyWith(xScale: v));
           }),
-          _buildNumberInputRowWithUnit('Y 比例', _yScaleController, '像素/米', (v) {
+          _buildNumberInputRowWithUnit('Y Scale', _yScaleController, 'px/m', (v) {
             _updateConfig(config.copyWith(yScale: v));
           }),
           const SizedBox(height: 16),
-          _buildSectionTitle('翻轉設置'),
-          _buildCheckboxRow('翻轉 X', config.flipX, (v) {
+          _buildSectionTitle('Flip Settings'),
+          _buildCheckboxRow('Flip X', config.flipX, (v) {
             _updateConfig(config.copyWith(flipX: v));
           }),
-          _buildCheckboxRow('翻轉 Y', config.flipY, (v) {
+          _buildCheckboxRow('Flip Y', config.flipY, (v) {
             _updateConfig(config.copyWith(flipY: v));
           }),
-          _buildCheckboxRow('顯示原點', config.showOrigin, (v) {
+          _buildCheckboxRow('Show Origin', config.showOrigin, (v) {
             _updateConfig(config.copyWith(showOrigin: v));
           }),
           const SizedBox(height: 16),
@@ -520,7 +520,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                '格式：${config.floorPlanFileType.toUpperCase()}  |  ${config.floorPlanImagePath!.split('\\').last.split('/').last}',
+                'Format: ${config.floorPlanFileType.toUpperCase()}  |  ${config.floorPlanImagePath!.split('\\').last.split('/').last}',
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontFamily: 'monospace'),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -540,7 +540,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '支援的檔案格式：',
+                  'Supported file formats:',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.blue.shade900,
@@ -549,27 +549,27 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '• 圖片：PNG, JPG, BMP, GIF, WEBP',
+                  '• Images: PNG, JPG, BMP, GIF, WEBP',
                   style: TextStyle(fontSize: 11, color: Colors.blue.shade800),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '• 向量圖：SVG（可調整大小不失真）',
+                  '• Vector: SVG (scalable)',
                   style: TextStyle(fontSize: 11, color: Colors.blue.shade800),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '• 文件：PDF（自動擷取第一頁）',
+                  '• Document: PDF (first page extracted)',
                   style: TextStyle(fontSize: 11, color: Colors.blue.shade800),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '• 工程圖：DWG/DXF（請先轉換為 PDF 或 SVG）',
+                  '• Engineering: DWG/DXF (convert to PDF/SVG first)',
                   style: TextStyle(fontSize: 11, color: Colors.blue.shade800),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '提示：X/Y比例 = 圖片上每米對應的像素數',
+                  'Tip: X/Y Scale = pixels per meter on the image',
                   style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
                 ),
               ],
@@ -609,23 +609,23 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
           String formatName;
           switch (ext) {
             case 'svg':
-              formatName = 'SVG 向量圖';
+              formatName = 'SVG Vector';
               break;
             case 'pdf':
-              formatName = 'PDF 文件';
+              formatName = 'PDF Document';
               break;
             case 'dwg':
             case 'dxf':
               // DWG 的錯誤訊息已在 service 中處理
               return;
             default:
-              formatName = '${ext.toUpperCase()} 圖片';
+              formatName = '${ext.toUpperCase()} Image';
           }
           
           if (widget.uwbService.floorPlanImage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('$formatName 已載入'),
+                content: Text('$formatName loaded'),
                 duration: const Duration(seconds: 2),
               ),
             );
@@ -636,7 +636,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('載入平面圖失敗: $e'),
+            content: Text('Failed to load floor plan: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -653,19 +653,19 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('網格參數'),
-          _buildNumberInputRowWithUnit('寬度', _gridWidthController, '米', (v) {
+          _buildSectionTitle('Grid Parameters'),
+          _buildNumberInputRowWithUnit('Width', _gridWidthController, 'm', (v) {
             _updateConfig(config.copyWith(gridWidth: v));
           }),
-          _buildNumberInputRowWithUnit('高度', _gridHeightController, '米', (v) {
+          _buildNumberInputRowWithUnit('Height', _gridHeightController, 'm', (v) {
             _updateConfig(config.copyWith(gridHeight: v));
           }),
           const SizedBox(height: 16),
-          _buildCheckboxRow('顯示網格', config.showGrid, (v) {
+          _buildCheckboxRow('Show Grid', config.showGrid, (v) {
             _updateConfig(config.copyWith(showGrid: v));
           }),
           const SizedBox(height: 24),
-          _buildSectionTitle('快捷設置'),
+          _buildSectionTitle('Quick Settings'),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -702,7 +702,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('串口配置'),
+          _buildSectionTitle('Serial Configuration'),
 
           // 当前连接状态
           Container(
@@ -732,7 +732,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    widget.uwbService.isConnected ? '已連接' : '未連接',
+                    widget.uwbService.isConnected ? 'Connected' : 'Disconnected',
                     style: TextStyle(
                       color: widget.uwbService.isConnected
                           ? Colors.green.shade700
@@ -748,7 +748,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
           const SizedBox(height: 16),
 
           // 波特率选择
-          _buildSectionTitle('波特率'),
+          _buildSectionTitle('Baud Rate'),
           DropdownButtonFormField<int>(
             initialValue: 115200,
             decoration: const InputDecoration(
@@ -779,7 +779,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                     Navigator.pop(context, 'search_ports');
                   },
                   icon: const Icon(Icons.search, size: 18),
-                  label: const Text('搜索串口'),
+                  label: const Text('Scan Ports'),
                 ),
               ),
             ],
@@ -799,21 +799,21 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                           foregroundColor: Colors.white,
                         ),
                         icon: const Icon(Icons.close, size: 18),
-                        label: const Text('關閉串口'),
+                        label: const Text('Disconnect'),
                       )
                     : ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context, 'connect');
                         },
                         icon: const Icon(Icons.usb, size: 18),
-                        label: const Text('連接串口'),
+                        label: const Text('Connect'),
                       ),
               ),
             ],
           ),
 
           const SizedBox(height: 24),
-          _buildSectionTitle('提示'),
+          _buildSectionTitle('Tips'),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -824,17 +824,17 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '• BU04 設備使用 CH340 或 CP210x 芯片',
+                  '• BU04 uses CH340 or CP210x chip',
                   style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '• 默認波特率為 115200',
+                  '• Default baud rate is 115200',
                   style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '• 如無法識別請安裝驅動程序',
+                  '• Install drivers if device is not recognized',
                   style: TextStyle(fontSize: 12, color: Colors.blue.shade900),
                 ),
               ],
@@ -1002,17 +1002,17 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
   }
 
   String _describeMapping(List<int> map) {
-    if (map.length != 4) return '無效映射';
+    if (map.length != 4) return 'Invalid Mapping';
     if (map[0] == 0 && map[1] == 1 && map[2] == 2 && map[3] == 3) {
-      return '預設順序（無交換）';
+      return 'Default Order (No Swaps)';
     }
     final swaps = <String>[];
     for (int i = 0; i < 4; i++) {
       if (map[i] != i) {
-        swaps.add('硬體D$i → 基站${map[i]}');
+        swaps.add('HW D$i → Anchor${map[i]}');
       }
     }
-    return swaps.join('，');
+    return swaps.join(', ');
   }
 
   Widget _buildSwapButton(String label, List<int> mapping) {

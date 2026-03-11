@@ -68,7 +68,7 @@ class _ReportScreenState extends State<ReportScreen> {
         _analyzeWithAI();
 
         if (mounted) {
-          _showSuccess('✨ AI 分析完成！');
+          _showSuccess('✨ AI analysis complete!');
         }
       } else {
         setState(() {
@@ -79,7 +79,7 @@ class _ReportScreenState extends State<ReportScreen> {
       setState(() {
         _isScanning = false;
       });
-      _showError('無法選取圖片: $e');
+      _showError('Cannot select image: $e');
     }
   }
 
@@ -95,7 +95,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Future<void> _analyzeWithAI() async {
     if (_imageBase64 == null) {
-      _showError('請先選擇圖片');
+      _showError('Please select an image first');
       return;
     }
 
@@ -115,16 +115,16 @@ class _ReportScreenState extends State<ReportScreen> {
           _aiResult = result;
           _aiCategory = result['category'] ?? 'structural';
           _aiSeverity = result['severity'] ?? 'moderate';
-          _aiTitle = result['title'] ?? '建築安全問題';
-          _aiDescription = result['analysis'] ?? 'AI 自動檢測到建築損壞';
+          _aiTitle = result['title'] ?? 'Building Safety Issue';
+          _aiDescription = result['analysis'] ?? 'AI detected building damage';
         });
 
-        _showSuccess('✅ AI 分析完成');
+        _showSuccess('✅ AI analysis complete');
       } else {
-        _showError('未檢測到明顯損壞，請重新拍照');
+        _showError('No obvious damage detected. Please retake the photo.');
       }
     } catch (e) {
-      _showError('AI 分析失敗: $e');
+      _showError('AI analysis failed: $e');
     } finally {
       setState(() {
         _isAnalyzing = false;
@@ -134,12 +134,12 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Future<void> _submitReport() async {
     if (_selectedImage == null) {
-      _showError('請先上傳照片');
+      _showError('Please upload a photo first');
       return;
     }
 
     if (_aiResult == null) {
-      _showError('請等待 AI 分析完成');
+      _showError('Please wait for AI analysis to complete');
       return;
     }
 
@@ -156,19 +156,19 @@ class _ReportScreenState extends State<ReportScreen> {
           Provider.of<NavigationProvider>(context, listen: false);
 
       final report = await reportProvider.addReport(
-        title: _aiTitle ?? '建築安全問題',
-        description: _aiDescription ?? 'AI 自動檢測',
+        title: _aiTitle ?? 'Building Safety Issue',
+        description: _aiDescription ?? 'AI auto-detection',
         category: _aiCategory ?? 'structural',
         severity: _aiSeverity ?? 'moderate',
         imagePath: _selectedImage!.path,
         imageBase64: _imageBase64,
-        location: '定位中（UWB）', // 之後會透過 UWB 自動填入
+        location: 'Locating (UWB)', // 之後會透過 UWB 自動填入
         isOnline: connectivity.isOnline,
       );
 
       if (report != null) {
         _resetForm();
-        _showSuccess('✅ 報告已成功提交！正在跳轉到紀錄頁面...');
+        _showSuccess('✅ Report submitted! Redirecting to history...');
         
         // 等待一下讓用戶看到成功消息，然後自動切換到歷史記錄頁面
         Future.delayed(const Duration(milliseconds: 1500), () {
@@ -178,7 +178,7 @@ class _ReportScreenState extends State<ReportScreen> {
         });
       }
     } catch (e) {
-      _showError('提交失敗: $e');
+      _showError('Submission failed: $e');
     } finally {
       setState(() {
         _isSubmitting = false;
@@ -256,7 +256,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    '拍攝建築損壞照片',
+                    'Take a photo of the building damage',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -265,7 +265,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'AI 將自動分析問題類別和嚴重程度',
+                    'AI will automatically analyze the issue type and severity',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 14,
@@ -328,7 +328,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                       ),
                                       const SizedBox(height: 12),
                                       const Text(
-                                        '拍照',
+                                        'Photo',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -337,7 +337,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '開啟相機',
+                                        'Open Camera',
                                         style: TextStyle(
                                           fontSize: 13,
                                           color: Colors.grey.shade600,
@@ -388,7 +388,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                       ),
                                       const SizedBox(height: 12),
                                       const Text(
-                                        '相簿',
+                                        'Gallery',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
@@ -397,7 +397,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '選擇照片',
+                                        'Select Photo',
                                         style: TextStyle(
                                           fontSize: 13,
                                           color: Colors.grey.shade600,
@@ -435,7 +435,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                     ),
                                     const SizedBox(height: 16),
                                     const Text(
-                                      '🤖 AI 正在分析環境...',
+                                      '🤖 AI is analyzing the image...',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
@@ -444,7 +444,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                     ),
                                     const SizedBox(height: 8),
                                     const Text(
-                                      '智能識別安全風險',
+                                      'Smart Detection of Safety Risks',
                                       style: TextStyle(
                                         color: Colors.white70,
                                         fontSize: 14,
@@ -501,7 +501,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                           ),
                                           SizedBox(height: 16),
                                           Text(
-                                            'AI 分析中...',
+                                            'AI Analyzing...',
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 16,
@@ -540,7 +540,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                 child: OutlinedButton.icon(
                                   onPressed: _openCamera,
                                   icon: const Icon(Icons.camera_alt),
-                                  label: const Text('重新拍攝'),
+                                  label: const Text('Retake'),
                                   style: OutlinedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12, horizontal: 16),
@@ -555,7 +555,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                 child: OutlinedButton.icon(
                                   onPressed: _openGallery,
                                   icon: const Icon(Icons.photo_library),
-                                  label: const Text('選擇相簿'),
+                                  label: const Text('Gallery'),
                                   style: OutlinedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 12, horizontal: 16),
@@ -600,7 +600,7 @@ class _ReportScreenState extends State<ReportScreen> {
                           ),
                           SizedBox(width: 12),
                           Text(
-                            'POE AI 正在分析圖片...',
+                            'POE AI is analyzing the image...',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
@@ -640,7 +640,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                 Icon(Icons.send, size: 20),
                                 SizedBox(width: 8),
                                 Text(
-                                  '提交報告',
+                                  'Submit Report',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -668,7 +668,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                 size: 20, color: AppTheme.textSecondary),
                             SizedBox(width: 8),
                             Text(
-                              '使用說明',
+                              'Instructions',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -678,10 +678,10 @@ class _ReportScreenState extends State<ReportScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        _buildInstructionItem('1. 拍攝建築損壞部位的清晰照片'),
-                        _buildInstructionItem('2. AI 將自動分析問題類別和嚴重程度'),
-                        _buildInstructionItem('3. 確認 AI 分析結果後提交報告'),
-                        _buildInstructionItem('4. 位置資訊將透過 UWB 自動定位'),
+                        _buildInstructionItem('1. Take a clear photo of the damaged area'),
+                        _buildInstructionItem('2. AI will automatically analyze the issue type and severity'),
+                        _buildInstructionItem('3. Confirm AI analysis results and submit the report'),
+                        _buildInstructionItem('4. Location will be auto-filled via UWB positioning'),
                       ],
                     ),
                   ),

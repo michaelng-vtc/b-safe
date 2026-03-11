@@ -63,7 +63,7 @@ class DesktopSerialService {
       // 打开串口
       if (!_port!.openReadWrite()) {
         final error = SerialPort.lastError;
-        debugPrint('无法打开串口 $portName: ${error?.message}');
+        debugPrint('Cannot open port $portName: ${error?.message}');
         return false;
       }
 
@@ -72,10 +72,10 @@ class DesktopSerialService {
       // 开始读取数据
       _startReading();
 
-      debugPrint('串口 $portName 连接成功 (波特率: $baudRate)');
+      debugPrint('Port $portName connected (baud: $baudRate)');
       return true;
     } catch (e) {
-      debugPrint('串口连接失败: $e');
+      debugPrint('Serial connect failed: $e');
       _isConnected = false;
       return false;
     }
@@ -86,15 +86,15 @@ class DesktopSerialService {
     final ports = getAvailablePorts();
 
     if (ports.isEmpty) {
-      debugPrint('未找到可用的串口设备');
+      debugPrint('No serial devices found');
       return false;
     }
 
-    debugPrint('找到 ${ports.length} 个串口: $ports');
+    debugPrint('Found ${ports.length} port(s): $ports');
 
     // 尝试连接第一个串口
     for (final port in ports) {
-      debugPrint('尝试连接: $port');
+      debugPrint('Trying to connect: $port');
       if (await connect(port, baudRate: baudRate)) {
         return true;
       }
@@ -115,9 +115,9 @@ class DesktopSerialService {
       _port?.dispose();
       _port = null;
 
-      debugPrint('串口已断开');
+      debugPrint('Serial port disconnected');
     } catch (e) {
-      debugPrint('断开连接错误: $e');
+      debugPrint('Disconnect error: $e');
     }
   }
 
@@ -140,7 +140,7 @@ class DesktopSerialService {
             // 調試：每收到一些數據就打印
             if (_totalBytesReceived % 500 < data.length) {
               debugPrint(
-                  '[串口] 已接收 $_totalBytesReceived 字節, 當前塊: ${data.length} 字節');
+                  '[Serial] Received $_totalBytesReceived bytes, chunk: ${data.length} bytes');
             }
 
             // 添加新数据到缓冲区
@@ -203,21 +203,21 @@ class DesktopSerialService {
               byteBuffer = byteBuffer.sublist(byteBuffer.length - 200);
             }
           } catch (e) {
-            debugPrint('数据解析错误: $e');
+            debugPrint('Data parse error: $e');
           }
         },
         onError: (error) {
-          debugPrint('串口读取错误: $error');
+          debugPrint('Serial read error: $error');
           _isConnected = false;
         },
         onDone: () {
-          debugPrint('串口读取结束');
+          debugPrint('Serial read ended');
           _isConnected = false;
         },
         cancelOnError: false,
       );
     } catch (e) {
-      debugPrint('开始读取数据失败: $e');
+      debugPrint('Failed to start reading: $e');
       _isConnected = false;
     }
   }
@@ -252,7 +252,7 @@ class DesktopSerialService {
   /// 发送数据到串口
   Future<bool> write(String data) async {
     if (_port == null || !_isConnected) {
-      debugPrint('串口未连接');
+      debugPrint('Serial port not connected');
       return false;
     }
 
@@ -261,7 +261,7 @@ class DesktopSerialService {
       final written = _port!.write(Uint8List.fromList(bytes));
       return written == bytes.length;
     } catch (e) {
-      debugPrint('发送数据失败: $e');
+      debugPrint('Failed to send data: $e');
       return false;
     }
   }

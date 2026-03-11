@@ -38,7 +38,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             list.map((e) => Project.fromJson(e as Map<String, dynamic>)).toList();
       }
     } catch (e) {
-      debugPrint('載入專案失敗: $e');
+      debugPrint('Failed to load projects: $e');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -50,7 +50,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       await prefs.setString(
           _projectsKey, jsonEncode(_projects.map((p) => p.toJson()).toList()));
     } catch (e) {
-      debugPrint('保存專案失敗: $e');
+      debugPrint('Failed to save projects: $e');
     }
   }
 
@@ -66,7 +66,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           children: [
             Icon(Icons.add_business, color: AppTheme.primaryColor),
             const SizedBox(width: 8),
-            const Text('新建專案'),
+            const Text('New Project'),
           ],
         ),
         content: Column(
@@ -75,8 +75,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             TextField(
               controller: nameController,
               decoration: const InputDecoration(
-                labelText: '大廈名稱',
-                hintText: '例如：港島商業大廈',
+                labelText: 'Building Name',
+                hintText: 'E.g.: Commercial Building',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.business),
               ),
@@ -87,8 +87,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               controller: floorController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: '樓層數目',
-                hintText: '例如：25',
+                labelText: 'Number of Floors',
+                hintText: 'E.g.: 25',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.layers),
               ),
@@ -97,26 +97,26 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton.icon(
             onPressed: () {
               final name = nameController.text.trim();
               final floors = int.tryParse(floorController.text.trim()) ?? 1;
               if (name.isEmpty) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('請輸入大廈名稱')));
+                    const SnackBar(content: Text('Please enter a building name')));
                 return;
               }
               if (floors < 1) {
                 ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('樓層數目至少為 1')));
+                    const SnackBar(content: Text('Number of floors must be at least 1')));
                 return;
               }
               Navigator.pop(ctx);
               _createProject(name, floors);
             },
             icon: const Icon(Icons.check),
-            label: const Text('建立'),
+            label: const Text('Create'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
@@ -178,11 +178,11 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('刪除專案'),
-        content: Text('確定要刪除「${project.buildingName}」？\n所有樓層的巡檢數據也會被刪除。'),
+        title: const Text('Delete Project'),
+        content: Text('Are you sure you want to delete "${project.buildingName}"?\nAll inspection data for all floors will be deleted.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
@@ -201,7 +201,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               _saveProjects();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('刪除', style: TextStyle(color: Colors.white)),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -240,7 +240,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('專案管理',
+            const Text('Project Management',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
@@ -256,7 +256,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateProjectDialog,
         icon: const Icon(Icons.add),
-        label: const Text('新建專案'),
+        label: const Text('New Project'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
       ),
@@ -271,7 +271,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           Icon(Icons.business, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            '尚無專案',
+            'No Projects Yet',
             style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -279,14 +279,14 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '按下方「+ 新建專案」開始建立大廈巡檢專案',
+            'Press "+ New Project" below to create a building inspection project',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
             onPressed: _showCreateProjectDialog,
             icon: const Icon(Icons.add),
-            label: const Text('新建專案'),
+            label: const Text('New Project'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
@@ -352,7 +352,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                                 fontWeight: FontWeight.bold, fontSize: 17)),
                         const SizedBox(height: 4),
                         Text(
-                          '${project.floorCount} 層  |  建立於 ${project.createdAt.toString().substring(0, 10)}',
+                          '${project.floorCount} Floors  |  Created on ${project.createdAt.toString().substring(0, 10)}',
                           style: TextStyle(
                               fontSize: 13, color: Colors.grey.shade600),
                         ),
@@ -370,7 +370,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                             children: [
                               Icon(Icons.delete, color: Colors.red, size: 18),
                               SizedBox(width: 8),
-                              Text('刪除', style: TextStyle(color: Colors.red)),
+                              Text('Delete', style: TextStyle(color: Colors.red)),
                             ],
                           )),
                     ],
@@ -378,16 +378,16 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
                 children: [
                   _buildStatChip(
-                      Icons.layers, '${project.floorCount} 樓層', Colors.blue),
-                  const SizedBox(width: 8),
+                      Icons.layers, '${project.floorCount} Floors', Colors.blue),
                   _buildStatChip(
-                      Icons.push_pin, '$totalPins 巡檢點', Colors.orange),
-                  const SizedBox(width: 8),
+                      Icons.push_pin, '$totalPins Inspection Points', Colors.orange),
                   _buildStatChip(
-                      Icons.analytics, '$analyzedPins 已分析', Colors.green),
+                      Icons.analytics, '$analyzedPins Analyzed', Colors.green),
                 ],
               ),
             ],

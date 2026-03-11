@@ -85,7 +85,7 @@ class InspectionProvider extends ChangeNotifier {
         );
       }
     } catch (e) {
-      debugPrint('載入巡檢會話失敗: $e');
+      debugPrint('Failed to load inspection session: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -103,7 +103,7 @@ class InspectionProvider extends ChangeNotifier {
         await prefs.setString(_currentSessionKey, _currentSession!.id);
       }
     } catch (e) {
-      debugPrint('保存巡檢會話失敗: $e');
+      debugPrint('Failed to save inspection session: $e');
     }
   }
 
@@ -160,7 +160,7 @@ class InspectionProvider extends ChangeNotifier {
   /// 在指定位置添加 pin
   InspectionPin addPin(double x, double y) {
     if (_currentSession == null) {
-      createSession('巡檢 ${DateTime.now().toString().substring(0, 16)}');
+      createSession('Inspection ${DateTime.now().toString().substring(0, 16)}');
     }
 
     final pin = InspectionPin(
@@ -252,10 +252,10 @@ class InspectionProvider extends ChangeNotifier {
 
       try {
         analysis = await _api.analyzeImageWithAI(imageBase64);
-        debugPrint('[InspectionProvider] POE AI 分析成功');
+        debugPrint('[InspectionProvider] POE AI analysis success');
       } catch (e) {
         // 使用本地分析作為後備
-        debugPrint('[InspectionProvider] POE AI 分析失敗，使用本地後備: $e');
+        debugPrint('[InspectionProvider] POE AI analysis failed, using local fallback: $e');
         analysis = ApiService.localAnalysis('moderate', 'structural');
       }
 
@@ -278,15 +278,15 @@ class InspectionProvider extends ChangeNotifier {
       updatePin(updatedPin);
       return updatedPin;
     } catch (e) {
-      debugPrint('AI 分析失敗: $e');
+      debugPrint('AI analysis failed: $e');
       // 返回帶有基本分析的 pin
       final fallbackPin = pin.copyWith(
         imagePath: imagePath,
         imageBase64: imageBase64,
         riskScore: 50,
         riskLevel: 'medium',
-        description: 'AI 分析服務暫時不可用，使用本地評估',
-        recommendations: ['建議安排專業人員檢查'],
+        description: 'AI analysis service temporarily unavailable. Using local assessment.',
+        recommendations: ['Recommend professional inspection'],
         status: 'analyzed',
       );
       updatePin(fallbackPin);
@@ -324,7 +324,7 @@ class InspectionProvider extends ChangeNotifier {
       chatMessages.add(ChatMessage(
         id: _uuid.v4(),
         role: 'ai',
-        content: analysis['analysis'] as String? ?? '分析完成。',
+        content: analysis['analysis'] as String? ?? 'Analysis complete.',
       ));
 
       return defect.copyWith(
@@ -344,14 +344,14 @@ class InspectionProvider extends ChangeNotifier {
         chatMessages: chatMessages,
       );
     } catch (e) {
-      debugPrint('AI 缺陷分析失敗: $e');
+      debugPrint('AI defect analysis failed: $e');
       return defect.copyWith(
         imagePath: imagePath ?? defect.imagePath,
         imageBase64: imageBase64,
         riskScore: 50,
         riskLevel: 'medium',
-        description: 'AI 分析服務暫時不可用，使用本地評估',
-        recommendations: ['建議安排專業人員檢查'],
+        description: 'AI analysis service temporarily unavailable. Using local assessment.',
+        recommendations: ['Recommend professional inspection'],
         status: 'analyzed',
       );
     } finally {

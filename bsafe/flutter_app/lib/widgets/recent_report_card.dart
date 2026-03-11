@@ -127,7 +127,7 @@ class RecentReportCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          '緊急',
+                          'Urgent',
                           style: TextStyle(
                             color: Colors.red.shade600,
                             fontSize: 11,
@@ -147,7 +147,7 @@ class RecentReportCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          '待同步',
+                          'Pending Sync',
                           style: TextStyle(
                             color: Colors.orange.shade600,
                             fontSize: 11,

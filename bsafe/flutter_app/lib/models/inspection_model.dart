@@ -140,18 +140,18 @@ class Defect {
   String get riskLevelLabel {
     switch (riskLevel) {
       case 'high':
-        return '高風險';
+        return 'High Risk';
       case 'medium':
-        return '中風險';
+        return 'Medium Risk';
       case 'low':
-        return '低風險';
+        return 'Low Risk';
       default:
-        return '未評估';
+        return 'Not Assessed';
     }
   }
 }
 
-/// 巡檢點數據模型 - 在 floor plan 上的標記點
+/// Inspection Pin Data Model - 在 floor plan 上的標記點
 class InspectionPin {
   final String id;
   final double x; // UWB 座標 X (米)
@@ -278,29 +278,29 @@ class InspectionPin {
     );
   }
 
-  /// 風險等級顯示
+  /// Risk level display
   String get riskLevelLabel {
     switch (riskLevel) {
       case 'high':
-        return '高風險';
+        return 'High Risk';
       case 'medium':
-        return '中風險';
+        return 'Medium Risk';
       case 'low':
-        return '低風險';
+        return 'Low Risk';
       default:
-        return '未評估';
+        return 'Not Assessed';
     }
   }
 
-  /// 狀態顯示
+  /// Status display
   String get statusLabel {
     switch (status) {
       case 'pending':
-        return '待拍照';
+        return 'Pending';
       case 'analyzed':
-        return '已分析';
+        return 'Analyzed';
       case 'reviewed':
-        return '已審查';
+        return 'Reviewed';
       default:
         return status;
     }
@@ -405,7 +405,7 @@ class InspectionSession {
   factory InspectionSession.fromJson(Map<String, dynamic> json) {
     return InspectionSession(
       id: json['id'] as String? ?? '',
-      name: json['name'] as String? ?? '未命名',
+      name: json['name'] as String? ?? 'Unnamed',
       projectId: json['projectId'] as String?,
       floor: json['floor'] as int? ?? 1,
       floorPlanPath: json['floorPlanPath'] as String?,

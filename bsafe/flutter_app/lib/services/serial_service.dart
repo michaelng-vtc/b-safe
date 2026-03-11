@@ -36,7 +36,7 @@ class SerialService {
   /// 請求連接串口
   Future<bool> connect({int baudRate = 115200}) async {
     if (!isSupported) {
-      debugPrint('Web Serial API 不支持');
+      debugPrint('Web Serial API not supported');
       return false;
     }
 
@@ -55,10 +55,10 @@ class SerialService {
       // 開始讀取數據
       _startReading();
 
-      debugPrint('串口連接成功');
+      debugPrint('Serial port connected');
       return true;
     } catch (e) {
-      debugPrint('串口連接失敗: $e');
+      debugPrint('Serial connection failed: $e');
       _isConnected = false;
       return false;
     }
@@ -79,7 +79,7 @@ class SerialService {
         _port = null;
       }
     } catch (e) {
-      debugPrint('關閉連接錯誤: $e');
+      debugPrint('Close connection error: $e');
     }
 
     _isConnected = false;
@@ -114,7 +114,7 @@ class SerialService {
         }
       }
     } catch (e) {
-      debugPrint('讀取數據錯誤: $e');
+      debugPrint('Read data error: $e');
       _isReading = false;
     }
   }
@@ -126,7 +126,7 @@ class SerialService {
     try {
       await _writeData(_port, data);
     } catch (e) {
-      debugPrint('發送數據錯誤: $e');
+      debugPrint('Send data error: $e');
     }
   }
 

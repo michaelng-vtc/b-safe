@@ -48,7 +48,7 @@ class ReportProvider extends ChangeNotifier {
         debugPrint('  - ${report.id}: ${report.title} (${report.category})');
       }
     } catch (e) {
-      _error = '載入資料失敗: $e';
+      _error = 'Failed to load data: $e';
       debugPrint('❌ Error loading reports: $e');
     } finally {
       _isLoading = false;
@@ -71,9 +71,9 @@ class ReportProvider extends ChangeNotifier {
         'risk_level': 'medium',
         'risk_score': 50,
         'is_urgent': false,
-        'title': '建築安全問題',
-        'analysis': 'AI 分析服務暫時不可用，使用本地評估',
-        'recommendations': ['建議安排專業人員檢查'],
+        'title': 'Building Safety Issue',
+        'analysis': 'AI analysis temporarily unavailable. Using local assessment.',
+        'recommendations': ['Recommend professional inspection'],
       };
     }
   }
@@ -158,7 +158,7 @@ class ReportProvider extends ChangeNotifier {
       
       return savedReport;
     } catch (e) {
-      _error = '提交報告失敗: $e';
+      _error = 'Failed to submit report: $e';
       notifyListeners();
       return null;
     } finally {
@@ -174,7 +174,7 @@ class ReportProvider extends ChangeNotifier {
       await loadReports();
       return true;
     } catch (e) {
-      _error = '更新報告失敗: $e';
+      _error = 'Failed to update report: $e';
       notifyListeners();
       return false;
     }
@@ -187,7 +187,7 @@ class ReportProvider extends ChangeNotifier {
       await loadReports();
       return true;
     } catch (e) {
-      _error = '刪除報告失敗: $e';
+      _error = 'Failed to delete report: $e';
       notifyListeners();
       return false;
     }
@@ -218,7 +218,7 @@ class ReportProvider extends ChangeNotifier {
       await _db.clearSyncQueue();
       await loadReports();
     } catch (e) {
-      _error = '同步失敗: $e';
+      _error = 'Sync failed: $e';
     } finally {
       _isLoading = false;
       notifyListeners();

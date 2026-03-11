@@ -21,11 +21,11 @@ class WordExportService {
     final body = StringBuffer();
 
     // 標題
-    body.writeln(_heading('B-SAFE 巡檢報告', level: 1));
-    body.writeln(_paragraph('專案名稱: $buildingName'));
+    body.writeln(_heading('B-SAFE Inspection Report', level: 1));
+    body.writeln(_paragraph('Project: $buildingName'));
     body.writeln(_paragraph(
-        '匯出時間: ${DateTime.now().toString().substring(0, 16)}'));
-    body.writeln(_paragraph('樓層數: ${sorted.length}'));
+        'Export Date: ${DateTime.now().toString().substring(0, 16)}'));
+    body.writeln(_paragraph('Floors: ${sorted.length}'));
     body.writeln(_paragraph(''));
 
     // 收集所有圖片
@@ -33,11 +33,11 @@ class WordExportService {
 
     for (final session in sorted) {
       body.writeln(_heading('${session.floor}F', level: 2));
-      body.writeln(_paragraph('巡檢點數: ${session.totalPins}'));
+      body.writeln(_paragraph('Inspection Points: ${session.totalPins}'));
       body.writeln(_paragraph(
-          '缺陷統計: 低風險 ${session.lowRiskDefects} / '
-          '中風險 ${session.mediumRiskDefects} / '
-          '高風險 ${session.highRiskDefects}'));
+          'Defect Summary: Low Risk ${session.lowRiskDefects} / '
+          'Medium Risk ${session.mediumRiskDefects} / '
+          'High Risk ${session.highRiskDefects}'));
       body.writeln(_paragraph(''));
 
       int defectNum = 0;
@@ -46,7 +46,7 @@ class WordExportService {
         if (pin.defects.isEmpty) continue;
 
         body.writeln(_heading(
-            '巡檢點 #${i + 1}  (${pin.x.toStringAsFixed(2)}, ${pin.y.toStringAsFixed(2)})',
+            'Inspection Point #${i + 1}  (${pin.x.toStringAsFixed(2)}, ${pin.y.toStringAsFixed(2)})',
             level: 3));
 
         for (int j = 0; j < pin.defects.length; j++) {
@@ -54,19 +54,19 @@ class WordExportService {
           final defect = pin.defects[j];
           final riskLabel = defect.riskLevelLabel;
 
-          body.writeln(_heading('缺陷 $defectNum — $riskLabel', level: 4));
+          body.writeln(_heading('Defect $defectNum — $riskLabel', level: 4));
 
           // 風險等級
-          body.writeln(_paragraph('風險等級: $riskLabel'));
+          body.writeln(_paragraph('Risk Level: $riskLabel'));
 
           // AI 分析描述
           if (defect.description != null && defect.description!.isNotEmpty) {
-            body.writeln(_paragraph('AI 分析: ${defect.description}'));
+            body.writeln(_paragraph('AI Analysis: ${defect.description}'));
           }
 
           // 建議
           if (defect.recommendations.isNotEmpty) {
-            body.writeln(_paragraph('建議:'));
+            body.writeln(_paragraph('Recommendations:'));
             for (final rec in defect.recommendations) {
               body.writeln(_bulletPoint('$rec'));
             }
@@ -74,9 +74,9 @@ class WordExportService {
 
           // AI 對話記錄
           if (defect.chatMessages.isNotEmpty) {
-            body.writeln(_paragraph('對話記錄:'));
+            body.writeln(_paragraph('Chat History:'));
             for (final msg in defect.chatMessages) {
-              final prefix = msg.role == 'user' ? '使用者' : 'AI';
+              final prefix = msg.role == 'user' ? 'User' : 'AI';
               body.writeln(_paragraph('[$prefix] ${msg.content}'));
             }
           }
@@ -98,7 +98,7 @@ class WordExportService {
       }
 
       if (defectNum == 0) {
-        body.writeln(_paragraph('此樓層無缺陷記錄。'));
+        body.writeln(_paragraph('No defect records for this floor.'));
         body.writeln(_paragraph(''));
       }
     }

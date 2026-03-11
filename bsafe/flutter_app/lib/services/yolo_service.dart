@@ -70,7 +70,7 @@ class YoloService {
   /// 初始化 YOLO 模型
   Future<bool> loadModel({String modelPath = 'yolo11n'}) async {
     if (!isSupported) {
-      debugPrint('YOLO: 不支援此平台 (僅 Android/iOS)');
+      debugPrint('YOLO: Platform not supported (Android/iOS only)');
       return false;
     }
 
@@ -90,10 +90,10 @@ class YoloService {
 
       await _yolo!.loadModel();
       _isLoaded = true;
-      debugPrint('YOLO: 模型載入成功');
+      debugPrint('YOLO: Model loaded successfully');
       return true;
     } catch (e) {
-      debugPrint('YOLO: 模型載入失敗: $e');
+      debugPrint('YOLO: Model load failed: $e');
       _yolo = null;
       _isLoaded = false;
       return false;
@@ -133,10 +133,10 @@ class YoloService {
         ));
       }
 
-      debugPrint('YOLO: 偵測到 ${detections.length} 個物件');
+      debugPrint('YOLO: Detected ${detections.length} object(s)');
       return detections;
     } catch (e) {
-      debugPrint('YOLO: 偵測失敗: $e');
+      debugPrint('YOLO: Detection failed: $e');
       return [];
     }
   }
@@ -147,8 +147,8 @@ class YoloService {
       return {
         'risk_level': 'low',
         'risk_score': 10,
-        'analysis': 'YOLO 偵測完成，未發現明顯物件異常。',
-        'recommendations': ['建議進一步人工檢查確認'],
+        'analysis': 'YOLO detection complete. No obvious anomalies found.',
+        'recommendations': ['Recommend manual inspection for confirmation'],
         'detections': [],
         'detection_count': 0,
       };
@@ -206,33 +206,33 @@ class YoloService {
 
     // 組合分析說明
     final analysisLines = <String>[];
-    analysisLines.add('YOLO 偵測到 ${detections.length} 個物件:');
+    analysisLines.add('YOLO detected ${detections.length} object(s):');
     if (personCount > 0) {
-      analysisLines.add('- 人員: $personCount 人');
+      analysisLines.add('- People: $personCount person(s)');
     }
     if (safetyHazards.isNotEmpty) {
-      analysisLines.add('- 安全相關: ${safetyHazards.join(', ')}');
+      analysisLines.add('- Safety-related: ${safetyHazards.join(', ')}');
     }
     if (structuralItems.isNotEmpty) {
-      analysisLines.add('- 設施/家具: ${structuralItems.join(', ')}');
+      analysisLines.add('- Facilities/Furniture: ${structuralItems.join(', ')}');
     }
     if (normalItems.isNotEmpty) {
-      analysisLines.add('- 其他物件: ${normalItems.join(', ')}');
+      analysisLines.add('- Other objects: ${normalItems.join(', ')}');
     }
 
     // 建議
     final recommendations = <String>[];
     if (safetyHazards.isNotEmpty) {
-      recommendations.add('偵測到安全相關物件，請確認消防設備狀態');
+      recommendations.add('Safety-related objects detected. Verify fire equipment status.');
     }
     if (personCount > 3) {
-      recommendations.add('人員密集，請注意疏散通道暢通');
+      recommendations.add('High occupancy. Ensure evacuation routes are clear.');
     }
     if (structuralItems.isNotEmpty) {
-      recommendations.add('請檢查設施狀態是否正常');
+      recommendations.add('Check facility conditions.');
     }
     if (recommendations.isEmpty) {
-      recommendations.add('環境正常，定期巡檢即可');
+      recommendations.add('Environment normal. Regular inspection recommended.');
     }
 
     return {

@@ -52,7 +52,7 @@ class AIAnalysisResult extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               const Text(
-                'AI 分析結果',
+                'AI Analysis Results',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -72,7 +72,7 @@ class AIAnalysisResult extends StatelessWidget {
                       Icon(Icons.warning, color: Colors.white, size: 14),
                       SizedBox(width: 4),
                       Text(
-                        '緊急',
+                        'Urgent',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -119,7 +119,7 @@ class AIAnalysisResult extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '風險評分',
+                      'Risk Score',
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontSize: 13,
@@ -154,7 +154,7 @@ class AIAnalysisResult extends StatelessWidget {
           if (damageTypes.isNotEmpty) ...[
             const SizedBox(height: 16),
             const Text(
-              '檢測到的損壞類型',
+              'Detected Damage Types',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
@@ -191,7 +191,7 @@ class AIAnalysisResult extends StatelessWidget {
           if (analysis.isNotEmpty) ...[
             const SizedBox(height: 16),
             const Text(
-              '分析說明',
+              'Analysis Details',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
@@ -220,7 +220,7 @@ class AIAnalysisResult extends StatelessWidget {
           if (recommendations.isNotEmpty) ...[
             const SizedBox(height: 16),
             const Text(
-              '處理建議',
+              'Recommendations',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,

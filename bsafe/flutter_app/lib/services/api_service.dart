@@ -142,7 +142,7 @@ class ApiService {
       return response.body;
     }
 
-    throw Exception('POE API 錯誤: ${response.statusCode} - ${response.body.substring(0, response.body.length.clamp(0, 300))}');
+    throw Exception('POE API error: ${response.statusCode} - ${response.body.substring(0, response.body.length.clamp(0, 300))}');
   }
 
   /// 從 AI 文字回應中提取 JSON
@@ -181,35 +181,35 @@ class ApiService {
       {String? additionalContext}) async {
     try {
       final prompt = StringBuffer();
-      prompt.writeln('你是一位專業建築安全檢測 AI 助手（B-SAFE 系統）。');
-      prompt.writeln('請分析以下建築物損壞情況並評估風險。');
+      prompt.writeln('You are a professional building safety inspection AI assistant (B-SAFE system).');
+      prompt.writeln('Please analyze the following building damage and assess the risk.');
       prompt.writeln();
-      prompt.writeln('請進行以下評估：');
-      prompt.writeln('1. 識別損壞類型（裂縫、剝落、鏽蝕、漏水、變形等）');
-      prompt.writeln('2. 評估損壞嚴重程度（mild 輕微 / moderate 中度 / severe 嚴重）');
-      prompt.writeln('3. 判斷風險等級（low 低 / medium 中 / high 高）');
-      prompt.writeln('4. 計算風險評分（0-100分）');
-      prompt.writeln('5. 是否需要緊急處理（true/false）');
-      prompt.writeln('6. 提供處理建議（至少2條）');
+      prompt.writeln('Please perform the following assessment:');
+      prompt.writeln('1. Identify damage types (cracks, spalling, corrosion, leaks, deformation, etc.)');
+      prompt.writeln('2. Assess damage severity (mild / moderate / severe)');
+      prompt.writeln('3. Determine risk level (low / medium / high)');
+      prompt.writeln('4. Calculate risk score (0-100)');
+      prompt.writeln('5. Whether urgent action is needed (true/false)');
+      prompt.writeln('6. Provide recommendations (at least 2)');
       prompt.writeln();
-      prompt.writeln('請以 JSON 格式返回，格式如下：');
+      prompt.writeln('Return in the following JSON format:');
       prompt.writeln('{');
       prompt.writeln('  "damage_detected": true,');
-      prompt.writeln('  "damage_types": ["裂縫", "剝落"],');
+      prompt.writeln('  "damage_types": ["crack", "spalling"],');
       prompt.writeln('  "severity": "moderate",');
       prompt.writeln('  "risk_level": "medium",');
       prompt.writeln('  "risk_score": 65,');
       prompt.writeln('  "is_urgent": false,');
-      prompt.writeln('  "analysis": "發現中度損壞...",');
-      prompt.writeln('  "recommendations": ["安排專業檢查", "監控是否惡化"]');
+      prompt.writeln('  "analysis": "Moderate damage found...",');
+      prompt.writeln('  "recommendations": ["Schedule professional inspection", "Monitor for deterioration"]');
       prompt.writeln('}');
       prompt.writeln();
-      prompt.writeln('⚠ 注意：只返回 JSON，不要包含其他文字或 markdown。');
+      prompt.writeln('⚠ IMPORTANT: Return JSON only. No extra text or markdown.');
 
       if (additionalContext != null && additionalContext.isNotEmpty) {
         prompt.writeln();
-        prompt.writeln('用戶補充資訊：$additionalContext');
-        prompt.writeln('請根據以上補充資訊重新評估。');
+        prompt.writeln('User additional info: $additionalContext');
+        prompt.writeln('Please re-assess based on the above information.');
       }
 
       // 構建訊息（OpenAI-compatible vision format）
@@ -233,7 +233,7 @@ class ApiService {
         });
       } else {
         debugPrint('[POE] Image too large, sending text-only analysis');
-        prompt.writeln('\n（注意：圖片過大無法附帶，請根據用戶描述進行分析）');
+        prompt.writeln('\n(Note: Image too large to attach. Analyze based on user description.)');
         messages.add({
           'role': 'user',
           'content': prompt.toString(),
@@ -257,7 +257,7 @@ class ApiService {
           'risk_score': json['risk_score'] ?? 50,
           'is_urgent': json['is_urgent'] ?? false,
           'analysis': json['analysis'] ?? responseText,
-          'recommendations': json['recommendations'] ?? ['建議安排專業人員檢查'],
+          'recommendations': json['recommendations'] ?? ['Schedule a professional inspection'],
         };
       }
 
@@ -269,8 +269,8 @@ class ApiService {
         'risk_level': 'medium',
         'risk_score': 50,
         'is_urgent': false,
-        'analysis': responseText.isNotEmpty ? responseText : 'AI 分析完成',
-        'recommendations': ['建議安排專業人員檢查'],
+        'analysis': responseText.isNotEmpty ? responseText : 'AI analysis complete',
+        'recommendations': ['Schedule a professional inspection'],
       };
     } catch (e) {
       debugPrint('[POE] AI Analysis Error: $e');
@@ -291,9 +291,9 @@ class ApiService {
       messages.add({
         'role': 'system',
         'content':
-            '你是 B-SAFE 建築安全檢測 AI 助手。請用繁體中文回答。'
-            '你的任務是協助用戶分析建築物損壞情況、評估風險、提供維修建議。'
-            '回答要簡潔專業。',
+            'You are the B-SAFE building safety AI assistant. Please respond in English.'
+            'Your task is to help users analyze building damage, assess risk, and provide maintenance recommendations.'
+            'Keep your answers concise and professional.',
       });
 
       // 加入歷史對話
@@ -330,7 +330,7 @@ class ApiService {
       // 查詢 POE Bot
       final responseText = await _queryPoeBot(messages: messages);
 
-      return responseText.isNotEmpty ? responseText : 'AI 暫時無法回應，請稍後再試。';
+      return responseText.isNotEmpty ? responseText : 'AI is temporarily unavailable. Please try again later.';
     } catch (e) {
       debugPrint('[POE Chat] Error: $e');
       rethrow;
@@ -368,7 +368,7 @@ class ApiService {
       'risk_level': riskLevel,
       'risk_score': riskScore.clamp(0, 100),
       'is_urgent': isUrgent,
-      'analysis': '基於用戶輸入的本地評估（離線模式）',
+      'analysis': 'Local assessment based on user input (offline mode)',
       'recommendations': _getRecommendations(severity, category),
     };
   }
@@ -377,29 +377,29 @@ class ApiService {
     final List<String> recommendations = [];
 
     if (severity == 'severe') {
-      recommendations.add('立即通知相關部門');
-      recommendations.add('建議暫時封閉受影響區域');
-      recommendations.add('盡快安排專業檢查');
+      recommendations.add('Notify relevant departments immediately');
+      recommendations.add('Consider temporarily closing the affected area');
+      recommendations.add('Arrange professional inspection as soon as possible');
     } else if (severity == 'moderate') {
-      recommendations.add('安排專業人員檢查');
-      recommendations.add('監控問題是否惡化');
+      recommendations.add('Arrange professional inspection');
+      recommendations.add('Monitor for further deterioration');
     } else {
-      recommendations.add('定期監控情況');
-      recommendations.add('安排例行維護');
+      recommendations.add('Monitor the situation periodically');
+      recommendations.add('Schedule routine maintenance');
     }
 
     switch (category) {
       case 'structural':
-        recommendations.add('聯繫結構工程師評估');
+        recommendations.add('Contact a structural engineer for assessment');
         break;
       case 'exterior':
-        recommendations.add('檢查外牆防水情況');
+        recommendations.add('Check exterior wall waterproofing');
         break;
       case 'electrical':
-        recommendations.add('切勿觸碰，聯繫電工處理');
+        recommendations.add('Do not touch. Contact an electrician.');
         break;
       case 'plumbing':
-        recommendations.add('關閉相關水閥，聯繫水電師傅');
+        recommendations.add('Shut off the water valve and contact a plumber.');
         break;
     }
 

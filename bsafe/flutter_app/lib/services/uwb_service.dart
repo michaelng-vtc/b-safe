@@ -118,9 +118,9 @@ class UwbService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final anchorsJson = _anchors.map((a) => a.toJson()).toList();
       await prefs.setString(_anchorsStorageKey, jsonEncode(anchorsJson));
-      debugPrint('✅ 基站配置已保存: ${_anchors.length} 个基站');
+      debugPrint('✅ Anchor config saved: ${_anchors.length} anchor(s)');
     } catch (e) {
-      debugPrint('❌ 保存基站配置失败: $e');
+      debugPrint('❌ Failed to save anchor config: $e');
     }
   }
 
@@ -133,14 +133,22 @@ class UwbService extends ChangeNotifier {
       if (anchorsJsonString != null && anchorsJsonString.isNotEmpty) {
         final List<dynamic> anchorsJson = jsonDecode(anchorsJsonString);
         _anchors = anchorsJson.map((json) => UwbAnchor.fromJson(json)).toList();
-        debugPrint('✅ 已加載保存的基站配置: ${_anchors.length} 个基站');
+        // Migrate legacy Chinese anchor names (基站N → AnchorN)
+        _anchors = _anchors.map((a) {
+          if (a.id.startsWith('基站')) {
+            final num = a.id.substring(2);
+            return UwbAnchor(id: 'Anchor$num', x: a.x, y: a.y, z: a.z, isActive: a.isActive);
+          }
+          return a;
+        }).toList();
+        debugPrint('✅ Loaded saved anchor config: ${_anchors.length} anchor(s)');
         notifyListeners();
       } else {
-        debugPrint('📝 未找到保存的配置，使用默认基站配置');
+        debugPrint('📝 No saved config found, using default anchors');
         initializeDefaultAnchors();
       }
     } catch (e) {
-      debugPrint('❌ 加載基站配置失敗，使用默認配置: $e');
+      debugPrint('❌ Failed to load anchor config, using defaults: $e');
       initializeDefaultAnchors();
     }
   }
@@ -148,10 +156,10 @@ class UwbService extends ChangeNotifier {
   // 初始化默认基站配置 (基于安信可 TWR App 截图)
   void initializeDefaultAnchors() {
     _anchors = [
-      UwbAnchor(id: '基站0', x: 0.00, y: 0.00, z: 3.00),
-      UwbAnchor(id: '基站1', x: -6.84, y: 0.00, z: 3.00),
-      UwbAnchor(id: '基站2', x: 0.00, y: -5.51, z: 3.00),
-      UwbAnchor(id: '基站3', x: -5.34, y: -5.51, z: 3.00),
+      UwbAnchor(id: 'Anchor0', x: 0.00, y: 0.00, z: 3.00),
+      UwbAnchor(id: 'Anchor1', x: -6.84, y: 0.00, z: 3.00),
+      UwbAnchor(id: 'Anchor2', x: 0.00, y: -5.51, z: 3.00),
+      UwbAnchor(id: 'Anchor3', x: -5.34, y: -5.51, z: 3.00),
     ];
     _saveAnchorsToStorage(); // 保存默认配置
     notifyListeners();
@@ -242,7 +250,7 @@ class UwbService extends ChangeNotifier {
 
       final file = File(filePath);
       if (!await file.exists()) {
-        _lastError = '找不到檔案: $filePath';
+        _lastError = 'File not found: $filePath';
         _isLoadingFloorPlan = false;
         notifyListeners();
         return;
@@ -262,12 +270,12 @@ class UwbService extends ChangeNotifier {
           break;
         case 'dwg':
           _isLoadingFloorPlan = false;
-          _lastError = 'DWG/DXF 格式暫不支援直接開啟，請先轉換為 PDF 或 SVG 格式';
+          _lastError = 'DWG/DXF format not directly supported. Please convert to PDF or SVG first.';
           notifyListeners();
           return;
         default:
           _isLoadingFloorPlan = false;
-          _lastError = '不支援的檔案格式: ${_getFileExtension(filePath)}';
+          _lastError = 'Unsupported file format: ${_getFileExtension(filePath)}';
           notifyListeners();
           return;
       }
@@ -282,12 +290,12 @@ class UwbService extends ChangeNotifier {
       notifyListeners();
 
       debugPrint(
-          '平面地圖已載入 ($fileType): ${_floorPlanImage!.width}x${_floorPlanImage!.height}');
+          'Floor plan loaded ($fileType): ${_floorPlanImage!.width}x${_floorPlanImage!.height}');
     } catch (e) {
       _isLoadingFloorPlan = false;
-      _lastError = '載入平面地圖失敗: $e';
+      _lastError = 'Failed to load floor plan: $e';
       notifyListeners();
-      debugPrint('載入平面地圖錯誤: $e');
+      debugPrint('Floor plan load error: $e');
     }
   }
 
@@ -356,7 +364,7 @@ class UwbService extends ChangeNotifier {
 
     if (pageImage == null) {
       document.dispose();
-      throw Exception('PDF 頁面渲染失敗');
+      throw Exception('PDF page rendering failed');
     }
 
     // 將像素數據轉為 ui.Image
@@ -415,10 +423,10 @@ class UwbService extends ChangeNotifier {
 
         // 获取可用串口
         final ports = _desktopSerial!.getAvailablePorts();
-        debugPrint('可用串口: $ports');
+        debugPrint('Available ports: $ports');
 
         if (ports.isEmpty) {
-          _lastError = '未找到可用串口設備，請確保 BU04 已連接';
+          _lastError = 'No serial port found. Ensure BU04 is connected.';
           notifyListeners();
           return false;
         }
@@ -434,7 +442,7 @@ class UwbService extends ChangeNotifier {
               processSerialData(data);
             },
             onError: (error) {
-              _lastError = '串口錯誤: $error';
+              _lastError = 'Serial port error: $error';
               notifyListeners();
             },
           );
@@ -444,7 +452,7 @@ class UwbService extends ChangeNotifier {
           notifyListeners();
           return true;
         } else {
-          _lastError = '無法連接串口，請檢查設備';
+          _lastError = 'Cannot connect to serial port. Check your device.';
           notifyListeners();
           return false;
         }
@@ -456,10 +464,10 @@ class UwbService extends ChangeNotifier {
 
         // 獲取可用 USB 設備
         final devices = await _mobileSerial!.getAvailableDevices();
-        debugPrint('可用 USB 設備: $devices');
+        debugPrint('Available USB devices: $devices');
 
         if (devices.isEmpty) {
-          _lastError = '未找到 USB 設備，請確保 BU04 已通過 USB-C 線連接';
+          _lastError = 'No USB device found. Ensure BU04 is connected via USB-C.';
           notifyListeners();
           return false;
         }
@@ -473,7 +481,7 @@ class UwbService extends ChangeNotifier {
               processSerialData(data);
             },
             onError: (error) {
-              _lastError = 'USB 串口錯誤: $error';
+              _lastError = 'USB serial error: $error';
               notifyListeners();
             },
           );
@@ -484,7 +492,7 @@ class UwbService extends ChangeNotifier {
           notifyListeners();
           return true;
         } else {
-          _lastError = '無法連接 USB 設備，請檢查連接和 OTG 設定';
+          _lastError = 'Cannot connect USB device. Check connection and OTG settings.';
           notifyListeners();
           return false;
         }
@@ -492,18 +500,18 @@ class UwbService extends ChangeNotifier {
 
       // Web 平台
       if (kIsWeb) {
-        _lastError = 'Web 平台請使用 Web Serial API';
+        _lastError = 'For Web platform, use the Web Serial API.';
         notifyListeners();
         return false;
       }
 
       // 其他平台
-      _lastError = '當前平台不支持串口連接';
+      _lastError = 'Serial connection not supported on this platform.';
       notifyListeners();
       return false;
     } catch (e) {
-      _lastError = '連接錯誤: $e';
-      debugPrint('连接真实设备失败: $e');
+      _lastError = 'Connection error: $e';
+      debugPrint('Failed to connect real device: $e');
       notifyListeners();
       return false;
     }
@@ -521,7 +529,7 @@ class UwbService extends ChangeNotifier {
           (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
         _desktopSerial = DesktopSerialService();
 
-        debugPrint('嘗試連接串口: $portName');
+        debugPrint('Trying serial port: $portName');
 
         // 连接指定串口
         final connected =
@@ -534,7 +542,7 @@ class UwbService extends ChangeNotifier {
               processSerialData(data);
             },
             onError: (error) {
-              _lastError = '串口錯誤: $error';
+              _lastError = 'Serial port error: $error';
               notifyListeners();
             },
           );
@@ -546,10 +554,10 @@ class UwbService extends ChangeNotifier {
           _startUiRefreshTimer();
 
           notifyListeners();
-          debugPrint('成功連接到 $portName');
+          debugPrint('Connected to $portName');
           return true;
         } else {
-          _lastError = '無法連接到 $portName';
+          _lastError = 'Cannot connect to $portName';
           notifyListeners();
           return false;
         }
@@ -561,7 +569,7 @@ class UwbService extends ChangeNotifier {
 
         final devices = await _mobileSerial!.getAvailableDevices();
         if (devices.isEmpty) {
-          _lastError = '未找到 USB 設備';
+          _lastError = 'USB device not found';
           notifyListeners();
           return false;
         }
@@ -585,7 +593,7 @@ class UwbService extends ChangeNotifier {
               processSerialData(data);
             },
             onError: (error) {
-              _lastError = 'USB 串口錯誤: $error';
+              _lastError = 'USB serial error: $error';
               notifyListeners();
             },
           );
@@ -594,21 +602,21 @@ class UwbService extends ChangeNotifier {
           _isRealDevice = true;
           _startUiRefreshTimer();
           notifyListeners();
-          debugPrint('成功連接到 USB 設備');
+          debugPrint('Connected to USB device');
           return true;
         } else {
-          _lastError = '無法連接到 USB 設備';
+          _lastError = 'Cannot connect to USB device';
           notifyListeners();
           return false;
         }
       }
 
-      _lastError = '當前平台不支持串口連接';
+      _lastError = 'Serial connection not supported on this platform.';
       notifyListeners();
       return false;
     } catch (e) {
-      _lastError = '連接錯誤: $e';
-      debugPrint('连接串口失败: $e');
+      _lastError = 'Connection error: $e';
+      debugPrint('Serial connection failed: $e');
       notifyListeners();
       return false;
     }
@@ -693,9 +701,9 @@ class UwbService extends ChangeNotifier {
     // 調試：打印數據格式 (每50個包一次)
     if (_dataReceiveCount % 50 == 1) {
       debugPrint(
-          '原始數據 (前100字): ${data.substring(0, data.length > 100 ? 100 : data.length)}');
+          'Raw data (first 100 chars): ${data.substring(0, data.length > 100 ? 100 : data.length)}');
       debugPrint(
-          '數據類型: RAWBIN=${data.startsWith("RAWBIN:")}, CmdM=${data.startsWith("CmdM")}');
+          'Data type: RAWBIN=${data.startsWith("RAWBIN:")}, CmdM=${data.startsWith("CmdM")}');
     }
 
     final tag = parseUwbData(data);
@@ -703,7 +711,7 @@ class UwbService extends ChangeNotifier {
     // 調試：打印解析結果
     if (_dataReceiveCount % 10 == 0) {
       debugPrint(
-          '數據包 #$_dataReceiveCount: tag=${tag != null ? "有效 x=${tag.x.toStringAsFixed(2)}, y=${tag.y.toStringAsFixed(2)}" : "null"}');
+          'Packet #$_dataReceiveCount: tag=${tag != null ? "valid x=${tag.x.toStringAsFixed(2)}, y=${tag.y.toStringAsFixed(2)}" : "null"}');
     }
 
     if (tag != null) {
@@ -767,7 +775,7 @@ class UwbService extends ChangeNotifier {
 
       // 更新标签数据
       _currentTag = UwbTag(
-        id: '标签0',
+        id: 'Tag0',
         x: double.parse(newX.toStringAsFixed(3)),
         y: double.parse(newY.toStringAsFixed(3)),
         z: 0.0,
@@ -868,7 +876,7 @@ class UwbService extends ChangeNotifier {
 
       return null;
     } catch (e) {
-      debugPrint('解析UWB数据失败: $e');
+      debugPrint('UWB data parse failed: $e');
       return null;
     }
   }
@@ -892,7 +900,7 @@ class UwbService extends ChangeNotifier {
 
       return null;
     } catch (e) {
-      debugPrint('CmdM格式解析错误: $e');
+      debugPrint('CmdM format parse error: $e');
       return null;
     }
   }
@@ -995,7 +1003,7 @@ class UwbService extends ChangeNotifier {
             });
             if (bestCount >= _offsetLearnThreshold * 0.5) {
               _learnedOffsets = bestPattern.split(',').map(int.parse).toList();
-              debugPrint('✅ 學習完成！固定 byte offsets: $_learnedOffsets (出現 $bestCount/$_offsetLearnCount 次)');
+              debugPrint('✅ Learning complete! Fixed byte offsets: $_learnedOffsets (found $bestCount/$_offsetLearnCount times)');
             } else {
               // 重置重新學習
               _offsetLearnCount = 0;
@@ -1005,7 +1013,7 @@ class UwbService extends ChangeNotifier {
         }
       }
 
-      debugPrint('原始距離: D0=${distances[0].toStringAsFixed(2)}m D1=${distances[1].toStringAsFixed(2)}m D2=${distances[2].toStringAsFixed(2)}m D3=${distances[3].toStringAsFixed(2)}m ${_learnedOffsets.isNotEmpty ? "(固定)" : "(學習中 $_offsetLearnCount/$_offsetLearnThreshold)"}');
+      debugPrint('Raw distances: D0=${distances[0].toStringAsFixed(2)}m D1=${distances[1].toStringAsFixed(2)}m D2=${distances[2].toStringAsFixed(2)}m D3=${distances[3].toStringAsFixed(2)}m ${_learnedOffsets.isNotEmpty ? "(fixed)" : "(learning $_offsetLearnCount/$_offsetLearnThreshold)"}');
 
       // ===== 應用距離索引映射 (修正硬體距離順序與基站編號不匹配) =====
       final indexMap = _config.distanceIndexMap;
@@ -1016,7 +1024,7 @@ class UwbService extends ChangeNotifier {
             distances[indexMap[i]] = original[i];
           }
         }
-        debugPrint('映射後距離: D0=${distances[0].toStringAsFixed(2)}m D1=${distances[1].toStringAsFixed(2)}m D2=${distances[2].toStringAsFixed(2)}m D3=${distances[3].toStringAsFixed(2)}m (映射: $indexMap)');
+        debugPrint('Mapped distances: D0=${distances[0].toStringAsFixed(2)}m D1=${distances[1].toStringAsFixed(2)}m D2=${distances[2].toStringAsFixed(2)}m D3=${distances[3].toStringAsFixed(2)}m (map: $indexMap)');
       }
 
       // ===== 應用安信可距離校正係數 =====
@@ -1035,7 +1043,7 @@ class UwbService extends ChangeNotifier {
       if (validCount >= 2) {
         // 確保基站已初始化
         if (_anchors.isEmpty) {
-          debugPrint('警告: 基站未初始化，正在初始化默認基站');
+          debugPrint('Warning: Anchors not initialized, initializing defaults');
           initializeDefaultAnchors();
         }
 
@@ -1043,7 +1051,7 @@ class UwbService extends ChangeNotifier {
         if (validCount >= 3 && _anchors.length >= 3) {
           final pos = _trilaterationWithDistances(distances);
           if (pos != null) {
-            debugPrint('📍 定位結果: (${pos.$1.toStringAsFixed(3)}, ${pos.$2.toStringAsFixed(3)}) | 基站: ${_anchors.map((a) => "${a.id}(${a.x.toStringAsFixed(2)},${a.y.toStringAsFixed(2)})").join(" ")}');
+            debugPrint('📍 Position: (${pos.$1.toStringAsFixed(3)}, ${pos.$2.toStringAsFixed(3)}) | Anchors: ${_anchors.map((a) => "${a.id}(${a.x.toStringAsFixed(2)},${a.y.toStringAsFixed(2)})").join(" ")}');
             return _createTagWithMeasuredDistances(
                 pos.$1, pos.$2, 0.0, '0', distances);
           }
@@ -1079,7 +1087,7 @@ class UwbService extends ChangeNotifier {
 
       return null;
     } catch (e) {
-      debugPrint('解析错误: $e');
+      debugPrint('Parse error: $e');
       return null;
     }
   }
@@ -1481,7 +1489,7 @@ class UwbService extends ChangeNotifier {
     }
 
     return UwbTag(
-      id: '标签$tagId',
+      id: 'Tag$tagId',
       x: double.parse(x.toStringAsFixed(3)),
       y: double.parse(y.toStringAsFixed(3)),
       z: double.parse(z.toStringAsFixed(3)),
@@ -1546,7 +1554,7 @@ class UwbService extends ChangeNotifier {
         final pos = _trilaterate(distances);
         if (pos != null) {
           return UwbTag(
-            id: '標籤0',
+            id: 'Tag0',
             x: pos['x']!,
             y: pos['y']!,
             z: pos['z'] ?? 0.0,
@@ -1617,7 +1625,7 @@ class UwbService extends ChangeNotifier {
     }
 
     return UwbTag(
-      id: '標籤0',
+      id: 'Tag0',
       x: x,
       y: y,
       z: z,
@@ -1690,7 +1698,7 @@ class UwbService extends ChangeNotifier {
       }
 
       return UwbTag(
-        id: '標籤0',
+        id: 'Tag0',
         x: x,
         y: y,
         z: z ?? 0.0,
@@ -1734,7 +1742,7 @@ class UwbService extends ChangeNotifier {
       }
 
       return UwbTag(
-        id: '標籤0',
+        id: 'Tag0',
         x: x,
         y: y,
         z: z,
@@ -1769,7 +1777,7 @@ class UwbService extends ChangeNotifier {
       }
 
       return UwbTag(
-        id: '標籤0',
+        id: 'Tag0',
         x: xMm / 1000.0,
         y: yMm / 1000.0,
         z: zMm / 1000.0,
@@ -1811,7 +1819,7 @@ class UwbService extends ChangeNotifier {
       }
 
       return UwbTag(
-        id: '標籤0',
+        id: 'Tag0',
         x: x,
         y: y,
         z: z,
@@ -1864,7 +1872,7 @@ class UwbService extends ChangeNotifier {
 
       return {'x': x, 'y': y, 'z': 0.0};
     } catch (e) {
-      debugPrint('定位计算失败: $e');
+      debugPrint('Positioning calculation failed: $e');
       return null;
     }
   }

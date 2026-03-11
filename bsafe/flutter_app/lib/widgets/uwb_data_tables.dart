@@ -99,10 +99,10 @@ class _AnchorListTableState extends State<AnchorListTable> {
             ),
             child: Row(
               children: [
-                _buildHeaderCell('基站ID', flex: 2),
-                _buildHeaderCell('X軸\n(m)', flex: 2),
-                _buildHeaderCell('Y軸\n(m)', flex: 2),
-                _buildHeaderCell('Z軸\n(m)', flex: 2),
+                _buildHeaderCell('Anchor ID', flex: 2),
+                _buildHeaderCell('X-axis\n(m)', flex: 2),
+                _buildHeaderCell('Y-axis\n(m)', flex: 2),
+                _buildHeaderCell('Z-axis\n(m)', flex: 2),
                 const SizedBox(width: 50), // Space for action buttons
               ],
             ),
@@ -258,7 +258,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
                               size: 16, color: Colors.green.shade600),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          tooltip: '保存',
+                          tooltip: 'Save',
                         ),
                       ),
                       // Cancel button
@@ -270,7 +270,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
                               size: 16, color: Colors.red.shade400),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          tooltip: '取消',
+                          tooltip: 'Cancel',
                         ),
                       ),
                     ],
@@ -287,7 +287,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
                               size: 16, color: AppTheme.primaryColor),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          tooltip: '編輯座標',
+                          tooltip: 'Edit Coordinates',
                         ),
                       ),
                       // Delete button
@@ -301,7 +301,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
                               size: 16, color: Colors.red.shade400),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          tooltip: '刪除基站',
+                          tooltip: 'Delete Anchor',
                         ),
                       ),
                     ],
@@ -351,12 +351,12 @@ class _AnchorListTableState extends State<AnchorListTable> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('重命名基站'),
+        title: const Text('Rename Anchor'),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
-            labelText: '基站名稱',
-            hintText: '輸入新名稱',
+            labelText: 'Anchor Name',
+            hintText: 'Enter new name',
             border: OutlineInputBorder(),
           ),
           autofocus: true,
@@ -364,7 +364,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -374,7 +374,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
               }
               Navigator.pop(context);
             },
-            child: const Text('確定'),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -422,7 +422,7 @@ class TagListTable extends StatelessWidget {
                         size: 16, color: Colors.blue.shade700),
                     const SizedBox(width: 4),
                     Text(
-                      '基站辨識方法',
+                      'Anchor Identification Guide',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -433,8 +433,8 @@ class TagListTable extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '將標籤放在某個基站旁邊，觀察哪個距離接近 0。\n'
-                  '例：標籤放在左下角 → D0 最小 → 該基站是基站0',
+                  'Place the tag next to an anchor and observe which distance is closest to 0.\n'
+                  'Example: Tag at bottom-left → D0 is smallest → that anchor is Anchor0',
                   style: TextStyle(fontSize: 10, color: Colors.blue.shade600),
                 ),
               ],
@@ -450,14 +450,14 @@ class TagListTable extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildHeaderCell('標籤ID', width: 60),
-                  _buildHeaderCell('X軸\n(m)', width: 50),
-                  _buildHeaderCell('Y軸\n(m)', width: 50),
-                  _buildHeaderCell('Z軸\n(m)', width: 50),
+                  _buildHeaderCell('Tag ID', width: 60),
+                  _buildHeaderCell('X-axis\n(m)', width: 50),
+                  _buildHeaderCell('Y-axis\n(m)', width: 50),
+                  _buildHeaderCell('Z-axis\n(m)', width: 50),
                   _buildHeaderCell('R95\n(m)', width: 50),
                   // 基站距离列 - 顯示 D0, D1, D2, D3
                   for (int i = 0; i < anchors.length && i < 8; i++)
-                    _buildHeaderCell('D$i\n距離(m)', width: 60),
+                    _buildHeaderCell('D$i\nDist(m)', width: 60),
                 ],
               ),
             ),
@@ -470,7 +470,7 @@ class TagListTable extends StatelessWidget {
               padding: EdgeInsets.all(16),
               child: Center(
                 child: Text(
-                  '等待標籤數據...',
+                  'Waiting for tag data...',
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
               ),
@@ -627,7 +627,7 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
   // 显示新增基站对话框
   void _showAddAnchorDialog(BuildContext context) {
     final idController =
-        TextEditingController(text: '基站${uwbService.anchors.length}');
+        TextEditingController(text: 'Anchor${uwbService.anchors.length}');
     final xController = TextEditingController(text: '0.00');
     final yController = TextEditingController(text: '0.00');
     final zController = TextEditingController(text: '3.00');
@@ -639,7 +639,7 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
           children: [
             Icon(Icons.cell_tower, color: AppTheme.primaryColor),
             SizedBox(width: 8),
-            Text('新增基站'),
+            Text('Add Anchor'),
           ],
         ),
         content: Column(
@@ -648,7 +648,7 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
             TextField(
               controller: idController,
               decoration: const InputDecoration(
-                labelText: '基站 ID',
+                labelText: 'Anchor ID',
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
@@ -701,7 +701,7 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -718,10 +718,10 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
 
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('已新增基站: ${idController.text}')),
+                SnackBar(content: Text('Anchor added: ${idController.text}')),
               );
             },
-            child: const Text('新增'),
+            child: const Text('Add'),
           ),
         ],
       ),
@@ -747,7 +747,7 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
                     child: Row(
                       children: [
                         const Text(
-                          '基站列表',
+                          'Anchor List',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -760,7 +760,7 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
                           child: ElevatedButton.icon(
                             onPressed: () => _showAddAnchorDialog(context),
                             icon: const Icon(Icons.add, size: 16),
-                            label: const Text('新增',
+                            label: const Text('Add',
                                 style: TextStyle(fontSize: 12)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primaryColor,
@@ -799,7 +799,7 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
                   const Padding(
                     padding: EdgeInsets.only(bottom: 8),
                     child: Text(
-                      '標籤列表',
+                      'Tag List',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

@@ -73,11 +73,11 @@ class MobileSerialService {
   Future<List<UsbDeviceInfo>> getAvailableDevices() async {
     try {
       final devices = await UsbSerial.listDevices();
-      debugPrint('[USB] 發現 ${devices.length} 個 USB 設備');
+      debugPrint('[USB] Found ${devices.length} USB device(s)');
 
       return devices.map((d) {
         debugPrint(
-            '[USB] 設備: ${d.deviceName}, VID: 0x${d.vid?.toRadixString(16)}, PID: 0x${d.pid?.toRadixString(16)}, Product: ${d.productName}');
+            '[USB] Device: ${d.deviceName}, VID: 0x${d.vid?.toRadixString(16)}, PID: 0x${d.pid?.toRadixString(16)}, Product: ${d.productName}');
         return UsbDeviceInfo(
           deviceName: d.deviceName,
           vid: d.vid ?? 0,
@@ -88,7 +88,7 @@ class MobileSerialService {
         );
       }).toList();
     } catch (e) {
-      debugPrint('[USB] 獲取設備列表失敗: $e');
+      debugPrint('[USB] Failed to get device list: $e');
       return [];
     }
   }
@@ -107,17 +107,17 @@ class MobileSerialService {
         await disconnect();
       }
 
-      debugPrint('[USB] 嘗試連接: ${device.deviceName}');
+      debugPrint('[USB] Trying: ${device.deviceName}');
 
       _port = await device.create();
       if (_port == null) {
-        debugPrint('[USB] 無法創建端口');
+        debugPrint('[USB] Cannot create port');
         return false;
       }
 
       final openResult = await _port!.open();
       if (!openResult) {
-        debugPrint('[USB] 無法打開端口');
+        debugPrint('[USB] Cannot open port');
         _port = null;
         return false;
       }
@@ -139,10 +139,10 @@ class MobileSerialService {
       _startReading();
 
       debugPrint(
-          '[USB] 連接成功: ${device.deviceName} (波特率: $baudRate)');
+          '[USB] Connected: ${device.deviceName} (baud: $baudRate)');
       return true;
     } catch (e) {
-      debugPrint('[USB] 連接失敗: $e');
+      debugPrint('[USB] Connection failed: $e');
       _isConnected = false;
       _port = null;
       return false;
@@ -154,11 +154,11 @@ class MobileSerialService {
     final devices = await getAvailableDevices();
 
     if (devices.isEmpty) {
-      debugPrint('[USB] 未找到可用的 USB 串口設備');
+      debugPrint('[USB] No USB serial devices found');
       return false;
     }
 
-    debugPrint('[USB] 找到 ${devices.length} 個設備，嘗試連接第一個');
+    debugPrint('[USB] Found ${devices.length} device(s), trying first');
 
     // 優先連接 CH340/CP210x（BU04 常用芯片）
     UsbDeviceInfo? preferredDevice;
@@ -188,9 +188,9 @@ class MobileSerialService {
       await _port?.close();
       _port = null;
       _device = null;
-      debugPrint('[USB] 已斷開連接');
+      debugPrint('[USB] Disconnected');
     } catch (e) {
-      debugPrint('[USB] 斷開連接錯誤: $e');
+      debugPrint('[USB] Disconnect error: $e');
     }
   }
 
@@ -211,7 +211,7 @@ class MobileSerialService {
 
             if (_totalBytesReceived % 500 < data.length) {
               debugPrint(
-                  '[USB] 已接收 $_totalBytesReceived 字節, 當前塊: ${data.length} 字節');
+                  '[USB] Received $_totalBytesReceived bytes, current chunk: ${data.length} bytes');
             }
 
             // 添加新數據到緩衝區
@@ -262,23 +262,23 @@ class MobileSerialService {
               byteBuffer = byteBuffer.sublist(byteBuffer.length - 200);
             }
           } catch (e) {
-            debugPrint('[USB] 數據解析錯誤: $e');
+            debugPrint('[USB] Data parse error: $e');
           }
         },
         onError: (error) {
-          debugPrint('[USB] 讀取錯誤: $error');
+          debugPrint('[USB] Read error: $error');
           _isConnected = false;
           onDeviceDisconnected?.call();
         },
         onDone: () {
-          debugPrint('[USB] 讀取結束');
+          debugPrint('[USB] Read ended');
           _isConnected = false;
           onDeviceDisconnected?.call();
         },
         cancelOnError: false,
       );
     } catch (e) {
-      debugPrint('[USB] 開始讀取數據失敗: $e');
+      debugPrint('[USB] Failed to start reading: $e');
       _isConnected = false;
     }
   }
@@ -299,7 +299,7 @@ class MobileSerialService {
   /// 發送數據到串口
   Future<bool> write(String data) async {
     if (_port == null || !_isConnected) {
-      debugPrint('[USB] 串口未連接');
+      debugPrint('[USB] Serial port not connected');
       return false;
     }
 
@@ -308,7 +308,7 @@ class MobileSerialService {
       await _port!.write(Uint8List.fromList(bytes));
       return true;
     } catch (e) {
-      debugPrint('[USB] 發送數據失敗: $e');
+      debugPrint('[USB] Failed to send data: $e');
       return false;
     }
   }
@@ -318,7 +318,7 @@ class MobileSerialService {
     _usbEventSubscription?.cancel();
     _usbEventSubscription =
         UsbSerial.usbEventStream?.listen((UsbEvent event) {
-      debugPrint('[USB] 事件: ${event.event}, 設備: ${event.device?.deviceName}');
+      debugPrint('[USB] Event: ${event.event}, Device: ${event.device?.deviceName}');
       if (event.event == UsbEvent.ACTION_USB_ATTACHED) {
         onDeviceConnected?.call();
       } else if (event.event == UsbEvent.ACTION_USB_DETACHED) {

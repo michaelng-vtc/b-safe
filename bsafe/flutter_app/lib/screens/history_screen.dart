@@ -52,7 +52,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             padding: const EdgeInsets.all(16),
             child: TextField(
               decoration: InputDecoration(
-                hintText: '搜索報告...',
+                hintText: 'Search reports...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -82,27 +82,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Row(
               children: [
                 _FilterChip(
-                  label: '全部',
+                  label: 'All',
                   isSelected: _filterRisk == 'all',
                   onSelected: () => setState(() => _filterRisk = 'all'),
                 ),
                 const SizedBox(width: 8),
                 _FilterChip(
-                  label: '高風險',
+                  label: 'High Risk',
                   isSelected: _filterRisk == 'high',
                   color: AppTheme.riskHigh,
                   onSelected: () => setState(() => _filterRisk = 'high'),
                 ),
                 const SizedBox(width: 8),
                 _FilterChip(
-                  label: '中風險',
+                  label: 'Medium Risk',
                   isSelected: _filterRisk == 'medium',
                   color: AppTheme.riskMedium,
                   onSelected: () => setState(() => _filterRisk = 'medium'),
                 ),
                 const SizedBox(width: 8),
                 _FilterChip(
-                  label: '低風險',
+                  label: 'Low Risk',
                   isSelected: _filterRisk == 'low',
                   color: AppTheme.riskLow,
                   onSelected: () => setState(() => _filterRisk = 'low'),
@@ -138,8 +138,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         const SizedBox(height: 16),
                         Text(
                           _searchQuery.isNotEmpty || _filterRisk != 'all'
-                              ? '沒有符合條件的報告'
-                              : '暫無報告記錄',
+                              ? 'No matching reports'
+                              : 'No reports yet',
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 16,
@@ -199,7 +199,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '篩選條件',
+                  'Filter',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -207,7 +207,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  '狀態',
+                  'Status',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
@@ -215,7 +215,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   spacing: 8,
                   children: [
                     ChoiceChip(
-                      label: const Text('全部'),
+                      label: const Text('All'),
                       selected: _filterStatus == 'all',
                       onSelected: (_) {
                         setModalState(() => _filterStatus = 'all');
@@ -223,7 +223,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       },
                     ),
                     ChoiceChip(
-                      label: const Text('待處理'),
+                      label: const Text('Pending'),
                       selected: _filterStatus == 'pending',
                       onSelected: (_) {
                         setModalState(() => _filterStatus = 'pending');
@@ -231,7 +231,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       },
                     ),
                     ChoiceChip(
-                      label: const Text('處理中'),
+                      label: const Text('In Progress'),
                       selected: _filterStatus == 'in_progress',
                       onSelected: (_) {
                         setModalState(() => _filterStatus = 'in_progress');
@@ -239,7 +239,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       },
                     ),
                     ChoiceChip(
-                      label: const Text('已解決'),
+                      label: const Text('Resolved'),
                       selected: _filterStatus == 'resolved',
                       onSelected: (_) {
                         setModalState(() => _filterStatus = 'resolved');
@@ -255,7 +255,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: const Text('確定'),
+                    child: const Text('OK'),
                   ),
                 ),
               ],

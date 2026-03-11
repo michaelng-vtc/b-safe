@@ -33,7 +33,7 @@ class BSafeApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => InspectionProvider()),
       ],
       child: MaterialApp(
-        title: 'B-SAFE 建築安全',
+        title: 'B-SAFE Building Safety',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const ProjectListScreen(),

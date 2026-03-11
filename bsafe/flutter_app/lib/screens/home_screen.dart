@@ -18,7 +18,7 @@ class HomeScreen extends StatelessWidget {
     // 決定社區健康狀態
     final bool isHealthy = highRisk <= 2;
     final String statusEmoji = isHealthy ? '😊' : '😰';
-    final String statusText = isHealthy ? '社區安全狀況良好！' : '需要你的幫助！';
+    final String statusText = isHealthy ? 'Community safety is good!' : 'Your attention is needed!';
     final List<Color> gradientColors = isHealthy
         ? [const Color(0xFF6BCB77), const Color(0xFF4ECDC4)]
         : [const Color(0xFFFF8C42), const Color(0xFFFF6B6B)];
@@ -64,7 +64,7 @@ class HomeScreen extends StatelessWidget {
           Row(
             children: [
               const Text(
-                '共發現 ',
+                'Total of ',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -80,7 +80,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const Text(
-                ' 個需要關注的地方',
+                ' issues need attention',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -176,7 +176,7 @@ class HomeScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          '建築安全監測',
+                          'Building Safety Monitor',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -185,7 +185,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '共監測 ${stats['total'] ?? 0} 個問題報告',
+                          'Monitoring ${stats['total'] ?? 0} issue report(s)',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 16,
@@ -212,7 +212,7 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  '${reportProvider.pendingSyncCount} 個待同步',
+                                  '${reportProvider.pendingSyncCount} pending sync',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
@@ -231,7 +231,7 @@ class HomeScreen extends StatelessWidget {
 
                   // Statistics Section
                   const Text(
-                    '風險概覽',
+                    'Risk Overview',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -243,7 +243,7 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: StatCard(
-                          title: '高風險',
+                          title: 'High Risk',
                           value: '${stats['highRisk'] ?? 0}',
                           icon: Icons.warning_amber_rounded,
                           color: AppTheme.riskHigh,
@@ -252,7 +252,7 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: StatCard(
-                          title: '中風險',
+                          title: 'Medium Risk',
                           value: '${stats['mediumRisk'] ?? 0}',
                           icon: Icons.error_outline,
                           color: AppTheme.riskMedium,
@@ -261,7 +261,7 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: StatCard(
-                          title: '低風險',
+                          title: 'Low Risk',
                           value: '${stats['lowRisk'] ?? 0}',
                           icon: Icons.check_circle_outline,
                           color: AppTheme.riskLow,
@@ -276,7 +276,7 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: StatCard(
-                          title: '緊急處理',
+                          title: 'Urgent',
                           value: '${stats['urgent'] ?? 0}',
                           icon: Icons.priority_high,
                           color: Colors.red.shade700,
@@ -285,7 +285,7 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: StatCard(
-                          title: '待處理',
+                          title: 'Pending',
                           value: '${stats['pending'] ?? 0}',
                           icon: Icons.pending_actions,
                           color: Colors.blue,
@@ -294,7 +294,7 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: StatCard(
-                          title: '已解決',
+                          title: 'Resolved',
                           value: '${stats['resolved'] ?? 0}',
                           icon: Icons.task_alt,
                           color: Colors.green,
@@ -310,7 +310,7 @@ class HomeScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        '最近上報',
+                        'Recent Reports',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -321,7 +321,7 @@ class HomeScreen extends StatelessWidget {
                           // Navigate to history
                           // Could use a callback or navigation here
                         },
-                        child: const Text('查看全部'),
+                        child: const Text('View All'),
                       ),
                     ],
                   ),
@@ -345,7 +345,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            '暫無報告記錄',
+                            'No reports yet',
                             style: TextStyle(
                               color: Colors.grey.shade600,
                               fontSize: 16,
@@ -353,7 +353,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '點擊底部「上報」開始新增',
+                            'Tap "Report" below to get started',
                             style: TextStyle(
                               color: Colors.grey.shade500,
                               fontSize: 14,
