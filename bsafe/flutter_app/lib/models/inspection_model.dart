@@ -45,6 +45,13 @@ class Defect {
   final String status; // pending / analyzed / reviewed
   final List<ChatMessage> chatMessages; // AI 對話記錄
   final DateTime createdAt;
+  // Structured input fields for AI analysis
+  final String? buildingElement;
+  final String? defectType;
+  final String? diagnosis;
+  final String? suspectedCause;
+  final String? recommendation; // user-input single recommendation
+  final String? defectSize;
 
   Defect({
     required this.id,
@@ -60,6 +67,12 @@ class Defect {
     this.status = 'pending',
     this.chatMessages = const [],
     DateTime? createdAt,
+    this.buildingElement,
+    this.defectType,
+    this.diagnosis,
+    this.suspectedCause,
+    this.recommendation,
+    this.defectSize,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Defect copyWith({
@@ -76,6 +89,12 @@ class Defect {
     String? status,
     List<ChatMessage>? chatMessages,
     DateTime? createdAt,
+    String? buildingElement,
+    String? defectType,
+    String? diagnosis,
+    String? suspectedCause,
+    String? recommendation,
+    String? defectSize,
   }) {
     return Defect(
       id: id ?? this.id,
@@ -91,6 +110,12 @@ class Defect {
       status: status ?? this.status,
       chatMessages: chatMessages ?? this.chatMessages,
       createdAt: createdAt ?? this.createdAt,
+      buildingElement: buildingElement ?? this.buildingElement,
+      defectType: defectType ?? this.defectType,
+      diagnosis: diagnosis ?? this.diagnosis,
+      suspectedCause: suspectedCause ?? this.suspectedCause,
+      recommendation: recommendation ?? this.recommendation,
+      defectSize: defectSize ?? this.defectSize,
     );
   }
 
@@ -108,6 +133,12 @@ class Defect {
         'status': status,
         'chatMessages': chatMessages.map((m) => m.toJson()).toList(),
         'createdAt': createdAt.toIso8601String(),
+        'buildingElement': buildingElement,
+        'defectType': defectType,
+        'diagnosis': diagnosis,
+        'suspectedCause': suspectedCause,
+        'recommendation': recommendation,
+        'defectSize': defectSize,
       };
 
   factory Defect.fromJson(Map<String, dynamic> json) => Defect(
@@ -133,6 +164,12 @@ class Defect {
         createdAt: json['createdAt'] != null
             ? DateTime.parse(json['createdAt'] as String)
             : DateTime.now(),
+        buildingElement: json['buildingElement'] as String?,
+        defectType: json['defectType'] as String?,
+        diagnosis: json['diagnosis'] as String?,
+        suspectedCause: json['suspectedCause'] as String?,
+        recommendation: json['recommendation'] as String?,
+        defectSize: json['defectSize'] as String?,
       );
 
   bool get isAnalyzed => status == 'analyzed' || status == 'reviewed';

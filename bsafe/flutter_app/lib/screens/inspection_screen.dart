@@ -19,6 +19,9 @@ import 'package:bsafe_app/theme/app_theme.dart';
 import 'package:bsafe_app/screens/calibration_screen.dart';
 import 'package:bsafe_app/services/api_service.dart';
 import 'package:bsafe_app/services/word_export_service.dart';
+import 'package:bsafe_app/services/pdf_export_service.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 
 class InspectionScreen extends StatefulWidget {
@@ -204,6 +207,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   ),
                 ),
               const PopupMenuItem(value: 'export_word', child: Text('Export Word')),
+              const PopupMenuItem(value: 'export_pdf', child: Text('Export PDF')),
               const PopupMenuDivider(),
               const PopupMenuItem(value: 'clear_pins', child: Text('Clear All Pins')),
             ],
@@ -314,68 +318,70 @@ class _InspectionScreenState extends State<InspectionScreen> {
         initialChildSize: 0.6,
         minChildSize: 0.3,
         maxChildSize: 0.9,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // 拖動手柄
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+        builder: (context, scrollController) => Consumer<InspectionProvider>(
+          builder: (context, insp, _) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                // 拖動手柄
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              // 標題
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    const Icon(Icons.push_pin, color: AppTheme.primaryColor),
-                    const SizedBox(width: 8),
-                    const Text('Inspection Points',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18)),
-                    const Spacer(),
-                    Text(
-                      '${inspection.currentPins.length}',
-                      style: const TextStyle(
-                        color: AppTheme.primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                // 標題
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.push_pin, color: AppTheme.primaryColor),
+                      const SizedBox(width: 8),
+                      const Text('Inspection Points',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18)),
+                      const Spacer(),
+                      Text(
+                        '${insp.currentPins.length}',
+                        style: const TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              if (inspection.currentPins.isNotEmpty)
-                _buildPinSummary(inspection),
-              // Pin 列表
-              Expanded(
-                child: inspection.currentPins.isEmpty
-                    ? _buildEmptyPinState()
-                    : ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.all(8),
-                        itemCount: inspection.currentPins.length,
-                        itemBuilder: (context, index) {
-                          final pin = inspection.currentPins[index];
-                          return _buildPinCard(pin, index, inspection);
-                        },
-                      ),
-              ),
-            ],
+                if (insp.currentPins.isNotEmpty)
+                  _buildPinSummary(insp),
+                // Pin 列表
+                Expanded(
+                  child: insp.currentPins.isEmpty
+                      ? _buildEmptyPinState()
+                      : ListView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(8),
+                          itemCount: insp.currentPins.length,
+                          itemBuilder: (context, index) {
+                            final pin = insp.currentPins[index];
+                            return _buildPinCard(pin, index, insp);
+                          },
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -775,6 +781,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   ),
                 ),
               const PopupMenuItem(value: 'export_word', child: Text('Export Word')),
+              const PopupMenuItem(value: 'export_pdf', child: Text('Export PDF')),
               const PopupMenuDivider(),
               const PopupMenuItem(value: 'clear_pins', child: Text('Clear All Pins')),
             ],
@@ -1608,6 +1615,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
   // ===== 拍照 + AI 分析對話框 =====
   void _showPhotoCaptureDialog(InspectionPin pin) {
+    final provider = context.read<InspectionProvider>();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1618,6 +1626,9 @@ class _InspectionScreenState extends State<InspectionScreen> {
           onComplete: (updatedPin) {
             context.read<InspectionProvider>().updatePin(updatedPin);
           },
+          allPins: provider.currentPins,
+          allSessions: provider.sessions,
+          currentFloor: provider.currentSession?.floor ?? 1,
         );
       },
     );
@@ -2690,6 +2701,9 @@ class _InspectionScreenState extends State<InspectionScreen> {
       case 'export_word':
         _exportWord(inspection);
         break;
+      case 'export_pdf':
+        _exportPdf(inspection);
+        break;
       case 'clear_pins':
         if (inspection.currentPins.isNotEmpty) {
           showDialog(
@@ -2879,7 +2893,74 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
   // ===== Word 匯出 =====
   Future<void> _exportWord(InspectionProvider inspection) async {
-    // 收集該專案所有樓層的 sessions
+    final projectSessions = _getExportSessions(inspection);
+    if (projectSessions == null) return;
+
+    final buildingName = widget.project?.buildingName ?? 'Unnamed Building';
+    final fileName =
+        '${buildingName}_InspectionReport_${DateTime.now().toString().substring(0, 10)}.docx';
+
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final filePath = '${tempDir.path}/$fileName';
+
+      await WordExportService.exportReport(
+        outputPath: filePath,
+        buildingName: buildingName,
+        sessions: projectSessions,
+      );
+
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        subject: 'B-SAFE Inspection Report (Word)',
+      );
+
+      if (mounted) inspection.markExported();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  // ===== PDF 匯出 =====
+  Future<void> _exportPdf(InspectionProvider inspection) async {
+    final projectSessions = _getExportSessions(inspection);
+    if (projectSessions == null) return;
+
+    final buildingName = widget.project?.buildingName ?? 'Unnamed Building';
+    final fileName =
+        '${buildingName}_InspectionReport_${DateTime.now().toString().substring(0, 10)}.pdf';
+
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final filePath = '${tempDir.path}/$fileName';
+
+      await PdfExportService.exportReport(
+        outputPath: filePath,
+        buildingName: buildingName,
+        sessions: projectSessions,
+      );
+
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        subject: 'B-SAFE Inspection Report (PDF)',
+      );
+
+      if (mounted) inspection.markExported();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  /// Collects sessions for export; returns null if nothing to export.
+  List<InspectionSession>? _getExportSessions(InspectionProvider inspection) {
     final projectId = widget.project?.id;
     final projectSessions = projectId != null
         ? inspection.sessions
@@ -2892,51 +2973,12 @@ class _InspectionScreenState extends State<InspectionScreen> {
     if (allPinsCount == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('No inspection points to export'), backgroundColor: Colors.orange),
+            content: Text('No inspection points to export'),
+            backgroundColor: Colors.orange),
       );
-      return;
+      return null;
     }
-
-    final buildingName = widget.project?.buildingName ?? 'Unnamed Building';
-
-    // 選擇保存路徑
-    final outputPath = await FilePicker.platform.saveFile(
-      dialogTitle: 'Save Inspection Report (Word)',
-      fileName: '${buildingName}_InspectionReport_${DateTime.now().toString().substring(0, 10)}.docx',
-      type: FileType.custom,
-      allowedExtensions: ['docx'],
-    );
-
-    if (outputPath == null) return;
-
-    try {
-      final finalPath = outputPath.endsWith('.docx')
-          ? outputPath
-          : '$outputPath.docx';
-
-      await WordExportService.exportReport(
-        outputPath: finalPath,
-        buildingName: buildingName,
-        sessions: projectSessions,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Word report saved to: $finalPath'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-        inspection.markExported();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
+    return projectSessions;
   }
 }
 
@@ -3883,11 +3925,17 @@ class _PhotoAnalysisDialog extends StatefulWidget {
   final InspectionPin pin;
   final ImagePicker imagePicker;
   final ValueChanged<InspectionPin> onComplete;
+  final List<InspectionPin> allPins;
+  final List<InspectionSession> allSessions;
+  final int currentFloor;
 
   const _PhotoAnalysisDialog({
     required this.pin,
     required this.imagePicker,
     required this.onComplete,
+    this.allPins = const [],
+    this.allSessions = const [],
+    this.currentFloor = 1,
   });
 
   @override
@@ -3901,6 +3949,14 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
   Map<String, dynamic>? _analysisResult;
   final _chatController = TextEditingController();
   bool _photoTaken = false;
+
+  // Structured input fields for AI
+  final _buildingElementController = TextEditingController();
+  final _defectTypeController = TextEditingController();
+  final _diagnosisController = TextEditingController();
+  final _suspectedCauseController = TextEditingController();
+  final _recommendationController = TextEditingController();
+  final _defectSizeController = TextEditingController();
 
   // Chat 相關
   final List<ChatMessage> _chatMessages = [];
@@ -3937,6 +3993,12 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
   void dispose() {
     _chatController.dispose();
     _chatScrollController.dispose();
+    _buildingElementController.dispose();
+    _defectTypeController.dispose();
+    _diagnosisController.dispose();
+    _suspectedCauseController.dispose();
+    _recommendationController.dispose();
+    _defectSizeController.dispose();
     super.dispose();
   }
 
@@ -4186,6 +4248,12 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 
                     const SizedBox(height: 12),
 
+                    // --- Structured Input Fields for AI ---
+                    if (_photoTaken) ...[
+                      _buildStructuredInputFields(),
+                      const SizedBox(height: 12),
+                    ],
+
                     // AI Chat 區域
                     if (_chatMessages.isNotEmpty) ...[
                       Container(
@@ -4243,37 +4311,21 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                       const SizedBox(height: 8),
                     ],
 
-                    // Chat 輸入框
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _chatController,
-                            decoration: InputDecoration(
-                              hintText: 'Enter additional info for AI re-analysis...',
-                              hintStyle: const TextStyle(fontSize: 12),
-                              border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(20)),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              isDense: true,
-                            ),
-                            style: const TextStyle(fontSize: 13),
-                            maxLines: 2,
-                            minLines: 1,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        IconButton(
-                          onPressed: (_isAnalyzing ||
-                                  _chatController.text.trim().isEmpty)
-                              ? null
-                              : _sendChatMessage,
-                          icon: const Icon(Icons.send, size: 20),
-                          color: AppTheme.primaryColor,
-                          tooltip: 'Send',
-                        ),
-                      ],
+                    // Chat 輸入框 (included when AI Analysis button is pressed)
+                    TextField(
+                      controller: _chatController,
+                      decoration: InputDecoration(
+                        hintText: 'Enter additional info for AI re-analysis...',
+                        hintStyle: const TextStyle(fontSize: 12),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        isDense: true,
+                      ),
+                      style: const TextStyle(fontSize: 13),
+                      maxLines: 2,
+                      minLines: 1,
                     ),
 
                     // AI 分析中
@@ -4348,6 +4400,142 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     );
   }
 
+  // --- Structured Input Fields for AI Analysis ---
+  Widget _buildStructuredInputFields() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.auto_awesome, size: 18, color: Colors.orange.shade700),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text(
+                  'AI Input Fields',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ),
+              Tooltip(
+                message: 'AI considers surrounding defects within 5m radius\nand the floor above within 5m radius',
+                child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _buildInputField('Building Element', _buildingElementController, 'e.g. Column, Beam, Slab, Wall'),
+          const SizedBox(height: 8),
+          _buildInputField('Defect Type', _defectTypeController, 'e.g. Crack, Spalling, Corrosion'),
+          const SizedBox(height: 8),
+          _buildInputField('Diagnosis', _diagnosisController, 'e.g. Structural damage observed'),
+          const SizedBox(height: 8),
+          _buildInputField('Suspected Cause', _suspectedCauseController, 'e.g. Water ingress, Overloading'),
+          const SizedBox(height: 8),
+          _buildInputField('Recommendation', _recommendationController, 'e.g. Immediate repair required'),
+          const SizedBox(height: 8),
+          _buildInputField('Defect Size', _defectSizeController, 'e.g. 30cm x 10cm, Width 2mm'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputField(String label, TextEditingController controller, String hint) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        ),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(fontSize: 11, color: Colors.grey.shade400),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              isDense: true,
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            style: const TextStyle(fontSize: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Gather surrounding defect context within 5m radius (same floor + floor above)
+  String _buildSurroundingContext() {
+    final buf = StringBuffer();
+    final pin = widget.pin;
+    final radius = 5.0;
+
+    // Same-floor nearby defects
+    final nearbyDefects = <String>[];
+    for (final p in widget.allPins) {
+      if (p.id == pin.id) continue;
+      final dx = p.x - pin.x;
+      final dy = p.y - pin.y;
+      final dist = (dx * dx + dy * dy);
+      if (dist <= radius * radius) {
+        for (final d in p.defects) {
+          final info = StringBuffer('Defect at (${p.x.toStringAsFixed(1)}, ${p.y.toStringAsFixed(1)}), dist=${dist > 0 ? (dist).toStringAsFixed(1) : "0"}m');
+          if (d.buildingElement != null) info.write(', element: ${d.buildingElement}');
+          if (d.defectType != null) info.write(', type: ${d.defectType}');
+          if (d.description != null) info.write(', desc: ${d.description}');
+          if (d.riskLevel != 'low') info.write(', risk: ${d.riskLevel}');
+          nearbyDefects.add(info.toString());
+        }
+      }
+    }
+
+    // Floor above defects within 5m horizontal radius
+    final floorAbove = widget.currentFloor + 1;
+    final aboveDefects = <String>[];
+    for (final session in widget.allSessions) {
+      if (session.floor == floorAbove) {
+        for (final p in session.pins) {
+          final dx = p.x - pin.x;
+          final dy = p.y - pin.y;
+          final dist = (dx * dx + dy * dy);
+          if (dist <= radius * radius) {
+            for (final d in p.defects) {
+              final info = StringBuffer('Floor-above defect at (${p.x.toStringAsFixed(1)}, ${p.y.toStringAsFixed(1)})');
+              if (d.buildingElement != null) info.write(', element: ${d.buildingElement}');
+              if (d.defectType != null) info.write(', type: ${d.defectType}');
+              if (d.description != null) info.write(', desc: ${d.description}');
+              if (d.riskLevel != 'low') info.write(', risk: ${d.riskLevel}');
+              aboveDefects.add(info.toString());
+            }
+          }
+        }
+      }
+    }
+
+    if (nearbyDefects.isNotEmpty) {
+      buf.writeln('Surrounding defects within ${radius.toInt()}m radius on the same floor:');
+      for (final d in nearbyDefects) {
+        buf.writeln('- $d');
+      }
+    }
+    if (aboveDefects.isNotEmpty) {
+      buf.writeln('Defects on the floor above within ${radius.toInt()}m radius:');
+      for (final d in aboveDefects) {
+        buf.writeln('- $d');
+      }
+    }
+
+    return buf.toString();
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     try {
       XFile? image;
@@ -4414,20 +4602,48 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     });
 
     try {
-      final provider = context.read<InspectionProvider>();
-      final updatedPin = await provider.analyzePin(
-        widget.pin,
-        imageBase64: _imageBase64!,
-        imagePath: _imagePath,
+      // Build additional context from structured fields + surrounding defects
+      final contextBuf = StringBuffer();
+
+      // Structured fields
+      if (_buildingElementController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Building Element: ${_buildingElementController.text.trim()}');
+      }
+      if (_defectTypeController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Defect Type: ${_defectTypeController.text.trim()}');
+      }
+      if (_diagnosisController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Diagnosis: ${_diagnosisController.text.trim()}');
+      }
+      if (_suspectedCauseController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Suspected Cause: ${_suspectedCauseController.text.trim()}');
+      }
+      if (_recommendationController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Recommendation: ${_recommendationController.text.trim()}');
+      }
+      if (_defectSizeController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Defect Size: ${_defectSizeController.text.trim()}');
+      }
+      if (_chatController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Additional Notes: ${_chatController.text.trim()}');
+      }
+
+      // Surrounding defect context
+      final surroundingCtx = _buildSurroundingContext();
+      if (surroundingCtx.isNotEmpty) {
+        contextBuf.writeln();
+        contextBuf.writeln('Consider surrounding defects to draw a conclusive cause:');
+        contextBuf.write(surroundingCtx);
+      }
+
+      final additionalContext = contextBuf.toString().trim();
+
+      final result = await ApiService.instance.analyzeImageWithAI(
+        _imageBase64!,
+        additionalContext: additionalContext.isNotEmpty ? additionalContext : null,
       );
 
-      final result = updatedPin.aiResult ??
-          {
-            'risk_level': updatedPin.riskLevel,
-            'risk_score': updatedPin.riskScore,
-            'analysis': updatedPin.description,
-            'recommendations': updatedPin.recommendations,
-          };
+      if (!mounted) return;
 
       setState(() {
         _analysisResult = result;
@@ -4660,6 +4876,12 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         status: _analysisResult != null ? 'analyzed' : 'pending',
         chatMessages: List<ChatMessage>.from(_chatMessages),
         createdAt: DateTime.now(),
+        buildingElement: _buildingElementController.text.trim().isNotEmpty ? _buildingElementController.text.trim() : null,
+        defectType: _defectTypeController.text.trim().isNotEmpty ? _defectTypeController.text.trim() : null,
+        diagnosis: _diagnosisController.text.trim().isNotEmpty ? _diagnosisController.text.trim() : null,
+        suspectedCause: _suspectedCauseController.text.trim().isNotEmpty ? _suspectedCauseController.text.trim() : null,
+        recommendation: _recommendationController.text.trim().isNotEmpty ? _recommendationController.text.trim() : null,
+        defectSize: _defectSizeController.text.trim().isNotEmpty ? _defectSizeController.text.trim() : null,
       );
 
       final newDefects = [...updatedPin.defects, defect];

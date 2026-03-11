@@ -50,6 +50,8 @@ dependencies:
   file_picker: ^10.3.10
   flutter_svg: ^2.2.3
   pdfrx: ^2.2.24
+  pdf: ^3.11.1
+  share_plus: ^10.1.4
 
   # YOLO Object Detection (Android/iOS)
   ultralytics_yolo: ^0.2.0

@@ -208,8 +208,10 @@ class ApiService {
 
       if (additionalContext != null && additionalContext.isNotEmpty) {
         prompt.writeln();
-        prompt.writeln('User additional info: $additionalContext');
-        prompt.writeln('Please re-assess based on the above information.');
+        prompt.writeln('Inspector observations and context:');
+        prompt.writeln(additionalContext);
+        prompt.writeln();
+        prompt.writeln('Use the above inspector observations and surrounding defect data to provide a comprehensive, conclusive analysis. Factor in spatial patterns when determining root cause.');
       }
 
       // 構建訊息（OpenAI-compatible vision format）

@@ -59,6 +59,26 @@ class WordExportService {
           // 風險等級
           body.writeln(_paragraph('Risk Level: $riskLabel'));
 
+          // Structured fields
+          if (defect.buildingElement != null && defect.buildingElement!.isNotEmpty) {
+            body.writeln(_paragraph('Building Element: ${defect.buildingElement}'));
+          }
+          if (defect.defectType != null && defect.defectType!.isNotEmpty) {
+            body.writeln(_paragraph('Defect Type: ${defect.defectType}'));
+          }
+          if (defect.diagnosis != null && defect.diagnosis!.isNotEmpty) {
+            body.writeln(_paragraph('Diagnosis: ${defect.diagnosis}'));
+          }
+          if (defect.suspectedCause != null && defect.suspectedCause!.isNotEmpty) {
+            body.writeln(_paragraph('Suspected Cause: ${defect.suspectedCause}'));
+          }
+          if (defect.recommendation != null && defect.recommendation!.isNotEmpty) {
+            body.writeln(_paragraph('Inspector Recommendation: ${defect.recommendation}'));
+          }
+          if (defect.defectSize != null && defect.defectSize!.isNotEmpty) {
+            body.writeln(_paragraph('Defect Size: ${defect.defectSize}'));
+          }
+
           // AI 分析描述
           if (defect.description != null && defect.description!.isNotEmpty) {
             body.writeln(_paragraph('AI Analysis: ${defect.description}'));
