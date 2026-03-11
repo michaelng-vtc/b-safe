@@ -3,6 +3,8 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:pdfrx/pdfrx.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:bsafe_app/models/uwb_model.dart';
 import 'package:bsafe_app/services/uwb_service.dart';
 import 'package:bsafe_app/theme/app_theme.dart';
@@ -408,6 +410,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                     secondIndex: _secondAnchorIndex,
                     calculatedScale: _calculatedScale,
                     referencePoints: _referencePoints,
+                    zoom: _currentZoom,
                   ),
                   size: Size.infinite,
                 ),
@@ -1300,7 +1303,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
 
   // ===== 操作說明 =====
   Widget _buildInstructions() {
-    final isSingleAnchorFloorPlan = _placedAnchors.length == 1 && _mode == 'floor_plan';
+    final isSingleAnchorFloorPlan = _mode == 'floor_plan';
     final isRoomMode = _mode == 'room_dimension';
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1373,18 +1376,52 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   Future<void> _pickFloorPlan() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['png', 'jpg', 'jpeg', 'bmp'],
+      allowedExtensions: ['png', 'jpg', 'jpeg', 'bmp', 'pdf'],
       dialogTitle: 'Select Floor Plan',
     );
     if (result != null && result.files.single.path != null) {
       final path = result.files.single.path!;
       try {
-        final file = File(path);
-        final bytes = await file.readAsBytes();
-        final codec = await ui.instantiateImageCodec(bytes);
-        final frame = await codec.getNextFrame();
+        ui.Image? image;
+
+        if (path.toLowerCase().endsWith('.pdf')) {
+          // Ensure pdfrx cache directory is set
+          Pdfrx.getCacheDirectory ??= () async => (await getTemporaryDirectory()).path;
+          // Render the first page of the PDF to an image
+          final doc = await PdfDocument.openFile(path);
+          try {
+            final page = doc.pages[0];
+            final pageImage = await page.render(
+              width: (page.width * 2).toInt(),
+              height: (page.height * 2).toInt(),
+            );
+            if (pageImage == null) throw Exception('PDF page rendering failed');
+            final pixels = pageImage.pixels;
+            final buffer = await ui.ImmutableBuffer.fromUint8List(pixels);
+            final descriptor = ui.ImageDescriptor.raw(
+              buffer,
+              width: pageImage.width,
+              height: pageImage.height,
+              pixelFormat: ui.PixelFormat.rgba8888,
+            );
+            final codec = await descriptor.instantiateCodec();
+            final frame = await codec.getNextFrame();
+            descriptor.dispose();
+            buffer.dispose();
+            image = frame.image;
+          } finally {
+            doc.dispose();
+          }
+        } else {
+          final file = File(path);
+          final bytes = await file.readAsBytes();
+          final codec = await ui.instantiateImageCodec(bytes);
+          final frame = await codec.getNextFrame();
+          image = frame.image;
+        }
+
         setState(() {
-          _floorPlanImage = frame.image;
+          _floorPlanImage = image;
           _floorPlanPath = path;
           _mode = 'floor_plan';
           _placedAnchors.clear();
@@ -1905,6 +1942,7 @@ class _CalibrationPainter extends CustomPainter {
   final int? secondIndex;
   final double? calculatedScale;
   final List<Offset> referencePoints;
+  final double zoom;
 
   _CalibrationPainter({
     required this.mode,
@@ -1917,6 +1955,7 @@ class _CalibrationPainter extends CustomPainter {
     this.secondIndex,
     this.calculatedScale,
     this.referencePoints = const [],
+    this.zoom = 1.0,
   });
 
   static const _anchorColors = [
@@ -2102,31 +2141,27 @@ class _CalibrationPainter extends CustomPainter {
 
   void _drawReferencePoints(Canvas canvas, Size size) {
     if (referencePoints.isEmpty) return;
-
-    final paint = Paint()
-      ..color = Colors.purple.shade400
-      ..strokeWidth = 2;
+    final s = 1.0 / zoom;
 
     // Draw reference points
     for (int i = 0; i < referencePoints.length; i++) {
       final pos = referencePoints[i];
-      // Diamond shape marker
-      canvas.drawCircle(pos, 8, Paint()..color = Colors.purple.shade300);
+      canvas.drawCircle(pos, 8 * s, Paint()..color = Colors.purple.shade300);
       canvas.drawCircle(
         pos,
-        8,
+        8 * s,
         Paint()
           ..color = Colors.white
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2,
+          ..strokeWidth = 2 * s,
       );
       // Label
       final label = i == 0 ? 'A' : 'B';
       final tp = TextPainter(
         text: TextSpan(
           text: label,
-          style: const TextStyle(
-              color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: Colors.white, fontSize: 10 * s, fontWeight: FontWeight.bold),
         ),
         textDirection: TextDirection.ltr,
       );
@@ -2138,7 +2173,7 @@ class _CalibrationPainter extends CustomPainter {
     if (referencePoints.length == 2) {
       final dashPaint = Paint()
         ..color = Colors.purple.shade300
-        ..strokeWidth = 2
+        ..strokeWidth = 2 * s
         ..style = PaintingStyle.stroke;
 
       canvas.drawLine(referencePoints[0], referencePoints[1], dashPaint);
@@ -2205,45 +2240,46 @@ class _CalibrationPainter extends CustomPainter {
     final color = _anchorColors[index % _anchorColors.length];
     final isSelected = index == selectedIndex;
     final isSecond = index == secondIndex;
+    final s = 1.0 / zoom; // inverse scale so markers stay constant screen size
 
     // 選中光暈
     if (isSelected || isSecond) {
       canvas.drawCircle(
         pos,
-        24,
+        24 * s,
         Paint()
           ..color =
               (isSelected ? Colors.blue : Colors.orange).withValues(alpha: 0.3)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6 * s),
       );
     }
 
     // 陰影
     canvas.drawCircle(
-      pos + const Offset(2, 2),
-      14,
+      pos + Offset(2 * s, 2 * s),
+      14 * s,
       Paint()
         ..color = Colors.black.withValues(alpha: 0.15)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3 * s),
     );
 
     // 基站圓圈
-    canvas.drawCircle(pos, 14, Paint()..color = color);
+    canvas.drawCircle(pos, 14 * s, Paint()..color = color);
     canvas.drawCircle(
       pos,
-      14,
+      14 * s,
       Paint()
         ..color = Colors.white
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5,
+        ..strokeWidth = 2.5 * s,
     );
 
     // 序號
     final tp = TextPainter(
       text: TextSpan(
         text: '${index + 1}',
-        style: const TextStyle(
-            color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+        style: TextStyle(
+            color: Colors.white, fontSize: 13 * s, fontWeight: FontWeight.bold),
       ),
       textDirection: TextDirection.ltr,
     );
@@ -2256,7 +2292,7 @@ class _CalibrationPainter extends CustomPainter {
         text: anchor.name,
         style: TextStyle(
             color: Colors.grey.shade800,
-            fontSize: 11,
+            fontSize: 11 * s,
             fontWeight: FontWeight.bold),
       ),
       textDirection: TextDirection.ltr,
@@ -2265,16 +2301,16 @@ class _CalibrationPainter extends CustomPainter {
 
     // 標籤背景
     final labelRect = Rect.fromLTWH(
-      pos.dx - nameTp.width / 2 - 4,
-      pos.dy + 18,
-      nameTp.width + 8,
-      nameTp.height + 4,
+      pos.dx - nameTp.width / 2 - 4 * s,
+      pos.dy + 18 * s,
+      nameTp.width + 8 * s,
+      nameTp.height + 4 * s,
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(labelRect, const Radius.circular(4)),
+      RRect.fromRectAndRadius(labelRect, Radius.circular(4 * s)),
       Paint()..color = Colors.white.withValues(alpha: 0.9),
     );
-    nameTp.paint(canvas, Offset(pos.dx - nameTp.width / 2, pos.dy + 20));
+    nameTp.paint(canvas, Offset(pos.dx - nameTp.width / 2, pos.dy + 20 * s));
 
     // 座標標籤
     if (anchor.realX != null && anchor.realY != null) {
@@ -2284,23 +2320,23 @@ class _CalibrationPainter extends CustomPainter {
               '(${anchor.realX!.toStringAsFixed(2)}, ${anchor.realY!.toStringAsFixed(2)})',
           style: TextStyle(
               color: Colors.green.shade700,
-              fontSize: 9,
+              fontSize: 9 * s,
               fontFamily: 'monospace'),
         ),
         textDirection: TextDirection.ltr,
       );
       coordTp.layout();
       final coordRect = Rect.fromLTWH(
-        pos.dx - coordTp.width / 2 - 3,
-        pos.dy + 32,
-        coordTp.width + 6,
-        coordTp.height + 2,
+        pos.dx - coordTp.width / 2 - 3 * s,
+        pos.dy + 32 * s,
+        coordTp.width + 6 * s,
+        coordTp.height + 2 * s,
       );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(coordRect, const Radius.circular(3)),
+        RRect.fromRectAndRadius(coordRect, Radius.circular(3 * s)),
         Paint()..color = Colors.green.shade50,
       );
-      coordTp.paint(canvas, Offset(pos.dx - coordTp.width / 2, pos.dy + 33));
+      coordTp.paint(canvas, Offset(pos.dx - coordTp.width / 2, pos.dy + 33 * s));
     }
   }
 

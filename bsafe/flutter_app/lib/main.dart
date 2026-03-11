@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:bsafe_app/providers/report_provider.dart';
 import 'package:bsafe_app/providers/connectivity_provider.dart';
 import 'package:bsafe_app/providers/inspection_provider.dart';
@@ -9,6 +10,9 @@ import 'package:bsafe_app/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize pdfrx (required for PDF floor plan loading)
+  await pdfrxFlutterInitialize();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
