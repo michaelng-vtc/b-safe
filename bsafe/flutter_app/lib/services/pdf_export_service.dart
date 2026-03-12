@@ -128,6 +128,17 @@ class PdfExportService {
             'Suspected Cause': defect.suspectedCause,
             'Inspector Recommendation': defect.recommendation,
             'Defect Size': defect.defectSize,
+            'Extent of Defect': defect.extentOfDefect != null ? (defect.extentOfDefect == 'locally' ? 'Locally noted' : 'Generally noted') : null,
+            'Room Current Use': defect.currentUse,
+            'Room Designed Use': defect.designedUse,
+            'Only Typical Floor': defect.onlyTypicalFloor != null ? (defect.onlyTypicalFloor! ? 'Yes' : 'No') : null,
+            'Use of Above': defect.useOfAbove,
+            'Adjacent Wet Area': defect.adjacentWetArea != null ? (defect.adjacentWetArea! ? 'Yes' : 'No') : null,
+            'Adjacent to External Wall': defect.adjacentExternalWall != null ? (defect.adjacentExternalWall! ? 'Yes' : 'No') : null,
+            'Concealed Pipeworks': defect.concealedPipeworks != null ? (defect.concealedPipeworks! ? 'Yes' : 'No') : null,
+            'Repetitive Pattern': defect.repetitivePattern,
+            'Heavy Loading on Floor Above': defect.heavyLoadingAbove != null ? (defect.heavyLoadingAbove! ? 'Yes' : 'No') : null,
+            'Remarks': defect.remarks,
           };
           for (final entry in structuredFields.entries) {
             if (entry.value != null && entry.value!.isNotEmpty) {

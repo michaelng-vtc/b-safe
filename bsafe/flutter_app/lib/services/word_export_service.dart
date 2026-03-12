@@ -79,6 +79,41 @@ class WordExportService {
             body.writeln(_paragraph('Defect Size: ${defect.defectSize}'));
           }
 
+          // Additional information fields
+          if (defect.extentOfDefect != null) {
+            body.writeln(_paragraph('Extent of Defect: ${defect.extentOfDefect == 'locally' ? 'Locally noted' : 'Generally noted'}'));
+          }
+          if (defect.currentUse != null && defect.currentUse!.isNotEmpty) {
+            body.writeln(_paragraph('Room Current Use: ${defect.currentUse}'));
+          }
+          if (defect.designedUse != null && defect.designedUse!.isNotEmpty) {
+            body.writeln(_paragraph('Room Designed Use: ${defect.designedUse}'));
+          }
+          if (defect.onlyTypicalFloor != null) {
+            body.writeln(_paragraph('Only Typical Floor: ${defect.onlyTypicalFloor! ? 'Yes' : 'No'}'));
+          }
+          if (defect.useOfAbove != null && defect.useOfAbove!.isNotEmpty) {
+            body.writeln(_paragraph('Use of Above: ${defect.useOfAbove}'));
+          }
+          if (defect.adjacentWetArea != null) {
+            body.writeln(_paragraph('Adjacent Space is Wet Area: ${defect.adjacentWetArea! ? 'Yes' : 'No'}'));
+          }
+          if (defect.adjacentExternalWall != null) {
+            body.writeln(_paragraph('Adjacent to External Wall: ${defect.adjacentExternalWall! ? 'Yes' : 'No'}'));
+          }
+          if (defect.concealedPipeworks != null) {
+            body.writeln(_paragraph('Concealed Pipeworks: ${defect.concealedPipeworks! ? 'Yes' : 'No'}'));
+          }
+          if (defect.repetitivePattern != null && defect.repetitivePattern!.isNotEmpty) {
+            body.writeln(_paragraph('Repetitive Pattern: ${defect.repetitivePattern}'));
+          }
+          if (defect.heavyLoadingAbove != null) {
+            body.writeln(_paragraph('Heavy Loading on Floor Above: ${defect.heavyLoadingAbove! ? 'Yes' : 'No'}'));
+          }
+          if (defect.remarks != null && defect.remarks!.isNotEmpty) {
+            body.writeln(_paragraph('Remarks: ${defect.remarks}'));
+          }
+
           // AI 分析描述
           if (defect.description != null && defect.description!.isNotEmpty) {
             body.writeln(_paragraph('AI Analysis: ${defect.description}'));

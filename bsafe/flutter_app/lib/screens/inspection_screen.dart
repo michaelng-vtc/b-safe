@@ -3947,16 +3947,33 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
   String? _imagePath;
   bool _isAnalyzing = false;
   Map<String, dynamic>? _analysisResult;
-  final _chatController = TextEditingController();
   bool _photoTaken = false;
 
-  // Structured input fields for AI
+  // Inspector observation fields
   final _buildingElementController = TextEditingController();
   final _defectTypeController = TextEditingController();
   final _diagnosisController = TextEditingController();
   final _suspectedCauseController = TextEditingController();
   final _recommendationController = TextEditingController();
   final _defectSizeController = TextEditingController();
+
+  // Additional Information form fields (matching inspection form)
+  // 0. Extent of Defect
+  String? _extentOfDefect; // 'locally' or 'generally'
+  // 1. Room information
+  final _currentUseController = TextEditingController();
+  final _designedUseController = TextEditingController();
+  bool? _onlyTypicalFloor;
+  final _useOfAboveController = TextEditingController();
+  // 2-4, 6: Yes/No toggles
+  bool? _adjacentWetArea;
+  bool? _adjacentExternalWall;
+  bool? _concealedPipeworks;
+  bool? _heavyLoadingAbove;
+  // 5. Repetitive pattern
+  final _repetitivePatternController = TextEditingController();
+  // 8. Remarks
+  final _remarksController = TextEditingController();
 
   // Chat 相關
   final List<ChatMessage> _chatMessages = [];
@@ -3991,7 +4008,6 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 
   @override
   void dispose() {
-    _chatController.dispose();
     _chatScrollController.dispose();
     _buildingElementController.dispose();
     _defectTypeController.dispose();
@@ -3999,6 +4015,11 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     _suspectedCauseController.dispose();
     _recommendationController.dispose();
     _defectSizeController.dispose();
+    _currentUseController.dispose();
+    _designedUseController.dispose();
+    _useOfAboveController.dispose();
+    _repetitivePatternController.dispose();
+    _remarksController.dispose();
     super.dispose();
   }
 
@@ -4311,22 +4332,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                       const SizedBox(height: 8),
                     ],
 
-                    // Chat 輸入框 (included when AI Analysis button is pressed)
-                    TextField(
-                      controller: _chatController,
-                      decoration: InputDecoration(
-                        hintText: 'Enter additional info for AI re-analysis...',
-                        hintStyle: const TextStyle(fontSize: 12),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20)),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        isDense: true,
-                      ),
-                      style: const TextStyle(fontSize: 13),
-                      maxLines: 2,
-                      minLines: 1,
-                    ),
+
 
                     // AI 分析中
                     if (_isAnalyzing) ...[
@@ -4418,7 +4424,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
               const SizedBox(width: 6),
               const Expanded(
                 child: Text(
-                  'AI Input Fields',
+                  'Additional Information',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
               ),
@@ -4429,23 +4435,141 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
             ],
           ),
           const SizedBox(height: 10),
-          _buildInputField('Building Element', _buildingElementController, 'e.g. Column, Beam, Slab, Wall'),
-          const SizedBox(height: 8),
-          _buildInputField('Defect Type', _defectTypeController, 'e.g. Crack, Spalling, Corrosion'),
-          const SizedBox(height: 8),
-          _buildInputField('Diagnosis', _diagnosisController, 'e.g. Structural damage observed'),
-          const SizedBox(height: 8),
-          _buildInputField('Suspected Cause', _suspectedCauseController, 'e.g. Water ingress, Overloading'),
-          const SizedBox(height: 8),
-          _buildInputField('Recommendation', _recommendationController, 'e.g. Immediate repair required'),
-          const SizedBox(height: 8),
-          _buildInputField('Defect Size', _defectSizeController, 'e.g. 30cm x 10cm, Width 2mm'),
+
+          // Inspector observation fields
+          _buildInspectorInputField('Building Element', _buildingElementController, 'e.g. Column, Beam, Slab, Wall'),
+          const SizedBox(height: 6),
+          _buildInspectorInputField('Defect Type', _defectTypeController, 'e.g. Crack, Spalling, Corrosion'),
+          const SizedBox(height: 6),
+          _buildInspectorInputField('Diagnosis', _diagnosisController, 'e.g. Structural damage observed'),
+          const SizedBox(height: 6),
+          _buildInspectorInputField('Suspected Cause', _suspectedCauseController, 'e.g. Water ingress, Overloading'),
+          const SizedBox(height: 6),
+          _buildInspectorInputField('Recommendation', _recommendationController, 'e.g. Immediate repair required'),
+          const SizedBox(height: 6),
+          _buildInspectorInputField('Defect Size', _defectSizeController, 'e.g. 30cm x 10cm, Width 2mm'),
+          const SizedBox(height: 10),
+          const Divider(height: 1),
+          const SizedBox(height: 10),
+
+          // 0. Extent of Defect
+          _buildToggleRow('0. Extent of Defect:', [
+            _buildChoiceChip('Locally noted', _extentOfDefect == 'locally', () => setState(() => _extentOfDefect = 'locally')),
+            _buildChoiceChip('Generally noted', _extentOfDefect == 'generally', () => setState(() => _extentOfDefect = 'generally')),
+          ]),
+          const SizedBox(height: 6),
+
+          // 1. Room information
+          const Text('1. Room Information:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          _buildTextInputRow('1.1 Current use:', _currentUseController),
+          const SizedBox(height: 4),
+          _buildTextInputRow('1.2 Designed use:', _designedUseController),
+          const SizedBox(height: 4),
+          _buildYesNoRow('1.3 Only typical floor:', _onlyTypicalFloor, (v) => setState(() => _onlyTypicalFloor = v)),
+          const SizedBox(height: 4),
+          _buildTextInputRow('1.4 Use of above:', _useOfAboveController),
+          const SizedBox(height: 6),
+
+          // 2. Adjacent wet area
+          _buildYesNoRow('2. Adjacent space is wet area:', _adjacentWetArea, (v) => setState(() => _adjacentWetArea = v)),
+          const SizedBox(height: 4),
+
+          // 3. Adjacent to External wall
+          _buildYesNoRow('3. Adjacent to External wall:', _adjacentExternalWall, (v) => setState(() => _adjacentExternalWall = v)),
+          const SizedBox(height: 4),
+
+          // 4. Any concealed pipeworks
+          _buildYesNoRow('4. Any concealed pipeworks:', _concealedPipeworks, (v) => setState(() => _concealedPipeworks = v)),
+          const SizedBox(height: 4),
+
+          // 5. Any repetitive pattern
+          _buildTextInputRow('5. Any repetitive pattern:', _repetitivePatternController),
+          const SizedBox(height: 4),
+
+          // 6. Heavy loading on floor above
+          _buildYesNoRow('6. Heavy loading on floor above:', _heavyLoadingAbove, (v) => setState(() => _heavyLoadingAbove = v)),
+          const SizedBox(height: 6),
+
+          // 8. Remarks
+          _buildTextInputRow('Remarks:', _remarksController, maxLines: 2),
         ],
       ),
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, String hint) {
+  Widget _buildToggleRow(String label, List<Widget> chips) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(flex: 4, child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+        Expanded(flex: 6, child: Wrap(spacing: 6, children: chips)),
+      ],
+    );
+  }
+
+  Widget _buildChoiceChip(String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: selected ? AppTheme.primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: selected ? AppTheme.primaryColor : Colors.grey.shade400),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 11, color: selected ? Colors.white : Colors.black87)),
+      ),
+    );
+  }
+
+  Widget _buildYesNoRow(String label, bool? value, ValueChanged<bool> onChanged) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(flex: 5, child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+        Expanded(
+          flex: 5,
+          child: Row(
+            children: [
+              _buildChoiceChip('Yes', value == true, () => onChanged(true)),
+              const SizedBox(width: 6),
+              _buildChoiceChip('No', value == false, () => onChanged(false)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextInputRow(String label, TextEditingController controller, {int maxLines = 1}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          flex: 4,
+          child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+        ),
+        Expanded(
+          flex: 6,
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              isDense: true,
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            style: const TextStyle(fontSize: 12),
+            maxLines: maxLines,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInspectorInputField(String label, TextEditingController controller, String hint) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -4459,8 +4583,8 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(fontSize: 11, color: Colors.grey.shade400),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               isDense: true,
               filled: true,
               fillColor: Colors.white,
@@ -4624,8 +4748,38 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
       if (_defectSizeController.text.trim().isNotEmpty) {
         contextBuf.writeln('Defect Size: ${_defectSizeController.text.trim()}');
       }
-      if (_chatController.text.trim().isNotEmpty) {
-        contextBuf.writeln('Additional Notes: ${_chatController.text.trim()}');
+      if (_extentOfDefect != null) {
+        contextBuf.writeln('Extent of Defect: ${_extentOfDefect == 'locally' ? 'Locally noted' : 'Generally noted'}');
+      }
+      if (_currentUseController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Room Current Use: ${_currentUseController.text.trim()}');
+      }
+      if (_designedUseController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Room Designed Use: ${_designedUseController.text.trim()}');
+      }
+      if (_onlyTypicalFloor != null) {
+        contextBuf.writeln('Only Typical Floor: ${_onlyTypicalFloor! ? 'Yes' : 'No'}');
+      }
+      if (_useOfAboveController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Use of Above: ${_useOfAboveController.text.trim()}');
+      }
+      if (_adjacentWetArea != null) {
+        contextBuf.writeln('Adjacent Space is Wet Area: ${_adjacentWetArea! ? 'Yes' : 'No'}');
+      }
+      if (_adjacentExternalWall != null) {
+        contextBuf.writeln('Adjacent to External Wall: ${_adjacentExternalWall! ? 'Yes' : 'No'}');
+      }
+      if (_concealedPipeworks != null) {
+        contextBuf.writeln('Concealed Pipeworks: ${_concealedPipeworks! ? 'Yes' : 'No'}');
+      }
+      if (_repetitivePatternController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Repetitive Pattern: ${_repetitivePatternController.text.trim()}');
+      }
+      if (_heavyLoadingAbove != null) {
+        contextBuf.writeln('Heavy Loading on Floor Above: ${_heavyLoadingAbove! ? 'Yes' : 'No'}');
+      }
+      if (_remarksController.text.trim().isNotEmpty) {
+        contextBuf.writeln('Remarks: ${_remarksController.text.trim()}');
       }
 
       // Surrounding defect context
@@ -4671,64 +4825,6 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         _isAnalyzing = false;
       });
       debugPrint('AI analysis error: $e');
-    }
-  }
-
-  Future<void> _sendChatMessage() async {
-    final text = _chatController.text.trim();
-    if (text.isEmpty || _imageBase64 == null) return;
-
-    setState(() {
-      _chatMessages.add(ChatMessage(
-        id: const Uuid().v4(),
-        role: 'user',
-        content: text,
-        timestamp: DateTime.now(),
-      ));
-      _chatController.clear();
-      _isAnalyzing = true;
-    });
-    _scrollChatToBottom();
-
-    try {
-      // 構建歷史對話
-      final chatHistory = _chatMessages
-          .map((m) => {
-                'role': m.role == 'ai' ? 'assistant' : m.role,
-                'content': m.content,
-              })
-          .toList();
-
-      // 使用 chatWithAI 進行追問
-      final responseText = await ApiService.instance.chatWithAI(
-        userMessage: text,
-        imageBase64: _imageBase64,
-        chatHistory: chatHistory.sublist(0, chatHistory.length - 1),
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        _isAnalyzing = false;
-        _chatMessages.add(ChatMessage(
-          id: const Uuid().v4(),
-          role: 'ai',
-          content: responseText,
-          timestamp: DateTime.now(),
-        ));
-      });
-      _scrollChatToBottom();
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isAnalyzing = false;
-        _chatMessages.add(ChatMessage(
-          id: const Uuid().v4(),
-          role: 'ai',
-          content: 'Analysis failed: $e',
-          timestamp: DateTime.now(),
-        ));
-      });
     }
   }
 
@@ -4882,6 +4978,17 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         suspectedCause: _suspectedCauseController.text.trim().isNotEmpty ? _suspectedCauseController.text.trim() : null,
         recommendation: _recommendationController.text.trim().isNotEmpty ? _recommendationController.text.trim() : null,
         defectSize: _defectSizeController.text.trim().isNotEmpty ? _defectSizeController.text.trim() : null,
+        extentOfDefect: _extentOfDefect,
+        currentUse: _currentUseController.text.trim().isNotEmpty ? _currentUseController.text.trim() : null,
+        designedUse: _designedUseController.text.trim().isNotEmpty ? _designedUseController.text.trim() : null,
+        onlyTypicalFloor: _onlyTypicalFloor,
+        useOfAbove: _useOfAboveController.text.trim().isNotEmpty ? _useOfAboveController.text.trim() : null,
+        adjacentWetArea: _adjacentWetArea,
+        adjacentExternalWall: _adjacentExternalWall,
+        concealedPipeworks: _concealedPipeworks,
+        repetitivePattern: _repetitivePatternController.text.trim().isNotEmpty ? _repetitivePatternController.text.trim() : null,
+        heavyLoadingAbove: _heavyLoadingAbove,
+        remarks: _remarksController.text.trim().isNotEmpty ? _remarksController.text.trim() : null,
       );
 
       final newDefects = [...updatedPin.defects, defect];

@@ -52,6 +52,18 @@ class Defect {
   final String? suspectedCause;
   final String? recommendation; // user-input single recommendation
   final String? defectSize;
+  // Additional information form fields
+  final String? extentOfDefect; // 'locally' or 'generally'
+  final String? currentUse;
+  final String? designedUse;
+  final bool? onlyTypicalFloor;
+  final String? useOfAbove;
+  final bool? adjacentWetArea;
+  final bool? adjacentExternalWall;
+  final bool? concealedPipeworks;
+  final String? repetitivePattern;
+  final bool? heavyLoadingAbove;
+  final String? remarks;
 
   Defect({
     required this.id,
@@ -73,6 +85,17 @@ class Defect {
     this.suspectedCause,
     this.recommendation,
     this.defectSize,
+    this.extentOfDefect,
+    this.currentUse,
+    this.designedUse,
+    this.onlyTypicalFloor,
+    this.useOfAbove,
+    this.adjacentWetArea,
+    this.adjacentExternalWall,
+    this.concealedPipeworks,
+    this.repetitivePattern,
+    this.heavyLoadingAbove,
+    this.remarks,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Defect copyWith({
@@ -95,6 +118,17 @@ class Defect {
     String? suspectedCause,
     String? recommendation,
     String? defectSize,
+    String? extentOfDefect,
+    String? currentUse,
+    String? designedUse,
+    bool? onlyTypicalFloor,
+    String? useOfAbove,
+    bool? adjacentWetArea,
+    bool? adjacentExternalWall,
+    bool? concealedPipeworks,
+    String? repetitivePattern,
+    bool? heavyLoadingAbove,
+    String? remarks,
   }) {
     return Defect(
       id: id ?? this.id,
@@ -116,6 +150,17 @@ class Defect {
       suspectedCause: suspectedCause ?? this.suspectedCause,
       recommendation: recommendation ?? this.recommendation,
       defectSize: defectSize ?? this.defectSize,
+      extentOfDefect: extentOfDefect ?? this.extentOfDefect,
+      currentUse: currentUse ?? this.currentUse,
+      designedUse: designedUse ?? this.designedUse,
+      onlyTypicalFloor: onlyTypicalFloor ?? this.onlyTypicalFloor,
+      useOfAbove: useOfAbove ?? this.useOfAbove,
+      adjacentWetArea: adjacentWetArea ?? this.adjacentWetArea,
+      adjacentExternalWall: adjacentExternalWall ?? this.adjacentExternalWall,
+      concealedPipeworks: concealedPipeworks ?? this.concealedPipeworks,
+      repetitivePattern: repetitivePattern ?? this.repetitivePattern,
+      heavyLoadingAbove: heavyLoadingAbove ?? this.heavyLoadingAbove,
+      remarks: remarks ?? this.remarks,
     );
   }
 
@@ -139,6 +184,17 @@ class Defect {
         'suspectedCause': suspectedCause,
         'recommendation': recommendation,
         'defectSize': defectSize,
+        'extentOfDefect': extentOfDefect,
+        'currentUse': currentUse,
+        'designedUse': designedUse,
+        'onlyTypicalFloor': onlyTypicalFloor,
+        'useOfAbove': useOfAbove,
+        'adjacentWetArea': adjacentWetArea,
+        'adjacentExternalWall': adjacentExternalWall,
+        'concealedPipeworks': concealedPipeworks,
+        'repetitivePattern': repetitivePattern,
+        'heavyLoadingAbove': heavyLoadingAbove,
+        'remarks': remarks,
       };
 
   factory Defect.fromJson(Map<String, dynamic> json) => Defect(
@@ -170,6 +226,17 @@ class Defect {
         suspectedCause: json['suspectedCause'] as String?,
         recommendation: json['recommendation'] as String?,
         defectSize: json['defectSize'] as String?,
+        extentOfDefect: json['extentOfDefect'] as String?,
+        currentUse: json['currentUse'] as String?,
+        designedUse: json['designedUse'] as String?,
+        onlyTypicalFloor: json['onlyTypicalFloor'] as bool?,
+        useOfAbove: json['useOfAbove'] as String?,
+        adjacentWetArea: json['adjacentWetArea'] as bool?,
+        adjacentExternalWall: json['adjacentExternalWall'] as bool?,
+        concealedPipeworks: json['concealedPipeworks'] as bool?,
+        repetitivePattern: json['repetitivePattern'] as String?,
+        heavyLoadingAbove: json['heavyLoadingAbove'] as bool?,
+        remarks: json['remarks'] as String?,
       );
 
   bool get isAnalyzed => status == 'analyzed' || status == 'reviewed';
