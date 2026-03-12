@@ -122,24 +122,18 @@ class _InspectionScreenState extends State<InspectionScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border(bottom: BorderSide(color: AppTheme.borderColor, width: 1)),
       ),
       child: Row(
         children: [
-          // App 標題
+          // App title
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
                   AppTheme.primaryColor,
-                  AppTheme.primaryColor.withValues(alpha: 0.8)
+                  AppTheme.primaryLight,
                 ],
               ),
               borderRadius: BorderRadius.circular(8),
@@ -147,14 +141,15 @@ class _InspectionScreenState extends State<InspectionScreen> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.shield, color: Colors.white, size: 16),
-                SizedBox(width: 4),
+                Icon(Icons.shield_rounded, color: Colors.white, size: 14),
+                SizedBox(width: 3),
                 Text(
                   'B-SAFE',
                   style: TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],
@@ -223,17 +218,11 @@ class _InspectionScreenState extends State<InspectionScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        border: Border(top: BorderSide(color: AppTheme.borderColor, width: 1)),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -285,21 +274,21 @@ class _InspectionScreenState extends State<InspectionScreen> {
     required VoidCallback onTap,
     Color? color,
   }) {
-    final c = color ?? Colors.grey.shade700;
+    final c = color ?? AppTheme.textSecondary;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 22, color: c),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
-                  fontSize: 11, color: c, fontWeight: FontWeight.w500),
+                  fontSize: 10, color: c, fontWeight: FontWeight.w500),
               overflow: TextOverflow.ellipsis,
             ),
           ],

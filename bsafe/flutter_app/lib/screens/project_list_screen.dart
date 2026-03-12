@@ -211,42 +211,42 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     AppTheme.primaryColor,
-                    AppTheme.primaryColor.withValues(alpha: 0.8),
+                    AppTheme.primaryLight,
                   ],
                 ),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.shield, color: Colors.white, size: 20),
-                  SizedBox(width: 6),
+                  Icon(Icons.shield_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 5),
                   Text('B-SAFE',
                       style: TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16)),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          letterSpacing: 0.5)),
                 ],
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Project Management',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text('Projects'),
           ],
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 1,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: AppTheme.borderColor),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -255,45 +255,49 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               : _buildProjectList(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showCreateProjectDialog,
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
         label: const Text('New Project'),
-        backgroundColor: AppTheme.primaryColor,
-        foregroundColor: Colors.white,
       ),
     );
   }
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.business, size: 80, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(
-            'No Projects Yet',
-            style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade500),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Press "+ New Project" below to create a building inspection project',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: _showCreateProjectDialog,
-            icon: const Icon(Icons.add),
-            label: const Text('New Project'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.business_rounded, size: 56, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            const Text(
+              'No Projects Yet',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Tap the button below to create your\nfirst building inspection project',
+              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: _showCreateProjectDialog,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Create Project'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -319,78 +323,95 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     final analyzedPins =
         projectSessions.fold<int>(0, (sum, s) => sum + s.analyzedPins);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      child: InkWell(
-        onTap: () => _openProject(project),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(Icons.business,
-                        color: AppTheme.primaryColor, size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(project.buildingName,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 17)),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${project.floorCount} Floors  |  Created on ${project.createdAt.toString().substring(0, 10)}',
-                          style: TextStyle(
-                              fontSize: 13, color: Colors.grey.shade600),
+      decoration: AppTheme.cardDecoration,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _openProject(project),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.primaryColor.withValues(alpha: 0.12),
+                            AppTheme.primaryLight.withValues(alpha: 0.08),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(Icons.business_rounded,
+                          color: AppTheme.primaryColor, size: 26),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(project.buildingName,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: -0.3)),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${project.floorCount} Floors  \u00b7  ${project.createdAt.toString().substring(0, 10)}',
+                            style: const TextStyle(
+                                fontSize: 13, color: AppTheme.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'delete') _deleteProject(project);
+                      },
+                      icon: Icon(Icons.more_horiz_rounded, color: AppTheme.textHint),
+                      itemBuilder: (ctx) => [
+                        const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                                SizedBox(width: 8),
+                                Text('Delete', style: TextStyle(color: Colors.red)),
+                              ],
+                            )),
                       ],
                     ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundColor,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'delete') _deleteProject(project);
-                    },
-                    itemBuilder: (ctx) => [
-                      const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, color: Colors.red, size: 18),
-                              SizedBox(width: 8),
-                              Text('Delete', style: TextStyle(color: Colors.red)),
-                            ],
-                          )),
+                  child: Row(
+                    children: [
+                      _buildStatChip(
+                          Icons.layers_rounded, '${project.floorCount} Floors', AppTheme.primaryColor),
+                      const SizedBox(width: 16),
+                      _buildStatChip(
+                          Icons.push_pin_rounded, '$totalPins Points', Colors.orange.shade700),
+                      const SizedBox(width: 16),
+                      _buildStatChip(
+                          Icons.check_circle_outline_rounded, '$analyzedPins Done', AppTheme.riskLow),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  _buildStatChip(
-                      Icons.layers, '${project.floorCount} Floors', Colors.blue),
-                  _buildStatChip(
-                      Icons.push_pin, '$totalPins Inspection Points', Colors.orange),
-                  _buildStatChip(
-                      Icons.analytics, '$analyzedPins Analyzed', Colors.green),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -398,22 +419,15 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   Widget _buildStatChip(IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 12, color: color, fontWeight: FontWeight.w600)),
-        ],
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color.withValues(alpha: 0.7)),
+        const SizedBox(width: 4),
+        Text(label,
+            style: TextStyle(
+                fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 }

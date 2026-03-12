@@ -12,17 +12,7 @@ class RecentReportCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: AppTheme.cardDecoration,
       child: InkWell(
         onTap: () {
           // Navigate to detail
@@ -34,10 +24,10 @@ class RecentReportCard extends StatelessWidget {
             children: [
               // Thumbnail
               Container(
-                width: 60,
-                height: 60,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: AppTheme.backgroundColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: report.imagePath != null

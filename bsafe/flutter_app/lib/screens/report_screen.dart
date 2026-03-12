@@ -240,35 +240,47 @@ class _ReportScreenState extends State<ReportScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: AppTheme.primaryColor,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppTheme.primaryColor, AppTheme.primaryLight],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(28),
+                  bottomRight: Radius.circular(28),
                 ),
               ),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.add_a_photo,
-                    size: 60,
-                    color: Colors.white.withValues(alpha: 0.9),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.add_a_photo_rounded,
+                      size: 40,
+                      color: Colors.white,
+                    ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   const Text(
-                    'Take a photo of the building damage',
+                    'Report Building Damage',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     'AI will automatically analyze the issue type and severity',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 13,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -297,8 +309,8 @@ class _ReportScreenState extends State<ReportScreen> {
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        AppTheme.primaryColor.withValues(alpha: 0.1),
-                                        AppTheme.primaryColor.withValues(alpha: 0.05),
+                                        AppTheme.primaryColor.withValues(alpha: 0.08),
+                                        AppTheme.primaryColor.withValues(alpha: 0.04),
                                       ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
@@ -306,8 +318,8 @@ class _ReportScreenState extends State<ReportScreen> {
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
                                       color: AppTheme.primaryColor
-                                          .withValues(alpha: 0.3),
-                                      width: 2,
+                                          .withValues(alpha: 0.25),
+                                      width: 1.5,
                                     ),
                                   ),
                                   child: Column(
@@ -317,12 +329,12 @@ class _ReportScreenState extends State<ReportScreen> {
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
                                           color: AppTheme.primaryColor
-                                              .withValues(alpha: 0.15),
+                                              .withValues(alpha: 0.12),
                                           shape: BoxShape.circle,
                                         ),
                                         child: const Icon(
-                                          Icons.camera_alt,
-                                          size: 40,
+                                          Icons.camera_alt_rounded,
+                                          size: 36,
                                           color: AppTheme.primaryColor,
                                         ),
                                       ),
@@ -358,16 +370,16 @@ class _ReportScreenState extends State<ReportScreen> {
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        Colors.purple.withValues(alpha: 0.1),
-                                        Colors.purple.withValues(alpha: 0.05),
+                                        AppTheme.accentColor.withValues(alpha: 0.1),
+                                        AppTheme.accentColor.withValues(alpha: 0.05),
                                       ],
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
                                     ),
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                      color: Colors.purple.withValues(alpha: 0.3),
-                                      width: 2,
+                                      color: AppTheme.accentColor.withValues(alpha: 0.3),
+                                      width: 1.5,
                                     ),
                                   ),
                                   child: Column(
@@ -377,13 +389,13 @@ class _ReportScreenState extends State<ReportScreen> {
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
                                           color:
-                                              Colors.purple.withValues(alpha: 0.15),
+                                              AppTheme.accentColor.withValues(alpha: 0.12),
                                           shape: BoxShape.circle,
                                         ),
                                         child: const Icon(
-                                          Icons.photo_library,
-                                          size: 40,
-                                          color: Colors.purple,
+                                          Icons.photo_library_rounded,
+                                          size: 36,
+                                          color: AppTheme.accentColor,
                                         ),
                                       ),
                                       const SizedBox(height: 12),

@@ -130,19 +130,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.inbox_outlined,
-                          size: 64,
-                          color: Colors.grey.shade400,
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.06),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.inbox_rounded,
+                            size: 48,
+                            color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           _searchQuery.isNotEmpty || _filterRisk != 'all'
                               ? 'No matching reports'
                               : 'No reports yet',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
                             fontSize: 16,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -282,21 +290,28 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeColor = color ?? AppTheme.primaryColor;
     return GestureDetector(
       onTap: onSelected,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? (color ?? AppTheme.primaryColor)
-              : Colors.grey.shade200,
+              ? activeColor
+              : AppTheme.backgroundColor,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? activeColor : AppTheme.borderColor,
+            width: 1,
+          ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade700,
+            color: isSelected ? Colors.white : AppTheme.textSecondary,
             fontWeight: FontWeight.w600,
+            fontSize: 13,
           ),
         ),
       ),

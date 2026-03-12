@@ -19,16 +19,8 @@ class ReportDetailCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+        decoration: AppTheme.cardDecoration.copyWith(
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,12 +31,12 @@ class ReportDetailCard extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
+                      top: Radius.circular(16),
                     ),
                     child: Container(
                       height: 120,
                       width: double.infinity,
-                      color: Colors.grey.shade200,
+                      color: AppTheme.backgroundColor,
                       child: Image.file(
                         File(report.imagePath!),
                         fit: BoxFit.cover,
