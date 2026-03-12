@@ -3238,7 +3238,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                       ),
-                      child: const Text('AI Analysis', style: TextStyle(fontSize: 13)),
+                      child: const Text('AI', style: TextStyle(fontSize: 13)),
                     ),
                   // 重新拍照
                   OutlinedButton.icon(
@@ -4375,7 +4375,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                         ),
-                        child: const Text('AI Analysis', overflow: TextOverflow.ellipsis),
+                        child: const Text('AI', overflow: TextOverflow.ellipsis),
                       ),
                     ),
                   const SizedBox(width: 8),
