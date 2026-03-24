@@ -122,7 +122,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppTheme.borderColor, width: 1)),
+        border:
+            Border(bottom: BorderSide(color: AppTheme.borderColor, width: 1)),
       ),
       child: Row(
         children: [
@@ -201,10 +202,13 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ],
                   ),
                 ),
-              const PopupMenuItem(value: 'export_word', child: Text('Export Word')),
-              const PopupMenuItem(value: 'export_pdf', child: Text('Export PDF')),
+              const PopupMenuItem(
+                  value: 'export_word', child: Text('Export Word')),
+              const PopupMenuItem(
+                  value: 'export_pdf', child: Text('Export PDF')),
               const PopupMenuDivider(),
-              const PopupMenuItem(value: 'clear_pins', child: Text('Clear All Pins')),
+              const PopupMenuItem(
+                  value: 'clear_pins', child: Text('Clear All Pins')),
             ],
           ),
         ],
@@ -353,8 +357,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ],
                   ),
                 ),
-                if (insp.currentPins.isNotEmpty)
-                  _buildPinSummary(insp),
+                if (insp.currentPins.isNotEmpty) _buildPinSummary(insp),
                 // Pin 列表
                 Expanded(
                   child: insp.currentPins.isEmpty
@@ -440,9 +443,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                               uwbService.updateConfig(uwbService.config
                                   .copyWith(showTrajectory: v));
                             }),
-                            _buildToggle(
-                                'Fence', Icons.fence, uwbService.config.showFence,
-                                (v) {
+                            _buildToggle('Fence', Icons.fence,
+                                uwbService.config.showFence, (v) {
                               uwbService.updateConfig(
                                   uwbService.config.copyWith(showFence: v));
                             }),
@@ -457,7 +459,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         if (uwbService.config.floorPlanImagePath != null) ...[
                           const SizedBox(height: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: Colors.blue.shade50,
                               borderRadius: BorderRadius.circular(10),
@@ -468,7 +471,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.layers, size: 16, color: Colors.blue.shade700),
+                                    Icon(Icons.layers,
+                                        size: 16, color: Colors.blue.shade700),
                                     const SizedBox(width: 6),
                                     Text(
                                       'Floor Plan Opacity',
@@ -480,7 +484,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                                     ),
                                     const Spacer(),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: Colors.blue.shade100,
                                         borderRadius: BorderRadius.circular(8),
@@ -498,10 +503,12 @@ class _InspectionScreenState extends State<InspectionScreen> {
                                 ),
                                 Row(
                                   children: [
-                                    Icon(Icons.opacity, size: 14, color: Colors.blue.shade300),
+                                    Icon(Icons.opacity,
+                                        size: 14, color: Colors.blue.shade300),
                                     Expanded(
                                       child: Slider(
-                                        value: uwbService.config.floorPlanOpacity,
+                                        value:
+                                            uwbService.config.floorPlanOpacity,
                                         min: 0.1,
                                         max: 1.0,
                                         divisions: 18,
@@ -512,7 +519,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                                         },
                                       ),
                                     ),
-                                    Icon(Icons.opacity, size: 20, color: Colors.blue.shade600),
+                                    Icon(Icons.opacity,
+                                        size: 20, color: Colors.blue.shade600),
                                   ],
                                 ),
                               ],
@@ -543,7 +551,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         ),
                         const SizedBox(height: 16),
                         // 基站資訊
-                        _buildSectionHeader('Anchor Management', Icons.cell_tower),
+                        _buildSectionHeader(
+                            'Anchor Management', Icons.cell_tower),
                         const SizedBox(height: 8),
                         ...uwbService.anchors.asMap().entries.map((entry) {
                           final index = entry.key;
@@ -563,7 +572,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         const SizedBox(height: 20),
 
                         // ---- 距離索引映射 ----
-                        _buildSectionHeader('Distance Index Mapping', Icons.swap_horiz),
+                        _buildSectionHeader(
+                            'Distance Index Mapping', Icons.swap_horiz),
                         const SizedBox(height: 8),
                         Container(
                           padding: const EdgeInsets.all(12),
@@ -577,12 +587,15 @@ class _InspectionScreenState extends State<InspectionScreen> {
                             children: [
                               Text(
                                 'Select multiple swap pairs. E.g.: D0↔D1 then D2↔D3.',
-                                style: TextStyle(fontSize: 12, color: Colors.orange.shade800),
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.orange.shade800),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'Current Mapping: ${_describeDistanceMapping(uwbService.config.distanceIndexMap)}',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
@@ -769,10 +782,13 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ],
                   ),
                 ),
-              const PopupMenuItem(value: 'export_word', child: Text('Export Word')),
-              const PopupMenuItem(value: 'export_pdf', child: Text('Export PDF')),
+              const PopupMenuItem(
+                  value: 'export_word', child: Text('Export Word')),
+              const PopupMenuItem(
+                  value: 'export_pdf', child: Text('Export PDF')),
               const PopupMenuDivider(),
-              const PopupMenuItem(value: 'clear_pins', child: Text('Clear All Pins')),
+              const PopupMenuItem(
+                  value: 'clear_pins', child: Text('Clear All Pins')),
             ],
           ),
         ],
@@ -806,11 +822,14 @@ class _InspectionScreenState extends State<InspectionScreen> {
           Flexible(
             child: Text(
               isConnected
-                  ? (uwbService.isRealDevice ? 'UWB Connected' : 'Simulation Mode')
+                  ? (uwbService.isRealDevice
+                      ? 'UWB Connected'
+                      : 'Simulation Mode')
                   : 'UWB Not Connected',
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: isConnected ? Colors.green.shade700 : Colors.grey.shade600,
+                color:
+                    isConnected ? Colors.green.shade700 : Colors.grey.shade600,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -1071,7 +1090,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
   }
 
   /// 計算與畫布 painter 一致的座標範圍（包含平面圖擴展）
-  ({double minX, double maxX, double minY, double maxY}) _computeViewportBounds(UwbService uwbService) {
+  ({double minX, double maxX, double minY, double maxY}) _computeViewportBounds(
+      UwbService uwbService) {
     final anchors = uwbService.anchors;
     double minX = anchors.map((a) => a.x).reduce(min) - 1;
     double maxX = anchors.map((a) => a.x).reduce(max) + 1;
@@ -1182,9 +1202,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
               runSpacing: 8,
               alignment: WrapAlignment.center,
               children: [
-                _buildToggle(
-                    'Trajectory', Icons.timeline, uwbService.config.showTrajectory,
-                    (v) {
+                _buildToggle('Trajectory', Icons.timeline,
+                    uwbService.config.showTrajectory, (v) {
                   uwbService.updateConfig(
                       uwbService.config.copyWith(showTrajectory: v));
                 }),
@@ -1193,7 +1212,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   uwbService
                       .updateConfig(uwbService.config.copyWith(showFence: v));
                 }),
-                _buildToggle('Floor Plan', Icons.map, uwbService.config.showFloorPlan,
+                _buildToggle(
+                    'Floor Plan', Icons.map, uwbService.config.showFloorPlan,
                     (v) {
                   uwbService.updateConfig(
                       uwbService.config.copyWith(showFloorPlan: v));
@@ -1202,9 +1222,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
             )
           : Row(
               children: [
-                _buildToggle(
-                    'Trajectory', Icons.timeline, uwbService.config.showTrajectory,
-                    (v) {
+                _buildToggle('Trajectory', Icons.timeline,
+                    uwbService.config.showTrajectory, (v) {
                   uwbService.updateConfig(
                       uwbService.config.copyWith(showTrajectory: v));
                 }),
@@ -1213,7 +1232,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   uwbService
                       .updateConfig(uwbService.config.copyWith(showFence: v));
                 }),
-                _buildToggle('Floor Plan', Icons.map, uwbService.config.showFloorPlan,
+                _buildToggle(
+                    'Floor Plan', Icons.map, uwbService.config.showFloorPlan,
                     (v) {
                   uwbService.updateConfig(
                       uwbService.config.copyWith(showFloorPlan: v));
@@ -1333,11 +1353,14 @@ class _InspectionScreenState extends State<InspectionScreen> {
       ),
       child: Row(
         children: [
-          _buildStatBadge('Low Risk', session.lowRiskDefects.toString(), Colors.blue),
+          _buildStatBadge(
+              'Low Risk', session.lowRiskDefects.toString(), Colors.blue),
           const SizedBox(width: 8),
-          _buildStatBadge('Medium Risk', session.mediumRiskDefects.toString(), Colors.orange),
+          _buildStatBadge('Medium Risk', session.mediumRiskDefects.toString(),
+              Colors.orange),
           const SizedBox(width: 8),
-          _buildStatBadge('High Risk', session.highRiskDefects.toString(), Colors.red),
+          _buildStatBadge(
+              'High Risk', session.highRiskDefects.toString(), Colors.red),
         ],
       ),
     );
@@ -1475,9 +1498,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                pin.isAnalyzed
-                                    ? 'Analyzed'
-                                    : pin.statusLabel,
+                                pin.isAnalyzed ? 'Analyzed' : pin.statusLabel,
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: pin.isAnalyzed
@@ -1657,7 +1678,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
             'Delete inspection point at (${pin.x.toStringAsFixed(2)}, ${pin.y.toStringAsFixed(2)})?'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               inspection.removePin(pin.id);
@@ -1845,7 +1867,14 @@ class _InspectionScreenState extends State<InspectionScreen> {
               Text('No Serial Port Found'),
             ],
           ),
-          content: const Text('No serial devices detected. Confirm BU04 is connected and driver is installed.'),
+          content: const Text(
+            'No serial devices detected.\n\n'
+            'Please verify:\n'
+            '• BU04 is connected via USB\n'
+            '• On Linux, your user is in the dialout group\n'
+            '  (sudo usermod -aG dialout <user>)\n'
+            '• Re-login after group changes',
+          ),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -2052,7 +2081,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                           uwbService.config.copyWith(showFloorPlan: v));
                       setState(() {});
                     },
-                    title: const Text('Show Floor Plan', style: TextStyle(fontSize: 13)),
+                    title: const Text('Show Floor Plan',
+                        style: TextStyle(fontSize: 13)),
                   ),
 
                   // 透明度
@@ -2061,7 +2091,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       children: [
                         const SizedBox(
                             width: 60,
-                            child: Text('Opacity', style: TextStyle(fontSize: 13))),
+                            child: Text('Opacity',
+                                style: TextStyle(fontSize: 13))),
                         Expanded(
                           child: Slider(
                             value: uwbService.config.floorPlanOpacity,
@@ -2111,13 +2142,13 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 13)),
                     const SizedBox(height: 4),
-                    _buildNumberField('X Scale (px/m)', uwbService.config.xScale,
-                        (v) {
+                    _buildNumberField(
+                        'X Scale (px/m)', uwbService.config.xScale, (v) {
                       uwbService
                           .updateConfig(uwbService.config.copyWith(xScale: v));
                     }),
-                    _buildNumberField('Y Scale (px/m)', uwbService.config.yScale,
-                        (v) {
+                    _buildNumberField(
+                        'Y Scale (px/m)', uwbService.config.yScale, (v) {
                       uwbService
                           .updateConfig(uwbService.config.copyWith(yScale: v));
                     }),
@@ -2187,7 +2218,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     value: uwbService.config.showTrajectory,
                     onChanged: (v) => uwbService.updateConfig(
                         uwbService.config.copyWith(showTrajectory: v)),
-                    title: const Text('Show Trajectory', style: TextStyle(fontSize: 13)),
+                    title: const Text('Show Trajectory',
+                        style: TextStyle(fontSize: 13)),
                   ),
                   SwitchListTile(
                     dense: true,
@@ -2195,13 +2227,15 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     value: uwbService.config.showFence,
                     onChanged: (v) => uwbService
                         .updateConfig(uwbService.config.copyWith(showFence: v)),
-                    title: const Text('Show Fence', style: TextStyle(fontSize: 13)),
+                    title: const Text('Show Fence',
+                        style: TextStyle(fontSize: 13)),
                   ),
 
                   const SizedBox(height: 20),
 
                   // ---- 距離索引映射 ----
-                  _buildSectionHeader('Distance Index Mapping', Icons.swap_horiz),
+                  _buildSectionHeader(
+                      'Distance Index Mapping', Icons.swap_horiz),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -2216,7 +2250,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         Text(
                           'Multiple swap pairs can be selected.\n'
                           'E.g.: Select D0↔D1 then D2↔D3.',
-                          style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
+                          style: TextStyle(
+                              fontSize: 11, color: Colors.blue.shade700),
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -2229,8 +2264,10 @@ class _InspectionScreenState extends State<InspectionScreen> {
                           ),
                         ),
                         Text(
-                          _describeDistanceMapping(uwbService.config.distanceIndexMap),
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                          _describeDistanceMapping(
+                              uwbService.config.distanceIndexMap),
+                          style: TextStyle(
+                              fontSize: 11, color: Colors.grey.shade700),
                         ),
                       ],
                     ),
@@ -2254,7 +2291,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         uwbService.updateConfig(
-                          uwbService.config.copyWith(distanceIndexMap: [0, 1, 2, 3]),
+                          uwbService.config
+                              .copyWith(distanceIndexMap: [0, 1, 2, 3]),
                         );
                         setState(() {});
                       },
@@ -2352,7 +2390,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
               onPressed: () => _toggleSwap(uwbService, a, b),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                textStyle:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
               ),
               child: Text('✓ $label'),
             )
@@ -2699,7 +2738,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Clear All Inspection Points'),
-              content: const Text('Clear all inspection points? This cannot be undone.'),
+              content: const Text(
+                  'Clear all inspection points? This cannot be undone.'),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(ctx),
@@ -2712,8 +2752,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     Navigator.pop(ctx);
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  child:
-                      const Text('Clear', style: TextStyle(color: Colors.white)),
+                  child: const Text('Clear',
+                      style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),
@@ -2759,8 +2799,10 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   final floor = index + 1;
                   final isActive = floor == _currentFloor;
                   // Check if this floor has pins
-                  final hasPins = inspection.sessions.any(
-                      (s) => s.projectId == project.id && s.floor == floor && s.pins.isNotEmpty);
+                  final hasPins = inspection.sessions.any((s) =>
+                      s.projectId == project.id &&
+                      s.floor == floor &&
+                      s.pins.isNotEmpty);
 
                   return Material(
                     color: isActive
@@ -2908,7 +2950,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Export failed: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -2942,7 +2985,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Export failed: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -2952,9 +2996,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
   List<InspectionSession>? _getExportSessions(InspectionProvider inspection) {
     final projectId = widget.project?.id;
     final projectSessions = projectId != null
-        ? inspection.sessions
-            .where((s) => s.projectId == projectId)
-            .toList()
+        ? inspection.sessions.where((s) => s.projectId == projectId).toList()
         : [if (inspection.currentSession != null) inspection.currentSession!];
 
     final allPinsCount =
@@ -3156,7 +3198,10 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                     const SizedBox(height: 16),
 
                     // --- AI 分析按鈕 (有照片但未分析) ---
-                    if (hasPhoto && !_isAnalyzing && _status != 'analyzed' && _expandedDefectIndex == null)
+                    if (hasPhoto &&
+                        !_isAnalyzing &&
+                        _status != 'analyzed' &&
+                        _expandedDefectIndex == null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: ElevatedButton.icon(
@@ -3188,8 +3233,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                       ),
 
                     // --- 風險等級（只在選中缺陷時顯示）---
-                    if (_expandedDefectIndex != null)
-                      _buildRiskSection(),
+                    if (_expandedDefectIndex != null) _buildRiskSection(),
 
                     if (_expandedDefectIndex != null)
                       const SizedBox(height: 16),
@@ -3244,19 +3288,22 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                   OutlinedButton.icon(
                     onPressed: _isAnalyzing ? null : widget.onRetakePhoto,
                     icon: const Icon(Icons.camera_alt, size: 16),
-                    label: const Text('Retake Photo', style: TextStyle(fontSize: 13)),
+                    label: const Text('Retake Photo',
+                        style: TextStyle(fontSize: 13)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
                   ),
                   // 關閉
                   ElevatedButton(
-                    onPressed: _isAnalyzing ? null : () {
-                      if (_hasChanges) {
-                        _saveChanges();
-                      }
-                      Navigator.pop(context);
-                    },
+                    onPressed: _isAnalyzing
+                        ? null
+                        : () {
+                            if (_hasChanges) {
+                              _saveChanges();
+                            }
+                            Navigator.pop(context);
+                          },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
@@ -3431,9 +3478,8 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                     constraints: BoxConstraints(
                         maxWidth: MediaQuery.of(context).size.width * 0.55),
                     decoration: BoxDecoration(
-                      color: isUser
-                          ? AppTheme.primaryColor
-                          : Colors.green.shade50,
+                      color:
+                          isUser ? AppTheme.primaryColor : Colors.green.shade50,
                       borderRadius: BorderRadius.circular(10),
                       border: isUser
                           ? null
@@ -3526,8 +3572,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
             _buildRiskChip('high', 'High', Colors.red),
           ] else
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
                 color: _riskColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
@@ -3587,7 +3632,8 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
             const Icon(Icons.report_problem, size: 18, color: Colors.orange),
             const SizedBox(width: 6),
             Text('Defect Records (${defects.length})',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const Spacer(),
             TextButton.icon(
               onPressed: widget.onRetakePhoto,
@@ -3771,7 +3817,8 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
       final responseText = await ApiService.instance.chatWithAI(
         userMessage: text,
         imageBase64: defect.imageBase64,
-        chatHistory: chatHistory.sublist(0, chatHistory.length - 1), // 排除剛加的用戶訊息（已在 userMessage）
+        chatHistory: chatHistory.sublist(
+            0, chatHistory.length - 1), // 排除剛加的用戶訊息（已在 userMessage）
       );
 
       if (!mounted) return;
@@ -3863,12 +3910,13 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
       if (!mounted) return;
 
       setState(() {
-        _aiResult = updatedPin.aiResult ?? {
-          'risk_level': updatedPin.riskLevel,
-          'risk_score': updatedPin.riskScore,
-          'analysis': updatedPin.description,
-          'recommendations': updatedPin.recommendations,
-        };
+        _aiResult = updatedPin.aiResult ??
+            {
+              'risk_level': updatedPin.riskLevel,
+              'risk_score': updatedPin.riskScore,
+              'analysis': updatedPin.description,
+              'recommendations': updatedPin.recommendations,
+            };
         _riskLevel = updatedPin.riskLevel;
         _riskScore = updatedPin.riskScore;
         _description = updatedPin.description;
@@ -4080,7 +4128,8 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                               fit: BoxFit.contain,
                             ),
                             // YOLO 偵測框覆蓋
-                            if (_showBoundingBoxes && _yoloDetections.isNotEmpty)
+                            if (_showBoundingBoxes &&
+                                _yoloDetections.isNotEmpty)
                               Positioned.fill(
                                 child: LayoutBuilder(
                                   builder: (context, constraints) {
@@ -4212,7 +4261,9 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                                     : Icons.visibility_off,
                                 color: Colors.deepPurple,
                               ),
-                              tooltip: _showBoundingBoxes ? 'Hide Detection Boxes' : 'Show Detection Boxes',
+                              tooltip: _showBoundingBoxes
+                                  ? 'Hide Detection Boxes'
+                                  : 'Show Detection Boxes',
                             ),
                           ],
                         ],
@@ -4250,8 +4301,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                     ],
 
                     // YOLO 偵測結果摘要
-                    if (_yoloDetections.isNotEmpty &&
-                        !_isYoloDetecting) ...[
+                    if (_yoloDetections.isNotEmpty && !_isYoloDetecting) ...[
                       const SizedBox(height: 8),
                       _buildYoloResultSummary(),
                     ],
@@ -4321,8 +4371,6 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                       const SizedBox(height: 8),
                     ],
 
-
-
                     // AI 分析中
                     if (_isAnalyzing) ...[
                       const SizedBox(height: 16),
@@ -4375,7 +4423,8 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                         ),
-                        child: const Text('AI', overflow: TextOverflow.ellipsis),
+                        child:
+                            const Text('AI', overflow: TextOverflow.ellipsis),
                       ),
                     ),
                   const SizedBox(width: 8),
@@ -4418,66 +4467,83 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                 ),
               ),
               Tooltip(
-                message: 'AI considers surrounding defects within 5m radius\nand the floor above within 5m radius',
-                child: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade300),
+                message:
+                    'AI considers surrounding defects within 5m radius\nand the floor above within 5m radius',
+                child: Icon(Icons.info_outline,
+                    size: 16, color: Colors.blue.shade300),
               ),
             ],
           ),
           const SizedBox(height: 10),
 
           // Inspector observation fields
-          _buildInspectorInputField('Building Element', _buildingElementController, 'e.g. Column, Beam, Slab, Wall'),
+          _buildInspectorInputField('Building Element',
+              _buildingElementController, 'e.g. Column, Beam, Slab, Wall'),
           const SizedBox(height: 6),
-          _buildInspectorInputField('Defect Type', _defectTypeController, 'e.g. Crack, Spalling, Corrosion'),
+          _buildInspectorInputField('Defect Type', _defectTypeController,
+              'e.g. Crack, Spalling, Corrosion'),
           const SizedBox(height: 6),
-          _buildInspectorInputField('Diagnosis', _diagnosisController, 'e.g. Structural damage observed'),
+          _buildInspectorInputField('Diagnosis', _diagnosisController,
+              'e.g. Structural damage observed'),
           const SizedBox(height: 6),
-          _buildInspectorInputField('Suspected Cause', _suspectedCauseController, 'e.g. Water ingress, Overloading'),
+          _buildInspectorInputField('Suspected Cause',
+              _suspectedCauseController, 'e.g. Water ingress, Overloading'),
           const SizedBox(height: 6),
-          _buildInspectorInputField('Recommendation', _recommendationController, 'e.g. Immediate repair required'),
+          _buildInspectorInputField('Recommendation', _recommendationController,
+              'e.g. Immediate repair required'),
           const SizedBox(height: 6),
-          _buildInspectorInputField('Defect Size', _defectSizeController, 'e.g. 30cm x 10cm, Width 2mm'),
+          _buildInspectorInputField('Defect Size', _defectSizeController,
+              'e.g. 30cm x 10cm, Width 2mm'),
           const SizedBox(height: 10),
           const Divider(height: 1),
           const SizedBox(height: 10),
 
           // 0. Extent of Defect
           _buildToggleRow('0. Extent of Defect:', [
-            _buildChoiceChip('Locally noted', _extentOfDefect == 'locally', () => setState(() => _extentOfDefect = 'locally')),
-            _buildChoiceChip('Generally noted', _extentOfDefect == 'generally', () => setState(() => _extentOfDefect = 'generally')),
+            _buildChoiceChip('Locally noted', _extentOfDefect == 'locally',
+                () => setState(() => _extentOfDefect = 'locally')),
+            _buildChoiceChip('Generally noted', _extentOfDefect == 'generally',
+                () => setState(() => _extentOfDefect = 'generally')),
           ]),
           const SizedBox(height: 6),
 
           // 1. Room information
-          const Text('1. Room Information:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          const Text('1. Room Information:',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
           _buildTextInputRow('1.1 Current use:', _currentUseController),
           const SizedBox(height: 4),
           _buildTextInputRow('1.2 Designed use:', _designedUseController),
           const SizedBox(height: 4),
-          _buildYesNoRow('1.3 Only typical floor:', _onlyTypicalFloor, (v) => setState(() => _onlyTypicalFloor = v)),
+          _buildYesNoRow('1.3 Only typical floor:', _onlyTypicalFloor,
+              (v) => setState(() => _onlyTypicalFloor = v)),
           const SizedBox(height: 4),
           _buildTextInputRow('1.4 Use of above:', _useOfAboveController),
           const SizedBox(height: 6),
 
           // 2. Adjacent wet area
-          _buildYesNoRow('2. Adjacent space is wet area:', _adjacentWetArea, (v) => setState(() => _adjacentWetArea = v)),
+          _buildYesNoRow('2. Adjacent space is wet area:', _adjacentWetArea,
+              (v) => setState(() => _adjacentWetArea = v)),
           const SizedBox(height: 4),
 
           // 3. Adjacent to External wall
-          _buildYesNoRow('3. Adjacent to External wall:', _adjacentExternalWall, (v) => setState(() => _adjacentExternalWall = v)),
+          _buildYesNoRow('3. Adjacent to External wall:', _adjacentExternalWall,
+              (v) => setState(() => _adjacentExternalWall = v)),
           const SizedBox(height: 4),
 
           // 4. Any concealed pipeworks
-          _buildYesNoRow('4. Any concealed pipeworks:', _concealedPipeworks, (v) => setState(() => _concealedPipeworks = v)),
+          _buildYesNoRow('4. Any concealed pipeworks:', _concealedPipeworks,
+              (v) => setState(() => _concealedPipeworks = v)),
           const SizedBox(height: 4),
 
           // 5. Any repetitive pattern
-          _buildTextInputRow('5. Any repetitive pattern:', _repetitivePatternController),
+          _buildTextInputRow(
+              '5. Any repetitive pattern:', _repetitivePatternController),
           const SizedBox(height: 4),
 
           // 6. Heavy loading on floor above
-          _buildYesNoRow('6. Heavy loading on floor above:', _heavyLoadingAbove, (v) => setState(() => _heavyLoadingAbove = v)),
+          _buildYesNoRow('6. Heavy loading on floor above:', _heavyLoadingAbove,
+              (v) => setState(() => _heavyLoadingAbove = v)),
           const SizedBox(height: 6),
 
           // 8. Remarks
@@ -4491,7 +4557,11 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(flex: 4, child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+        Expanded(
+            flex: 4,
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w500))),
         Expanded(flex: 6, child: Wrap(spacing: 6, children: chips)),
       ],
     );
@@ -4505,18 +4575,26 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         decoration: BoxDecoration(
           color: selected ? AppTheme.primaryColor : Colors.white,
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: selected ? AppTheme.primaryColor : Colors.grey.shade400),
+          border: Border.all(
+              color: selected ? AppTheme.primaryColor : Colors.grey.shade400),
         ),
-        child: Text(label, style: TextStyle(fontSize: 11, color: selected ? Colors.white : Colors.black87)),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 11, color: selected ? Colors.white : Colors.black87)),
       ),
     );
   }
 
-  Widget _buildYesNoRow(String label, bool? value, ValueChanged<bool> onChanged) {
+  Widget _buildYesNoRow(
+      String label, bool? value, ValueChanged<bool> onChanged) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(flex: 5, child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
+        Expanded(
+            flex: 5,
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w500))),
         Expanded(
           flex: 5,
           child: Row(
@@ -4531,21 +4609,26 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     );
   }
 
-  Widget _buildTextInputRow(String label, TextEditingController controller, {int maxLines = 1}) {
+  Widget _buildTextInputRow(String label, TextEditingController controller,
+      {int maxLines = 1}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           flex: 4,
-          child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          child: Text(label,
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         ),
         Expanded(
           flex: 6,
           child: TextField(
             controller: controller,
             decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               isDense: true,
               filled: true,
               fillColor: Colors.white,
@@ -4558,13 +4641,16 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     );
   }
 
-  Widget _buildInspectorInputField(String label, TextEditingController controller, String hint) {
+  Widget _buildInspectorInputField(
+      String label, TextEditingController controller, String hint) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         SizedBox(
           width: 110,
-          child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+          child: Text(label,
+              style:
+                  const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         ),
         Expanded(
           child: TextField(
@@ -4572,8 +4658,10 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(fontSize: 11, color: Colors.grey.shade400),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               isDense: true,
               filled: true,
               fillColor: Colors.white,
@@ -4600,8 +4688,11 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
       final dist = (dx * dx + dy * dy);
       if (dist <= radius * radius) {
         for (final d in p.defects) {
-          final info = StringBuffer('Defect at (${p.x.toStringAsFixed(1)}, ${p.y.toStringAsFixed(1)}), dist=${dist > 0 ? (dist).toStringAsFixed(1) : "0"}m');
-          if (d.buildingElement != null) info.write(', element: ${d.buildingElement}');
+          final info = StringBuffer(
+              'Defect at (${p.x.toStringAsFixed(1)}, ${p.y.toStringAsFixed(1)}), dist=${dist > 0 ? (dist).toStringAsFixed(1) : "0"}m');
+          if (d.buildingElement != null) {
+            info.write(', element: ${d.buildingElement}');
+          }
           if (d.defectType != null) info.write(', type: ${d.defectType}');
           if (d.description != null) info.write(', desc: ${d.description}');
           if (d.riskLevel != 'low') info.write(', risk: ${d.riskLevel}');
@@ -4621,8 +4712,11 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
           final dist = (dx * dx + dy * dy);
           if (dist <= radius * radius) {
             for (final d in p.defects) {
-              final info = StringBuffer('Floor-above defect at (${p.x.toStringAsFixed(1)}, ${p.y.toStringAsFixed(1)})');
-              if (d.buildingElement != null) info.write(', element: ${d.buildingElement}');
+              final info = StringBuffer(
+                  'Floor-above defect at (${p.x.toStringAsFixed(1)}, ${p.y.toStringAsFixed(1)})');
+              if (d.buildingElement != null) {
+                info.write(', element: ${d.buildingElement}');
+              }
               if (d.defectType != null) info.write(', type: ${d.defectType}');
               if (d.description != null) info.write(', desc: ${d.description}');
               if (d.riskLevel != 'low') info.write(', risk: ${d.riskLevel}');
@@ -4634,13 +4728,15 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     }
 
     if (nearbyDefects.isNotEmpty) {
-      buf.writeln('Surrounding defects within ${radius.toInt()}m radius on the same floor:');
+      buf.writeln(
+          'Surrounding defects within ${radius.toInt()}m radius on the same floor:');
       for (final d in nearbyDefects) {
         buf.writeln('- $d');
       }
     }
     if (aboveDefects.isNotEmpty) {
-      buf.writeln('Defects on the floor above within ${radius.toInt()}m radius:');
+      buf.writeln(
+          'Defects on the floor above within ${radius.toInt()}m radius:');
       for (final d in aboveDefects) {
         buf.writeln('- $d');
       }
@@ -4720,7 +4816,8 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 
       // Structured fields
       if (_buildingElementController.text.trim().isNotEmpty) {
-        contextBuf.writeln('Building Element: ${_buildingElementController.text.trim()}');
+        contextBuf.writeln(
+            'Building Element: ${_buildingElementController.text.trim()}');
       }
       if (_defectTypeController.text.trim().isNotEmpty) {
         contextBuf.writeln('Defect Type: ${_defectTypeController.text.trim()}');
@@ -4729,43 +4826,55 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         contextBuf.writeln('Diagnosis: ${_diagnosisController.text.trim()}');
       }
       if (_suspectedCauseController.text.trim().isNotEmpty) {
-        contextBuf.writeln('Suspected Cause: ${_suspectedCauseController.text.trim()}');
+        contextBuf.writeln(
+            'Suspected Cause: ${_suspectedCauseController.text.trim()}');
       }
       if (_recommendationController.text.trim().isNotEmpty) {
-        contextBuf.writeln('Recommendation: ${_recommendationController.text.trim()}');
+        contextBuf.writeln(
+            'Recommendation: ${_recommendationController.text.trim()}');
       }
       if (_defectSizeController.text.trim().isNotEmpty) {
         contextBuf.writeln('Defect Size: ${_defectSizeController.text.trim()}');
       }
       if (_extentOfDefect != null) {
-        contextBuf.writeln('Extent of Defect: ${_extentOfDefect == 'locally' ? 'Locally noted' : 'Generally noted'}');
+        contextBuf.writeln(
+            'Extent of Defect: ${_extentOfDefect == 'locally' ? 'Locally noted' : 'Generally noted'}');
       }
       if (_currentUseController.text.trim().isNotEmpty) {
-        contextBuf.writeln('Room Current Use: ${_currentUseController.text.trim()}');
+        contextBuf
+            .writeln('Room Current Use: ${_currentUseController.text.trim()}');
       }
       if (_designedUseController.text.trim().isNotEmpty) {
-        contextBuf.writeln('Room Designed Use: ${_designedUseController.text.trim()}');
+        contextBuf.writeln(
+            'Room Designed Use: ${_designedUseController.text.trim()}');
       }
       if (_onlyTypicalFloor != null) {
-        contextBuf.writeln('Only Typical Floor: ${_onlyTypicalFloor! ? 'Yes' : 'No'}');
+        contextBuf.writeln(
+            'Only Typical Floor: ${_onlyTypicalFloor! ? 'Yes' : 'No'}');
       }
       if (_useOfAboveController.text.trim().isNotEmpty) {
-        contextBuf.writeln('Use of Above: ${_useOfAboveController.text.trim()}');
+        contextBuf
+            .writeln('Use of Above: ${_useOfAboveController.text.trim()}');
       }
       if (_adjacentWetArea != null) {
-        contextBuf.writeln('Adjacent Space is Wet Area: ${_adjacentWetArea! ? 'Yes' : 'No'}');
+        contextBuf.writeln(
+            'Adjacent Space is Wet Area: ${_adjacentWetArea! ? 'Yes' : 'No'}');
       }
       if (_adjacentExternalWall != null) {
-        contextBuf.writeln('Adjacent to External Wall: ${_adjacentExternalWall! ? 'Yes' : 'No'}');
+        contextBuf.writeln(
+            'Adjacent to External Wall: ${_adjacentExternalWall! ? 'Yes' : 'No'}');
       }
       if (_concealedPipeworks != null) {
-        contextBuf.writeln('Concealed Pipeworks: ${_concealedPipeworks! ? 'Yes' : 'No'}');
+        contextBuf.writeln(
+            'Concealed Pipeworks: ${_concealedPipeworks! ? 'Yes' : 'No'}');
       }
       if (_repetitivePatternController.text.trim().isNotEmpty) {
-        contextBuf.writeln('Repetitive Pattern: ${_repetitivePatternController.text.trim()}');
+        contextBuf.writeln(
+            'Repetitive Pattern: ${_repetitivePatternController.text.trim()}');
       }
       if (_heavyLoadingAbove != null) {
-        contextBuf.writeln('Heavy Loading on Floor Above: ${_heavyLoadingAbove! ? 'Yes' : 'No'}');
+        contextBuf.writeln(
+            'Heavy Loading on Floor Above: ${_heavyLoadingAbove! ? 'Yes' : 'No'}');
       }
       if (_remarksController.text.trim().isNotEmpty) {
         contextBuf.writeln('Remarks: ${_remarksController.text.trim()}');
@@ -4775,7 +4884,8 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
       final surroundingCtx = _buildSurroundingContext();
       if (surroundingCtx.isNotEmpty) {
         contextBuf.writeln();
-        contextBuf.writeln('Consider surrounding defects to draw a conclusive cause:');
+        contextBuf.writeln(
+            'Consider surrounding defects to draw a conclusive cause:');
         contextBuf.write(surroundingCtx);
       }
 
@@ -4783,7 +4893,8 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 
       final result = await ApiService.instance.analyzeImageWithAI(
         _imageBase64!,
-        additionalContext: additionalContext.isNotEmpty ? additionalContext : null,
+        additionalContext:
+            additionalContext.isNotEmpty ? additionalContext : null,
       );
 
       if (!mounted) return;
@@ -4793,7 +4904,8 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         _isAnalyzing = false;
 
         // 將 AI 分析結果加入聊天記錄
-        final analysisText = result['analysis'] as String? ?? 'Analysis complete';
+        final analysisText =
+            result['analysis'] as String? ?? 'Analysis complete';
         final recs =
             (result['recommendations'] as List<dynamic>?)?.join('\n• ') ?? '';
         final riskScore = result['risk_score'] ?? 0;
@@ -4893,8 +5005,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         children: [
           Row(
             children: [
-              const Icon(Icons.smart_toy,
-                  size: 16, color: Colors.deepPurple),
+              const Icon(Icons.smart_toy, size: 16, color: Colors.deepPurple),
               const SizedBox(width: 6),
               const Text(
                 'YOLO Detection Results',
@@ -4925,8 +5036,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                   '${e.key} ×${e.value}',
                   style: const TextStyle(fontSize: 11),
                 ),
-                backgroundColor:
-                    Colors.deepPurple.withValues(alpha: 0.1),
+                backgroundColor: Colors.deepPurple.withValues(alpha: 0.1),
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
@@ -4953,31 +5063,52 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         riskScore: _analysisResult?['risk_score'] as int? ?? 0,
         riskLevel: _analysisResult?['risk_level'] as String? ?? 'low',
         description: _analysisResult?['analysis'] as String?,
-        recommendations:
-            (_analysisResult?['recommendations'] as List<dynamic>?)
-                    ?.map((e) => e.toString())
-                    .toList() ??
-                [],
+        recommendations: (_analysisResult?['recommendations'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [],
         status: _analysisResult != null ? 'analyzed' : 'pending',
         chatMessages: List<ChatMessage>.from(_chatMessages),
         createdAt: DateTime.now(),
-        buildingElement: _buildingElementController.text.trim().isNotEmpty ? _buildingElementController.text.trim() : null,
-        defectType: _defectTypeController.text.trim().isNotEmpty ? _defectTypeController.text.trim() : null,
-        diagnosis: _diagnosisController.text.trim().isNotEmpty ? _diagnosisController.text.trim() : null,
-        suspectedCause: _suspectedCauseController.text.trim().isNotEmpty ? _suspectedCauseController.text.trim() : null,
-        recommendation: _recommendationController.text.trim().isNotEmpty ? _recommendationController.text.trim() : null,
-        defectSize: _defectSizeController.text.trim().isNotEmpty ? _defectSizeController.text.trim() : null,
+        buildingElement: _buildingElementController.text.trim().isNotEmpty
+            ? _buildingElementController.text.trim()
+            : null,
+        defectType: _defectTypeController.text.trim().isNotEmpty
+            ? _defectTypeController.text.trim()
+            : null,
+        diagnosis: _diagnosisController.text.trim().isNotEmpty
+            ? _diagnosisController.text.trim()
+            : null,
+        suspectedCause: _suspectedCauseController.text.trim().isNotEmpty
+            ? _suspectedCauseController.text.trim()
+            : null,
+        recommendation: _recommendationController.text.trim().isNotEmpty
+            ? _recommendationController.text.trim()
+            : null,
+        defectSize: _defectSizeController.text.trim().isNotEmpty
+            ? _defectSizeController.text.trim()
+            : null,
         extentOfDefect: _extentOfDefect,
-        currentUse: _currentUseController.text.trim().isNotEmpty ? _currentUseController.text.trim() : null,
-        designedUse: _designedUseController.text.trim().isNotEmpty ? _designedUseController.text.trim() : null,
+        currentUse: _currentUseController.text.trim().isNotEmpty
+            ? _currentUseController.text.trim()
+            : null,
+        designedUse: _designedUseController.text.trim().isNotEmpty
+            ? _designedUseController.text.trim()
+            : null,
         onlyTypicalFloor: _onlyTypicalFloor,
-        useOfAbove: _useOfAboveController.text.trim().isNotEmpty ? _useOfAboveController.text.trim() : null,
+        useOfAbove: _useOfAboveController.text.trim().isNotEmpty
+            ? _useOfAboveController.text.trim()
+            : null,
         adjacentWetArea: _adjacentWetArea,
         adjacentExternalWall: _adjacentExternalWall,
         concealedPipeworks: _concealedPipeworks,
-        repetitivePattern: _repetitivePatternController.text.trim().isNotEmpty ? _repetitivePatternController.text.trim() : null,
+        repetitivePattern: _repetitivePatternController.text.trim().isNotEmpty
+            ? _repetitivePatternController.text.trim()
+            : null,
         heavyLoadingAbove: _heavyLoadingAbove,
-        remarks: _remarksController.text.trim().isNotEmpty ? _remarksController.text.trim() : null,
+        remarks: _remarksController.text.trim().isNotEmpty
+            ? _remarksController.text.trim()
+            : null,
       );
 
       final newDefects = [...updatedPin.defects, defect];
@@ -5497,7 +5628,8 @@ class InspectionCanvasPainter extends CustomPainter {
     double maxY = anchors.map((a) => a.y).reduce(max) + 1;
 
     // DEBUG: 輸出平面圖相關資訊
-    debugPrint('[InspectionCanvas] showFloorPlan=${config.showFloorPlan}, floorPlanImage=${floorPlanImage != null ? "${floorPlanImage!.width}x${floorPlanImage!.height}" : "null"}, xScale=${config.xScale}, yScale=${config.yScale}, xOffset=${config.xOffset}, yOffset=${config.yOffset}');
+    debugPrint(
+        '[InspectionCanvas] showFloorPlan=${config.showFloorPlan}, floorPlanImage=${floorPlanImage != null ? "${floorPlanImage!.width}x${floorPlanImage!.height}" : "null"}, xScale=${config.xScale}, yScale=${config.yScale}, xOffset=${config.xOffset}, yOffset=${config.yOffset}');
 
     // 如果有平面圖，擴展視圖範圍以包含整個平面圖
     if (config.showFloorPlan && floorPlanImage != null) {
@@ -5508,13 +5640,15 @@ class InspectionCanvasPainter extends CustomPainter {
       final imgBottom = config.yOffset;
       final imgRight = imgLeft + realWidth;
       final imgTop = imgBottom + realHeight;
-      debugPrint('[InspectionCanvas] floorPlan bounds: left=$imgLeft, right=$imgRight, bottom=$imgBottom, top=$imgTop, realW=$realWidth, realH=$realHeight');
+      debugPrint(
+          '[InspectionCanvas] floorPlan bounds: left=$imgLeft, right=$imgRight, bottom=$imgBottom, top=$imgTop, realW=$realWidth, realH=$realHeight');
       minX = min(minX, imgLeft - 0.5);
       maxX = max(maxX, imgRight + 0.5);
       minY = min(minY, imgBottom - 0.5);
       maxY = max(maxY, imgTop + 0.5);
     }
-    debugPrint('[InspectionCanvas] viewport: minX=$minX, maxX=$maxX, minY=$minY, maxY=$maxY');
+    debugPrint(
+        '[InspectionCanvas] viewport: minX=$minX, maxX=$maxX, minY=$minY, maxY=$maxY');
 
     final double rangeX = maxX - minX;
     final double rangeY = maxY - minY;
@@ -5663,7 +5797,8 @@ class InspectionCanvasPainter extends CustomPainter {
   void _drawEmptyState(Canvas canvas, Size size) {
     final textPainter = TextPainter(
       text: const TextSpan(
-        text: 'Waiting for UWB device...\nConnect a device or load a floor plan',
+        text:
+            'Waiting for UWB device...\nConnect a device or load a floor plan',
         style: TextStyle(color: Colors.grey, fontSize: 16),
       ),
       textDirection: TextDirection.ltr,

@@ -261,7 +261,9 @@ class _LocationScreenState extends State<LocationScreen>
                         uwbService.isConnected ? Icons.stop : Icons.usb,
                         size: 18,
                       ),
-                      label: Text(uwbService.isConnected ? 'Disconnect' : 'Connect Device'),
+                      label: Text(uwbService.isConnected
+                          ? 'Disconnect'
+                          : 'Connect Device'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: uwbService.isConnected
@@ -287,7 +289,8 @@ class _LocationScreenState extends State<LocationScreen>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white.withValues(alpha: 0.2),
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.white.withValues(alpha: 0.1),
+                        disabledBackgroundColor:
+                            Colors.white.withValues(alpha: 0.1),
                         disabledForegroundColor: Colors.white38,
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(
@@ -593,7 +596,8 @@ class _LocationScreenState extends State<LocationScreen>
                       ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.blue.shade100,
                           borderRadius: BorderRadius.circular(8),
@@ -611,7 +615,8 @@ class _LocationScreenState extends State<LocationScreen>
                   ),
                   Row(
                     children: [
-                      Icon(Icons.opacity, size: 14, color: Colors.blue.shade300),
+                      Icon(Icons.opacity,
+                          size: 14, color: Colors.blue.shade300),
                       Expanded(
                         child: Slider(
                           value: uwbService.config.floorPlanOpacity,
@@ -622,12 +627,14 @@ class _LocationScreenState extends State<LocationScreen>
                           inactiveColor: Colors.blue.shade100,
                           onChanged: (value) {
                             uwbService.updateConfig(
-                              uwbService.config.copyWith(floorPlanOpacity: value),
+                              uwbService.config
+                                  .copyWith(floorPlanOpacity: value),
                             );
                           },
                         ),
                       ),
-                      Icon(Icons.opacity, size: 20, color: Colors.blue.shade600),
+                      Icon(Icons.opacity,
+                          size: 20, color: Colors.blue.shade600),
                     ],
                   ),
                 ],
@@ -775,8 +782,8 @@ class _LocationScreenState extends State<LocationScreen>
                     : const Center(
                         child: Padding(
                           padding: EdgeInsets.all(20),
-                          child:
-                              Text('No data', style: TextStyle(color: Colors.grey)),
+                          child: Text('No data',
+                              style: TextStyle(color: Colors.grey)),
                         ),
                       ),
               ),
@@ -818,7 +825,8 @@ class _LocationScreenState extends State<LocationScreen>
                       onTap: () {
                         uwbService.initializeDefaultAnchors();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Anchor configuration reset')),
+                          const SnackBar(
+                              content: Text('Anchor configuration reset')),
                         );
                       },
                     ),
@@ -941,7 +949,8 @@ class _LocationScreenState extends State<LocationScreen>
             ),
             TextField(
               controller: zController,
-              decoration: const InputDecoration(labelText: 'Z Coordinate/Height (m)'),
+              decoration:
+                  const InputDecoration(labelText: 'Z Coordinate/Height (m)'),
               keyboardType: TextInputType.number,
             ),
           ],
@@ -1251,7 +1260,8 @@ class _LocationScreenState extends State<LocationScreen>
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('For Web platform, use the browser serial port selector'),
+          content:
+              Text('For Web platform, use the browser serial port selector'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -1283,10 +1293,12 @@ class _LocationScreenState extends State<LocationScreen>
             children: [
               Text('No serial devices detected.'),
               SizedBox(height: 12),
-              Text('Please verify:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('Please verify:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               Text('• BU04 is connected via USB'),
               Text('• CH340 or CP210x driver is installed'),
-              Text('• Device shows normally in Device Manager'),
+              Text(
+                  '• Linux: user is in dialout group and can access /dev/ttyUSB* or /dev/ttyACM*'),
             ],
           ),
           actions: [
@@ -1437,7 +1449,8 @@ class _LocationScreenState extends State<LocationScreen>
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+            border:
+                Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -1539,7 +1552,8 @@ class _LocationScreenState extends State<LocationScreen>
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(uwbService.lastError ?? 'Failed to connect to $portName'),
+            content:
+                Text(uwbService.lastError ?? 'Failed to connect to $portName'),
             backgroundColor: Colors.red,
           ),
         );

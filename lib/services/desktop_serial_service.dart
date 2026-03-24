@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
 
@@ -92,8 +93,11 @@ class DesktopSerialService {
 
     debugPrint('Found ${ports.length} port(s): $ports');
 
+    // Linux 平台優先嘗試常見 USB/UART 設備路徑
+    final prioritizedPorts = _prioritizePortsForPlatform(ports);
+
     // 尝试连接第一个串口
-    for (final port in ports) {
+    for (final port in prioritizedPorts) {
       debugPrint('Trying to connect: $port');
       if (await connect(port, baudRate: baudRate)) {
         return true;
@@ -101,6 +105,25 @@ class DesktopSerialService {
     }
 
     return false;
+  }
+
+  List<String> _prioritizePortsForPlatform(List<String> ports) {
+    if (!Platform.isLinux) return ports;
+
+    final preferred = <String>[];
+    final others = <String>[];
+
+    for (final port in ports) {
+      if (port.startsWith('/dev/ttyUSB') ||
+          port.startsWith('/dev/ttyACM') ||
+          port.startsWith('/dev/ttyAMA')) {
+        preferred.add(port);
+      } else {
+        others.add(port);
+      }
+    }
+
+    return [...preferred, ...others];
   }
 
   /// 断开串口连接
