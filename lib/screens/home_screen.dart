@@ -15,7 +15,7 @@ class HomeScreen extends StatelessWidget {
     final highRisk = stats['highRisk'] ?? 0;
     final totalRisk = (stats['total'] ?? 0);
 
-    // 決定社區健康狀態
+    // Translated legacy note.
     final bool isHealthy = highRisk <= 2;
     final String statusEmoji = isHealthy ? '😊' : '😰';
     final String statusText = isHealthy ? 'Community safety is good!' : 'Your attention is needed!';

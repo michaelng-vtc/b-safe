@@ -1,9 +1,9 @@
-/// 專案模型 - 一棟大廈的巡檢專案
+/// Project model for a building inspection project.
 class Project {
   final String id;
-  final String buildingName; // 大廈名稱
-  final int floorCount; // 樓層數目
-  final int currentFloor; // 目前選中的樓層 (1-based)
+  final String buildingName; // Building name
+  final int floorCount; // Number of floors
+  final int currentFloor; // Currently selected floor (1-based)
   final DateTime createdAt;
   final DateTime? updatedAt;
 

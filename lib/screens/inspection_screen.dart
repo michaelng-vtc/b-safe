@@ -24,6 +24,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 
+/// Main inspection workflow screen.
+///
+/// Supports UWB pin placement, defect capture, AI analysis, and export actions.
 class InspectionScreen extends StatefulWidget {
   final Project? project;
   const InspectionScreen({super.key, this.project});
@@ -40,7 +43,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
   bool _showFullSettings = false;
   int _currentFloor = 1;
 
-  // 串口設定
+  // Serial settings.
   int _baudRate = 115200;
 
   @override
@@ -73,11 +76,11 @@ class _InspectionScreenState extends State<InspectionScreen> {
             body: SafeArea(
               child: Column(
                 children: [
-                  // 頂部工具列（手機/桌面不同佈局）
+                  // (mobile/ ).
                   isMobile
                       ? _buildMobileTopBar(uwbService, inspection)
                       : _buildTopBar(uwbService, inspection),
-                  // 主要內容
+                  // Content.
                   Expanded(
                     child: isMobile
                         ? _buildMapArea(uwbService, inspection)
@@ -106,7 +109,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
               ),
             ),
             floatingActionButton: _buildFAB(uwbService, inspection),
-            // 手機底部導航列
+            // Mobile.
             bottomNavigationBar:
                 isMobile ? _buildMobileBottomBar(uwbService, inspection) : null,
           );
@@ -115,7 +118,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 手機版頂部工具列（簡化） =====
+  // ===== mobile ( ) =====.
   Widget _buildMobileTopBar(
       UwbService uwbService, InspectionProvider inspection) {
     return Container(
@@ -177,16 +180,16 @@ class _InspectionScreenState extends State<InspectionScreen> {
           ],
           const SizedBox(width: 8),
 
-          // UWB 連接狀態
+          // UWB connect.
           Expanded(
             child: _buildConnectionChip(uwbService),
           ),
 
           const SizedBox(width: 8),
 
-          // 連接按鈕
+          // Connectbutton.
           _buildConnectButton(uwbService),
-          // 更多操作
+          // Translated legacy note.
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, size: 20),
             onSelected: (value) => _handleMenuAction(value, inspection),
@@ -216,7 +219,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 手機底部導航列 =====
+  // ===== mobile =====.
   Widget _buildMobileBottomBar(
       UwbService uwbService, InspectionProvider inspection) {
     return Container(
@@ -230,19 +233,19 @@ class _InspectionScreenState extends State<InspectionScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // 巡檢點列表
+              // Inspection.
               _buildBottomBarItem(
                 icon: Icons.push_pin,
                 label: 'Pins (${inspection.currentPins.length})',
                 onTap: () => _showMobilePinListSheet(inspection),
               ),
-              // 快捷設置
+              // Translated legacy note.
               _buildBottomBarItem(
                 icon: Icons.tune,
                 label: 'Settings',
                 onTap: () => _showMobileSettingsSheet(uwbService),
               ),
-              // 座標顯示
+              // Coordinateshow.
               _buildBottomBarItem(
                 icon: Icons.my_location,
                 label: uwbService.currentTag != null
@@ -252,7 +255,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 color:
                     uwbService.currentTag != null ? Colors.indigo : Colors.grey,
               ),
-              // 校正
+              // Translated legacy note.
               _buildBottomBarItem(
                 icon: Icons.straighten,
                 label: 'Calibrate',
@@ -301,7 +304,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 手機版 Pin 列表 Bottom Sheet =====
+  // ===== mobile Pin Bottom Sheet =====.
   void _showMobilePinListSheet(InspectionProvider inspection) {
     showModalBottomSheet(
       context: context,
@@ -319,7 +322,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
             ),
             child: Column(
               children: [
-                // 拖動手柄
+                // Translated legacy note.
                 Container(
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   width: 40,
@@ -329,7 +332,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                // 標題
+                // Title.
                 Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -358,7 +361,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   ),
                 ),
                 if (insp.currentPins.isNotEmpty) _buildPinSummary(insp),
-                // Pin 列表
+                // Pin.
                 Expanded(
                   child: insp.currentPins.isEmpty
                       ? _buildEmptyPinState()
@@ -380,7 +383,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 手機版設置 Bottom Sheet =====
+  // ===== mobile Bottom Sheet =====.
   void _showMobileSettingsSheet(UwbService uwbService) {
     showModalBottomSheet(
       context: context,
@@ -433,7 +436,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 快捷開關
+                        // Translated legacy note.
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -455,7 +458,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                             }),
                           ],
                         ),
-                        // 平面圖透明度滑桿（已載入平面圖時顯示）
+                        // ( load show).
                         if (uwbService.config.floorPlanImagePath != null) ...[
                           const SizedBox(height: 12),
                           Container(
@@ -528,7 +531,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                           ),
                         ],
                         const SizedBox(height: 16),
-                        // 操作按鈕
+                        // Button.
                         Row(
                           children: [
                             Expanded(
@@ -550,7 +553,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        // 基站資訊
+                        // Anchor list.
                         _buildSectionHeader(
                             'Anchor Management', Icons.cell_tower),
                         const SizedBox(height: 8),
@@ -571,7 +574,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
                         const SizedBox(height: 20),
 
-                        // ---- 距離索引映射 ----
+                        // Distance.
                         _buildSectionHeader(
                             'Distance Index Mapping', Icons.swap_horiz),
                         const SizedBox(height: 8),
@@ -641,7 +644,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 頂部工具列 =====
+  // Translated legacy comment.
   Widget _buildTopBar(UwbService uwbService, InspectionProvider inspection) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -657,7 +660,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
       ),
       child: Row(
         children: [
-          // App 標題
+          // App title.
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -687,17 +690,17 @@ class _InspectionScreenState extends State<InspectionScreen> {
           ),
           const SizedBox(width: 16),
 
-          // UWB 連接狀態
+          // UWB connect.
           _buildConnectionChip(uwbService),
           const SizedBox(width: 8),
 
-          // 當前坐標
+          // Translated legacy note.
           if (uwbService.isConnected && uwbService.currentTag != null)
             _buildCoordinateChip(uwbService),
 
           const Spacer(),
 
-          // 會話名稱
+          // Translated legacy note.
           if (inspection.currentSession != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -734,7 +737,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
           const SizedBox(width: 8),
 
-          // 工具按鈕列
+          // Button.
           IconButton(
             onPressed: () => setState(() => _showSettings = !_showSettings),
             icon: Icon(
@@ -763,10 +766,10 @@ class _InspectionScreenState extends State<InspectionScreen> {
             tooltip: 'Inspection Points',
           ),
           const SizedBox(width: 4),
-          // 連接按鈕
+          // Connectbutton.
           _buildConnectButton(uwbService),
           const SizedBox(width: 4),
-          // 更多操作
+          // Translated legacy note.
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) => _handleMenuAction(value, inspection),
@@ -892,23 +895,23 @@ class _InspectionScreenState extends State<InspectionScreen> {
           );
   }
 
-  // ===== 地圖區域 =====
+  // Translated legacy comment.
   Widget _buildMapArea(UwbService uwbService, InspectionProvider inspection) {
     return Column(
       children: [
-        // 快捷設置面板
+        // Translated legacy note.
         if (_showSettings) _buildQuickSettings(uwbService),
 
-        // 地圖畫布
+        // Translated legacy note.
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Stack(
               children: [
-                // UWB 畫布 + Pin 覆蓋層
+                // UWB + Pin.
                 _buildInspectionCanvas(uwbService, inspection),
 
-                // Pin 模式指示
+                // Pin mode.
                 if (inspection.isPinMode)
                   Positioned(
                     top: 8,
@@ -949,7 +952,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ),
                   ),
 
-                // 載入樓層平面圖按鈕 (當沒有 floor plan 時)
+                // Loadfloor button ( floor plan ).
                 if (uwbService.floorPlanImage == null &&
                     !uwbService.config.showFloorPlan)
                   Positioned(
@@ -967,7 +970,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ),
                   ),
 
-                // 距離 Debug 面板 (顯示各基站距離)
+                // Distance Debug (show anchordistance).
                 if (uwbService.isConnected && uwbService.currentTag != null)
                   Positioned(
                     top: 8,
@@ -1025,7 +1028,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 帶 Pin 標記的巡檢畫布 =====
+  // ===== Pin inspection =====.
   Widget _buildInspectionCanvas(
       UwbService uwbService, InspectionProvider inspection) {
     return LayoutBuilder(
@@ -1033,7 +1036,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
         return GestureDetector(
           onTapDown: (details) {
             if (inspection.isPinMode) {
-              // 將點擊位置轉換為 UWB 座標
+              // UWB coordinate.
               final uwbCoord = _canvasToUwb(
                 details.localPosition,
                 Size(constraints.maxWidth, constraints.maxHeight),
@@ -1041,11 +1044,11 @@ class _InspectionScreenState extends State<InspectionScreen> {
               );
               if (uwbCoord != null) {
                 final pin = inspection.addPin(uwbCoord.dx, uwbCoord.dy);
-                // 打開拍照對話框
+                // Translated legacy note.
                 _showPhotoCaptureDialog(pin);
               }
             } else {
-              // 檢查是否點擊了某個 pin
+              // Pin.
               _checkPinTap(
                 details.localPosition,
                 Size(constraints.maxWidth, constraints.maxHeight),
@@ -1089,7 +1092,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  /// 計算與畫布 painter 一致的座標範圍（包含平面圖擴展）
+  /// Painter coordinate ( ).
   ({double minX, double maxX, double minY, double maxY}) _computeViewportBounds(
       UwbService uwbService) {
     final anchors = uwbService.anchors;
@@ -1117,7 +1120,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     return (minX: minX, maxX: maxX, minY: minY, maxY: maxY);
   }
 
-  /// 將畫布座標轉為 UWB 座標
+  /// Coordinate UWB coordinate.
   Offset? _canvasToUwb(
       Offset canvasPos, Size canvasSize, UwbService uwbService) {
     if (uwbService.anchors.isEmpty) return null;
@@ -1135,7 +1138,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     final double offsetX = (canvasSize.width - rangeX * scale) / 2;
     final double offsetY = (canvasSize.height - rangeY * scale) / 2;
 
-    // 反向轉換 (canvas → uwb)
+    // (canvas → uwb).
     final double uwbX = (canvasPos.dx - offsetX) / scale + bounds.minX;
     final double uwbY =
         (canvasSize.height - canvasPos.dy - offsetY) / scale + bounds.minY;
@@ -1143,7 +1146,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     return Offset(uwbX, uwbY);
   }
 
-  /// 檢查是否點擊了某個 pin
+  /// Pin.
   void _checkPinTap(Offset tapPos, Size canvasSize, UwbService uwbService,
       InspectionProvider inspection) {
     if (uwbService.anchors.isEmpty) return;
@@ -1167,7 +1170,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
           canvasSize.height - offsetYCanvas - (pin.y - bounds.minY) * scale;
       final dist = (tapPos - Offset(pinCanvasX, pinCanvasY)).distance;
       if (dist < 20) {
-        // 如果點擊的是已選中的 pin，打開詳細對話框
+        // Pin，.
         if (inspection.selectedPin?.id == pin.id) {
           if (pin.isAnalyzed || pin.imageBase64 != null) {
             _showPinDetailDialog(pin);
@@ -1183,7 +1186,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     inspection.deselectPin();
   }
 
-  // ===== 快捷設置 =====
+  // Translated legacy comment.
   Widget _buildQuickSettings(UwbService uwbService) {
     final isMobile = MediaQuery.of(context).size.width < 600;
     return Container(
@@ -1283,7 +1286,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== Pin 列表面板 =====
+  // ===== Pin =====.
   Widget _buildPinListPanel(InspectionProvider inspection) {
     return Container(
       decoration: BoxDecoration(
@@ -1292,7 +1295,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
       ),
       child: Column(
         children: [
-          // 面板標題
+          // Title.
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -1321,10 +1324,10 @@ class _InspectionScreenState extends State<InspectionScreen> {
             ),
           ),
 
-          // 統計摘要
+          // Translated legacy note.
           if (inspection.currentPins.isNotEmpty) _buildPinSummary(inspection),
 
-          // Pin 列表
+          // Pin.
           Expanded(
             child: inspection.currentPins.isEmpty
                 ? _buildEmptyPinState()
@@ -1449,7 +1452,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
             children: [
               Row(
                 children: [
-                  // Pin 序號
+                  // Pin.
                   Container(
                     width: 32,
                     height: 32,
@@ -1472,7 +1475,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  // 座標與狀態
+                  // Coordinate.
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1523,7 +1526,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       ],
                     ),
                   ),
-                  // 拍照按鈕（未拍照時）
+                  // Button( ).
                   if (pin.imageBase64 == null)
                     IconButton(
                       icon: const Icon(Icons.camera_alt, size: 20),
@@ -1531,7 +1534,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       onPressed: () => _showPhotoCaptureDialog(pin),
                       tooltip: 'Take Photo',
                     ),
-                  // 刪除
+                  // Translated legacy note.
                   IconButton(
                     icon: const Icon(Icons.close, size: 16),
                     color: Colors.grey.shade400,
@@ -1543,7 +1546,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   ),
                 ],
               ),
-              // 分析結果描述
+              // Analysisresult.
               if (pin.isAnalyzed && pin.description != null) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -1553,7 +1556,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
-              // 備註
+              // Translated legacy note.
               if (pin.note != null && pin.note!.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Row(
@@ -1579,12 +1582,12 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 浮動操作按鈕 =====
+  // ===== button =====.
   Widget _buildFAB(UwbService uwbService, InspectionProvider inspection) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Pin 模式按鈕 (點擊地圖放置)
+        // Pin modebutton ( ).
         if (!inspection.isPinMode)
           FloatingActionButton.small(
             heroTag: 'pin_mode',
@@ -1602,7 +1605,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
             child: const Icon(Icons.close, color: Colors.white),
           ),
         const SizedBox(height: 8),
-        // 在當前 UWB 位置放置 Pin
+        // UWB Pin.
         FloatingActionButton(
           heroTag: 'add_pin',
           onPressed: uwbService.isConnected && uwbService.currentTag != null
@@ -1623,7 +1626,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 拍照 + AI 分析對話框 =====
+  // ===== + AI analysis =====.
   void _showPhotoCaptureDialog(InspectionPin pin) {
     final provider = context.read<InspectionProvider>();
     showDialog(
@@ -1644,7 +1647,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 巡檢點詳細資訊 / 編輯對話框 =====
+  // ===== inspection / =====.
   void _showPinDetailDialog(InspectionPin pin) {
     showDialog(
       context: context,
@@ -1668,7 +1671,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 刪除確認 =====
+  // Translated legacy comment.
   void _confirmDeletePin(InspectionPin pin, InspectionProvider inspection) {
     showDialog(
       context: context,
@@ -1693,7 +1696,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 載入樓層圖 =====
+  // ===== loadfloor =====.
   Future<void> _loadFloorPlan(
       UwbService uwbService, InspectionProvider inspection) async {
     final result = await FilePicker.platform.pickFiles(
@@ -1709,7 +1712,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     }
   }
 
-  // ===== 連接對話框 =====
+  // ===== connect =====.
   void _showConnectDialog(UwbService uwbService) {
     showModalBottomSheet(
       context: context,
@@ -1842,13 +1845,13 @@ class _InspectionScreenState extends State<InspectionScreen> {
   void _showSerialConnectDialog(UwbService uwbService) {
     if (kIsWeb) return;
 
-    // Android 平台：使用 USB OTG
+    // Android platform： USB OTG.
     if (!kIsWeb && Platform.isAndroid) {
       _showMobileUsbConnectDialog(uwbService);
       return;
     }
 
-    // 桌面平台：使用 COM 串口
+    // Platform： COM serial.
     List<String> ports = [];
     if (!kIsWeb &&
         (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
@@ -1944,7 +1947,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== Android USB OTG 連接對話框 =====
+  // ===== Android USB OTG connect =====.
   void _showMobileUsbConnectDialog(UwbService uwbService) {
     showDialog(
       context: context,
@@ -1954,7 +1957,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 完整設定面板 =====
+  // ===== settings =====.
   Widget _buildFullSettingsPanel(UwbService uwbService) {
     return Container(
       decoration: BoxDecoration(
@@ -1992,7 +1995,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ---- 基站管理 ----
+                  // Anchor list.
                   _buildSectionHeader('Anchor Management', Icons.cell_tower),
                   const SizedBox(height: 8),
                   ...uwbService.anchors.asMap().entries.map((entry) {
@@ -2033,11 +2036,11 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
                   const SizedBox(height: 20),
 
-                  // ---- 平面圖設置 ----
+                  // Translated legacy note.
                   _buildSectionHeader('Floor Plan Settings', Icons.map),
                   const SizedBox(height: 8),
 
-                  // 載入按鈕
+                  // Loadbutton.
                   Row(
                     children: [
                       Expanded(
@@ -2071,7 +2074,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ],
                   ),
 
-                  // 顯示/隱藏平面圖
+                  // Show/.
                   SwitchListTile(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
@@ -2085,7 +2088,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                         style: TextStyle(fontSize: 13)),
                   ),
 
-                  // 透明度
+                  // Translated legacy note.
                   if (uwbService.config.floorPlanImagePath != null) ...[
                     Row(
                       children: [
@@ -2120,7 +2123,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
                     const Divider(),
 
-                    // 偏移設置
+                    // Translated legacy note.
                     const Text('Offset Settings',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 13)),
@@ -2137,7 +2140,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     }),
                     const SizedBox(height: 8),
 
-                    // 比例設置
+                    // Translated legacy note.
                     const Text('Scale Settings',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 13)),
@@ -2154,7 +2157,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     }),
                     const SizedBox(height: 8),
 
-                    // 翻轉設置
+                    // Translated legacy note.
                     const Text('Flip Settings',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 13)),
@@ -2193,7 +2196,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       ],
                     ),
 
-                    // 提示
+                    // Hint.
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -2210,7 +2213,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
                   const SizedBox(height: 20),
 
-                  // ---- 顯示設置 ----
+                  // Show.
                   _buildSectionHeader('Display Settings', Icons.visibility),
                   SwitchListTile(
                     dense: true,
@@ -2233,7 +2236,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
                   const SizedBox(height: 20),
 
-                  // ---- 距離索引映射 ----
+                  // Distance.
                   _buildSectionHeader(
                       'Distance Index Mapping', Icons.swap_horiz),
                   const SizedBox(height: 8),
@@ -2697,9 +2700,9 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   }
                 },
                 onChanged: (text) {
-                  // 只在輸入完整數字時更新（包含小數點後的數字）
+                  // Update( ).
                   if (text.isEmpty || text == '-' || text.endsWith('.')) {
-                    return; // 允許輸入中間狀態
+                    return; // Translated note.
                   }
                   final v = double.tryParse(text);
                   if (v != null) {
@@ -2714,7 +2717,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== 選單操作 =====
+  // Translated legacy comment.
   void _handleMenuAction(String action, InspectionProvider inspection) {
     switch (action) {
       case 'change_floor':
@@ -2922,7 +2925,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  // ===== Word 匯出 =====
+  // ===== Word =====.
   Future<void> _exportWord(InspectionProvider inspection) async {
     final projectSessions = _getExportSessions(inspection);
     if (projectSessions == null) return;
@@ -2957,7 +2960,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
     }
   }
 
-  // ===== PDF 匯出 =====
+  // ===== PDF =====.
   Future<void> _exportPdf(InspectionProvider inspection) async {
     final projectSessions = _getExportSessions(inspection);
     if (projectSessions == null) return;
@@ -3013,7 +3016,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
   }
 }
 
-// ===== 巡檢點詳細 / 編輯對話框 Widget =====
+// ===== inspection / Widget =====.
 class _PinDetailDialog extends StatefulWidget {
   final InspectionPin pin;
   final ImagePicker imagePicker;
@@ -3072,7 +3075,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     super.dispose();
   }
 
-  /// 目前選中的缺陷
+  /// Defect.
   Defect? get _selectedDefect {
     if (_expandedDefectIndex != null &&
         _expandedDefectIndex! < _currentPin.defects.length) {
@@ -3081,7 +3084,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     return null;
   }
 
-  /// 用於顯示的風險等級：只顯示選中缺陷的
+  /// Show risk ： show defect.
   String get _displayRiskLevel => _selectedDefect?.riskLevel ?? 'none';
 
   Color get _riskColor {
@@ -3121,7 +3124,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ===== 標題欄 =====
+            // ===== title =====.
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -3158,7 +3161,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                       ],
                     ),
                   ),
-                  // 編輯 / 完成切換
+                  // Translated legacy comment.
                   IconButton(
                     icon: Icon(
                       _isEditing ? Icons.check_circle : Icons.edit,
@@ -3185,19 +3188,19 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
               ),
             ),
 
-            // ===== 內容區 =====
+            // ===== content =====.
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // --- 照片區 ---
+                    // Photo.
                     _buildPhotoSection(hasPhoto, pin),
 
                     const SizedBox(height: 16),
 
-                    // --- AI 分析按鈕 (有照片但未分析) ---
+                    // AI analysisbutton ( photo analysis).
                     if (hasPhoto &&
                         !_isAnalyzing &&
                         _status != 'analyzed' &&
@@ -3216,7 +3219,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                         ),
                       ),
 
-                    // AI 分析中
+                    // AI analysis.
                     if (_isAnalyzing)
                       const Padding(
                         padding: EdgeInsets.only(bottom: 12),
@@ -3232,24 +3235,24 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                         ),
                       ),
 
-                    // --- 風險等級（只在選中缺陷時顯示）---
+                    // Risk ( defect show).
                     if (_expandedDefectIndex != null) _buildRiskSection(),
 
                     if (_expandedDefectIndex != null)
                       const SizedBox(height: 16),
 
-                    // --- 選中缺陷的對話記錄 + Chat 輸入 ---
+                    // Defect + Chat.
                     if (_expandedDefectIndex != null)
                       _buildExpandedDefectChat(),
 
-                    // --- 缺陷列表 ---
+                    // Defect.
                     _buildDefectsSection(),
                   ],
                 ),
               ),
             ),
 
-            // ===== 底部操作按鈕 =====
+            // ===== button =====.
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
               decoration: BoxDecoration(
@@ -3260,7 +3263,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                 runSpacing: 6,
                 alignment: WrapAlignment.end,
                 children: [
-                  // 刪除
+                  // Translated legacy note.
                   TextButton.icon(
                     onPressed: () => _confirmDelete(),
                     icon: const Icon(Icons.delete_outline,
@@ -3273,7 +3276,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
-                  // AI 分析 (有照片但未分析時顯示)
+                  // AI analysis ( photo analysis show).
                   if (hasPhoto && _status != 'analyzed' && !_isAnalyzing)
                     ElevatedButton(
                       onPressed: _runAiAnalysis,
@@ -3284,7 +3287,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                       ),
                       child: const Text('AI', style: TextStyle(fontSize: 13)),
                     ),
-                  // 重新拍照
+                  // Translated legacy note.
                   OutlinedButton.icon(
                     onPressed: _isAnalyzing ? null : widget.onRetakePhoto,
                     icon: const Icon(Icons.camera_alt, size: 16),
@@ -3294,7 +3297,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
                   ),
-                  // 關閉
+                  // Translated legacy note.
                   ElevatedButton(
                     onPressed: _isAnalyzing
                         ? null
@@ -3318,9 +3321,9 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     );
   }
 
-  // --- 照片區 ---
+  // Photo.
   Widget _buildPhotoSection(bool hasPhoto, InspectionPin pin) {
-    // 若有選中缺陷，顯示缺陷照片；否則顯示 pin 照片
+    // Defect，showdefectphoto； show pin photo.
     final defect = _selectedDefect;
     final displayBase64 = defect?.imageBase64 ?? pin.imageBase64;
     final hasDisplayPhoto = displayBase64 != null;
@@ -3337,7 +3340,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
               fit: BoxFit.contain,
             ),
           ),
-          // 右上角提示目前顯示的是哪張
+          // Hint show.
           if (defect != null)
             Positioned(
               top: 8,
@@ -3354,7 +3357,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
                 ),
               ),
             ),
-          // 重新拍照按鈕（針對選中缺陷或 pin）
+          // Button( defect pin).
           Positioned(
             bottom: 8,
             right: 8,
@@ -3407,7 +3410,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     }
   }
 
-  // --- 對選中缺陷重新拍照 ---
+  // Defect.
   Future<void> _retakeDefectPhoto(int defectIndex) async {
     try {
       final XFile? image =
@@ -3420,7 +3423,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
       final defect = _currentPin.defects[defectIndex];
       final updatedDefect = defect.copyWith(
         imageBase64: base64,
-        status: 'pending', // 重新拍照後需重新分析
+        status: 'pending', // Analysis.
       );
       _updateDefectInPin(updatedDefect, defectIndex);
       setState(() {});
@@ -3433,7 +3436,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     }
   }
 
-  // --- 選中缺陷的對話記錄 + Chat 輸入框 ---
+  // Defect + Chat.
   Widget _buildExpandedDefectChat() {
     final defect = _selectedDefect;
     if (defect == null) return const SizedBox.shrink();
@@ -3442,7 +3445,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 對話記錄
+        // Translated legacy note.
         if (defect.chatMessages.isNotEmpty) ...[
           const Row(
             children: [
@@ -3500,7 +3503,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
           const SizedBox(height: 8),
         ],
 
-        // Chat 輸入框
+        // Chat.
         Row(
           children: [
             Expanded(
@@ -3548,7 +3551,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     );
   }
 
-  // --- 風險評估區 ---
+  // Risk.
   Widget _buildRiskSection() {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -3607,11 +3610,11 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
         if (val) {
           final defect = _selectedDefect;
           if (defect != null && _expandedDefectIndex != null) {
-            // 修改選中缺陷的風險等級
+            // Defect risk.
             final updated = defect.copyWith(riskLevel: level);
             _updateDefectInPin(updated, _expandedDefectIndex!);
           } else {
-            // 修改 pin 的風險等級
+            // Pin risk.
             _riskLevel = level;
           }
           setState(() => _hasChanges = true);
@@ -3805,7 +3808,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     _scrollDefectChat();
 
     try {
-      // 構建歷史對話
+      // History.
       final chatHistory = updatedMessages
           .map((m) => {
                 'role': m.role == 'ai' ? 'assistant' : m.role,
@@ -3813,12 +3816,12 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
               })
           .toList();
 
-      // 使用 chatWithAI 進行追問
+      // ChatWithAI.
       final responseText = await ApiService.instance.chatWithAI(
         userMessage: text,
         imageBase64: defect.imageBase64,
-        chatHistory: chatHistory.sublist(
-            0, chatHistory.length - 1), // 排除剛加的用戶訊息（已在 userMessage）
+        chatHistory:
+            chatHistory.sublist(0, chatHistory.length - 1), // （ userMessage）.
       );
 
       if (!mounted) return;
@@ -3893,7 +3896,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     _hasChanges = false;
   }
 
-  /// 對已有照片執行 AI 分析
+  /// Photo AI analysis.
   Future<void> _runAiAnalysis() async {
     if (_currentPin.imageBase64 == null) return;
 
@@ -3957,7 +3960,7 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
   }
 }
 
-// ===== 拍照 + AI 分析對話框 Widget =====
+// ===== + AI analysis Widget =====.
 class _PhotoAnalysisDialog extends StatefulWidget {
   final InspectionPin pin;
   final ImagePicker imagePicker;
@@ -4012,11 +4015,11 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
   // 8. Remarks
   final _remarksController = TextEditingController();
 
-  // Chat 相關
+  // Chat.
   final List<ChatMessage> _chatMessages = [];
   final ScrollController _chatScrollController = ScrollController();
 
-  // YOLO 相關
+  // YOLO.
   List<YoloDetection> _yoloDetections = [];
   bool _isYoloDetecting = false;
   bool _yoloModelLoaded = false;
@@ -4025,7 +4028,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
   @override
   void initState() {
     super.initState();
-    // 預載入已有的照片資料
+    // Load photo.
     if (widget.pin.imageBase64 != null) {
       _imageBase64 = widget.pin.imageBase64;
       _imagePath = widget.pin.imagePath;
@@ -4070,7 +4073,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 標題
+            // Title.
             Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
@@ -4108,14 +4111,14 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
               ),
             ),
 
-            // 內容
+            // Content.
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // 照片區 (含 YOLO Bounding Box 覆蓋)
+                    // Photo ( YOLO Bounding Box ).
                     if (_imageBase64 != null)
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
@@ -4127,7 +4130,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                               width: double.infinity,
                               fit: BoxFit.contain,
                             ),
-                            // YOLO 偵測框覆蓋
+                            // YOLO.
                             if (_showBoundingBoxes &&
                                 _yoloDetections.isNotEmpty)
                               Positioned.fill(
@@ -4144,7 +4147,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                                   },
                                 ),
                               ),
-                            // 偵測結果計數標記
+                            // Result.
                             if (_yoloDetections.isNotEmpty)
                               Positioned(
                                 top: 8,
@@ -4201,7 +4204,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 
                     const SizedBox(height: 12),
 
-                    // 拍照/選圖按鈕
+                    // / button.
                     Row(
                       children: [
                         Expanded(
@@ -4228,7 +4231,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 
                     const SizedBox(height: 12),
 
-                    // YOLO 偵測按鈕 (僅在支援平台上顯示)
+                    // YOLO button ( platform show).
                     if (YoloService.isSupported && _photoTaken) ...[
                       Row(
                         children: [
@@ -4277,7 +4280,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                         ),
                     ],
 
-                    // YOLO 偵測進行中
+                    // YOLO.
                     if (_isYoloDetecting) ...[
                       const SizedBox(height: 12),
                       const Center(
@@ -4300,7 +4303,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                       ),
                     ],
 
-                    // YOLO 偵測結果摘要
+                    // YOLO result.
                     if (_yoloDetections.isNotEmpty && !_isYoloDetecting) ...[
                       const SizedBox(height: 8),
                       _buildYoloResultSummary(),
@@ -4314,7 +4317,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                       const SizedBox(height: 12),
                     ],
 
-                    // AI Chat 區域
+                    // AI Chat.
                     if (_chatMessages.isNotEmpty) ...[
                       Container(
                         constraints: const BoxConstraints(maxHeight: 150),
@@ -4371,7 +4374,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                       const SizedBox(height: 8),
                     ],
 
-                    // AI 分析中
+                    // AI analysis.
                     if (_isAnalyzing) ...[
                       const SizedBox(height: 16),
                       const Center(
@@ -4386,7 +4389,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                       ),
                     ],
 
-                    // AI 分析結果
+                    // AI analysisresult.
                     if (_analysisResult != null) ...[
                       const SizedBox(height: 16),
                       _buildAnalysisResultCard(),
@@ -4396,7 +4399,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
               ),
             ),
 
-            // 底部按鈕
+            // Button.
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -4749,7 +4752,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     try {
       XFile? image;
       if (source == ImageSource.camera) {
-        // 在桌面端用 file_picker 替代
+        // File_picker.
         if (!kIsWeb &&
             (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
           final result = await FilePicker.platform.pickFiles(
@@ -4795,7 +4798,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
           _imagePath = image!.path;
           _photoTaken = true;
           _analysisResult = null;
-          _yoloDetections = []; // 清除上次偵測結果
+          _yoloDetections = []; // Clear result.
         });
       }
     } catch (e) {
@@ -4903,7 +4906,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         _analysisResult = result;
         _isAnalyzing = false;
 
-        // 將 AI 分析結果加入聊天記錄
+        // AI analysisresult.
         final analysisText =
             result['analysis'] as String? ?? 'Analysis complete';
         final recs =
@@ -4941,7 +4944,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     });
   }
 
-  /// YOLO 物件偵測
+  /// YOLO.
   Future<void> _runYoloDetection() async {
     if (_imageBase64 == null) return;
 
@@ -4958,17 +4961,17 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 
       if (!mounted) return;
 
-      // 將 YOLO 結果也轉為安全分析格式
+      // YOLO result analysis.
       final safetyAnalysis = YoloService.toSafetyAnalysis(detections);
 
       setState(() {
         _yoloDetections = detections;
         _isYoloDetecting = false;
-        // 如果沒有 AI 分析結果，使用 YOLO 結果
+        // AI analysisresult， YOLO result.
         if (_analysisResult == null) {
           _analysisResult = safetyAnalysis;
         } else {
-          // 合併 YOLO 偵測資訊到現有分析結果
+          // YOLO analysisresult.
           _analysisResult = {
             ..._analysisResult!,
             'yolo_detections': safetyAnalysis['detections'],
@@ -4987,7 +4990,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
   }
 
   Widget _buildYoloResultSummary() {
-    // 按類別分組
+    // Translated legacy note.
     final classCount = <String, int>{};
     for (final det in _yoloDetections) {
       classCount[det.className] = (classCount[det.className] ?? 0) + 1;
@@ -5051,7 +5054,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
   void _saveAndClose() {
     var updatedPin = widget.pin;
 
-    // 建立一個新的 Defect 物件（若有拍照）
+    // Defect ( ).
     if (_imageBase64 != null) {
       final defect = Defect(
         id: const Uuid().v4(),
@@ -5118,7 +5121,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
         imagePath: _imagePath,
       );
 
-      // 同時更新 legacy 欄位以維持向下相容
+      // Update legacy.
       if (_analysisResult != null) {
         updatedPin = updatedPin.copyWith(
           aiResult: _analysisResult,
@@ -5219,7 +5222,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
   }
 }
 
-// ===== YOLO Bounding Box 繪製器 =====
+// ===== YOLO Bounding Box =====.
 class _YoloBoundingBoxPainter extends CustomPainter {
   final List<YoloDetection> detections;
   final Uint8List imageBytes;
@@ -5233,7 +5236,7 @@ class _YoloBoundingBoxPainter extends CustomPainter {
     required this.canvasHeight,
   });
 
-  // 為不同類別分配不同顏色
+  // Translated legacy note.
   static final List<Color> _colors = [
     Colors.red,
     Colors.green,
@@ -5275,14 +5278,14 @@ class _YoloBoundingBoxPainter extends CustomPainter {
 
       final rect = Rect.fromLTWH(left, top, boxWidth, boxHeight);
 
-      // 繪製 bounding box
+      // Bounding box.
       final boxPaint = Paint()
         ..color = color
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.0;
       canvas.drawRect(rect, boxPaint);
 
-      // 繪製標籤背景
+      // Current tag data.
       final label =
           '${det.className} ${(det.confidence * 100).toStringAsFixed(0)}%';
       final textPainter = TextPainter(
@@ -5322,7 +5325,7 @@ class _YoloBoundingBoxPainter extends CustomPainter {
   }
 }
 
-// ===== Android USB OTG 連接對話框 =====
+// ===== Android USB OTG connect =====.
 class _MobileUsbConnectDialog extends StatefulWidget {
   final UwbService uwbService;
   final int baudRate;
@@ -5592,7 +5595,7 @@ class _MobileUsbConnectDialogState extends State<_MobileUsbConnectDialog> {
   }
 }
 
-// ===== 巡檢畫布 Painter (擴展 UWB Canvas 增加 Pin 繪製) =====
+// ===== inspection Painter ( UWB Canvas Pin ) =====.
 class InspectionCanvasPainter extends CustomPainter {
   final List<UwbAnchor> anchors;
   final UwbTag? currentTag;
@@ -5621,17 +5624,17 @@ class InspectionCanvasPainter extends CustomPainter {
       return;
     }
 
-    // 計算座標範圍
+    // Coordinate.
     double minX = anchors.map((a) => a.x).reduce(min) - 1;
     double maxX = anchors.map((a) => a.x).reduce(max) + 1;
     double minY = anchors.map((a) => a.y).reduce(min) - 1;
     double maxY = anchors.map((a) => a.y).reduce(max) + 1;
 
-    // DEBUG: 輸出平面圖相關資訊
+    // DEBUG.
     debugPrint(
         '[InspectionCanvas] showFloorPlan=${config.showFloorPlan}, floorPlanImage=${floorPlanImage != null ? "${floorPlanImage!.width}x${floorPlanImage!.height}" : "null"}, xScale=${config.xScale}, yScale=${config.yScale}, xOffset=${config.xOffset}, yOffset=${config.yOffset}');
 
-    // 如果有平面圖，擴展視圖範圍以包含整個平面圖
+    // Translated legacy comment.
     if (config.showFloorPlan && floorPlanImage != null) {
       final img = floorPlanImage!;
       final realWidth = img.width.toDouble() / config.xScale;
@@ -5667,50 +5670,50 @@ class InspectionCanvasPainter extends CustomPainter {
       );
     }
 
-    // 繪製背景網格
+    // Translated legacy note.
     _drawGrid(canvas, size, minX, maxX, minY, maxY, scale, offsetX, offsetY,
         toCanvas);
 
-    // 繪製平面地圖
+    // Translated legacy note.
     if (config.showFloorPlan && floorPlanImage != null) {
       _drawFloorPlan(canvas, size, minX, minY, scale, offsetX, offsetY);
     }
 
-    // 繪製圍欄
+    // Fence.
     if (config.showFence && currentTag != null) {
       _drawFence(canvas, toCanvas, scale, currentTag!);
     }
 
-    // 繪製軌跡
+    // Trajectory.
     if (config.showTrajectory && trajectory.isNotEmpty) {
       _drawTrajectory(canvas, toCanvas);
     }
 
-    // 繪製基站
+    // Anchor list.
     for (var anchor in anchors) {
       _drawAnchor(canvas, toCanvas(anchor.x, anchor.y), anchor);
     }
 
-    // 繪製標籤
+    // Current tag data.
     if (currentTag != null) {
       _drawTag(canvas, toCanvas(currentTag!.x, currentTag!.y), currentTag!);
     }
 
-    // ---- 繪製巡檢 Pin ----
+    // Inspection Pin.
     for (int i = 0; i < pins.length; i++) {
       final pin = pins[i];
       final pos = toCanvas(pin.x, pin.y);
       _drawInspectionPin(canvas, pos, pin, i + 1, pin.id == selectedPinId);
     }
 
-    // 繪製座標軸標籤
+    // Coordinate tag.
     _drawAxisLabels(canvas, size, minX, maxX, minY, maxY, scale, offsetX,
         offsetY, toCanvas);
   }
 
   void _drawInspectionPin(Canvas canvas, Offset position, InspectionPin pin,
       int index, bool isSelected) {
-    // Pin 顏色
+    // Pin.
     Color pinColor;
     switch (pin.riskLevel) {
       case 'high':
@@ -5726,7 +5729,7 @@ class InspectionCanvasPainter extends CustomPainter {
         pinColor = pin.isAnalyzed ? Colors.blue : Colors.grey;
     }
 
-    // 選中時的光暈
+    // Translated legacy note.
     if (isSelected) {
       final glowPaint = Paint()
         ..color = pinColor.withValues(alpha: 0.3)
@@ -5734,7 +5737,7 @@ class InspectionCanvasPainter extends CustomPainter {
       canvas.drawCircle(position, 20, glowPaint);
     }
 
-    // Pin 圖釘形狀
+    // Pin.
     final pinPath = Path();
     pinPath.moveTo(position.dx, position.dy + 4);
     pinPath.lineTo(position.dx - 8, position.dy - 12);
@@ -5744,32 +5747,32 @@ class InspectionCanvasPainter extends CustomPainter {
         position.dx + 12, position.dy - 22, position.dx + 8, position.dy - 12);
     pinPath.close();
 
-    // 陰影
+    // Translated legacy note.
     final shadowPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.2)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
     canvas.drawPath(pinPath.shift(const Offset(2, 2)), shadowPaint);
 
-    // Pin 本體
+    // Pin.
     final pinPaint = Paint()
       ..color = pinColor
       ..style = PaintingStyle.fill;
     canvas.drawPath(pinPath, pinPaint);
 
-    // Pin 邊框
+    // Pin.
     final borderPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
     canvas.drawPath(pinPath, borderPaint);
 
-    // 內部圓圈 (白點)
+    // Translated legacy comment.
     final dotPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(position.dx, position.dy - 16), 5, dotPaint);
 
-    // Pin 序號
+    // Pin.
     final textPainter = TextPainter(
       text: TextSpan(
         text: '$index',
@@ -5788,11 +5791,11 @@ class InspectionCanvasPainter extends CustomPainter {
           position.dy - 16 - textPainter.height / 2),
     );
 
-    // 底部小點 (pin 著陸點)
+    // (pin ).
     canvas.drawCircle(position, 3, Paint()..color = pinColor);
   }
 
-  // ---- 以下方法與 UwbCanvasPainter 相同 ----
+  // UwbCanvasPainter.
 
   void _drawEmptyState(Canvas canvas, Size size) {
     final textPainter = TextPainter(

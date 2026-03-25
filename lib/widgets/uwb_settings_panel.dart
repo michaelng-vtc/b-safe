@@ -4,7 +4,7 @@ import 'package:bsafe_app/models/uwb_model.dart';
 import 'package:bsafe_app/services/uwb_service.dart';
 import 'package:bsafe_app/theme/app_theme.dart';
 
-/// UWB 设置面板 - 复制安信可 UWB TWR 应用的设置功能
+/// UWB settings - UWB TWR settings.
 class UwbSettingsPanel extends StatefulWidget {
   final UwbService uwbService;
   final VoidCallback? onClose;
@@ -23,7 +23,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // 控制器
+  // Translated legacy note.
   late TextEditingController _gridWidthController;
   late TextEditingController _gridHeightController;
   late TextEditingController _area1Controller;
@@ -103,7 +103,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 标题栏
+          // Title.
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: const BoxDecoration(
@@ -135,7 +135,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
             ),
           ),
 
-          // Tab 栏
+          // Tab.
           Container(
             color: Colors.grey.shade100,
             child: TabBar(
@@ -155,7 +155,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
             ),
           ),
 
-          // Tab 内容
+          // Tab content.
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -172,7 +172,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
     );
   }
 
-  // 功能设置 Tab
+  // Settings Tab.
   Widget _buildFunctionSettings() {
     final config = widget.uwbService.config;
 
@@ -181,7 +181,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 功能选择
+          // Translated legacy note.
           _buildSectionTitle('Feature Selection'),
           _buildCheckboxRow('Show Anchor List', config.showAnchorList, (v) {
             _updateConfig(config.copyWith(showAnchorList: v));
@@ -204,7 +204,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
 
           const SizedBox(height: 16),
 
-          // 区域围栏模式
+          // Fencemode.
           _buildSectionTitle('Geofence Mode'),
           _buildNumberInputRow('Zone 1 (m)', _area1Controller, (v) {
             _updateConfig(config.copyWith(areaRadius1: v));
@@ -240,7 +240,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
 
           const SizedBox(height: 16),
 
-          // 轨迹/导航模式
+          // Trajectory/ mode.
           _buildSectionTitle('Trajectory/Navigation Mode'),
           _buildDropdownRow('Positioning Mode', config.positioningMode, ['2D Positioning', '3D Positioning'],
               (v) {
@@ -253,7 +253,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
 
           const SizedBox(height: 16),
 
-          // 距离校正设置
+          // Distance settings.
           _buildSectionTitle('Distance Correction'),
           Container(
             padding: const EdgeInsets.all(8),
@@ -288,7 +288,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
 
           const SizedBox(height: 16),
 
-          // 距離索引映射設置
+          // Distance.
           _buildSectionTitle('Distance Index Mapping'),
           Container(
             padding: const EdgeInsets.all(8),
@@ -324,7 +324,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
             ),
           ),
           const SizedBox(height: 8),
-          // 快速交換按鈕
+          // Button.
           Wrap(
             spacing: 6,
             runSpacing: 6,
@@ -356,7 +356,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
     );
   }
 
-  // 平面图设置 Tab
+  // Settings Tab.
   Widget _buildMapSettings() {
     final config = widget.uwbService.config;
 
@@ -367,7 +367,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
         children: [
           _buildSectionTitle('Floor Plan'),
           
-          // 顯示當前載入的地圖
+          // Show load.
           if (config.floorPlanImagePath != null) ...[
             Container(
               padding: const EdgeInsets.all(8),
@@ -426,7 +426,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                 child: OutlinedButton.icon(
                   onPressed: config.floorPlanImagePath != null
                       ? () {
-                          // 保存配置到本地（未來可實現）
+                          // Saveconfig ( ).
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Configuration auto-saved')),
                           );
@@ -441,13 +441,13 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
           
           const SizedBox(height: 12),
           
-          // 顯示/隱藏平面圖
+          // Show/.
           _buildCheckboxRow('Show Floor Plan', config.showFloorPlan, (v) {
             widget.uwbService.toggleFloorPlan(v);
             setState(() {});
           }),
           
-          // 透明度調整
+          // Translated legacy note.
           if (config.floorPlanImagePath != null) ...[
             const SizedBox(height: 8),
             Row(
@@ -510,7 +510,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
           }),
           const SizedBox(height: 16),
           
-          // 當前檔案格式提示
+          // Hint.
           if (config.floorPlanImagePath != null) ...[
             const SizedBox(height: 8),
             Container(
@@ -529,7 +529,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
           
           const SizedBox(height: 16),
           
-          // 提示說明
+          // Hint.
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -580,19 +580,19 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
     );
   }
 
-  /// 選擇平面圖檔案（支援多種格式）
+  /// Translated legacy comment.
   Future<void> _pickFloorPlanImage() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: [
-          // 點陣圖格式
+          // Translated legacy note.
           'png', 'jpg', 'jpeg', 'bmp', 'gif', 'webp',
-          // 向量圖格式
+          // Translated legacy note.
           'svg',
-          // PDF 文件
+          // PDF.
           'pdf',
-          // CAD 工程圖（提示使用者轉檔）
+          // CAD (hint ).
           'dwg', 'dxf',
         ],
         allowMultiple: false,
@@ -616,7 +616,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
               break;
             case 'dwg':
             case 'dxf':
-              // DWG 的錯誤訊息已在 service 中處理
+              // DWG error service.
               return;
             default:
               formatName = '${ext.toUpperCase()} Image';
@@ -644,7 +644,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
     }
   }
 
-  // 网格设置 Tab
+  // Settings Tab.
   Widget _buildGridSettings() {
     final config = widget.uwbService.config;
 
@@ -695,7 +695,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
     );
   }
 
-  // 串口配置 Tab
+  // Serialconfig Tab.
   Widget _buildSerialSettings() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -704,7 +704,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
         children: [
           _buildSectionTitle('Serial Configuration'),
 
-          // 当前连接状态
+          // Connect.
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -747,7 +747,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
 
           const SizedBox(height: 16),
 
-          // 波特率选择
+          // Translated legacy note.
           _buildSectionTitle('Baud Rate'),
           DropdownButtonFormField<int>(
             initialValue: 115200,
@@ -763,19 +763,19 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
                     ))
                 .toList(),
             onChanged: (value) {
-              // TODO: 更新波特率
+              // TODO: update.
             },
           ),
 
           const SizedBox(height: 16),
 
-          // 操作按钮
+          // Button.
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // 搜索串口 - 会在主界面调用
+                    // Serial.
                     Navigator.pop(context, 'search_ports');
                   },
                   icon: const Icon(Icons.search, size: 18),
@@ -845,7 +845,7 @@ class _UwbSettingsPanelState extends State<UwbSettingsPanel>
     );
   }
 
-  // 辅助方法
+  // Translated legacy note.
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),

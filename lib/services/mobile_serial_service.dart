@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:usb_serial/usb_serial.dart';
 
-/// USB 設備資訊
+/// USB device information.
 class UsbDeviceInfo {
   final String deviceName;
   final int vid;
@@ -25,7 +25,7 @@ class UsbDeviceInfo {
     if (productName != null && productName!.isNotEmpty) {
       return '$productName ($deviceName)';
     }
-    // 常見芯片名稱對照
+    // Common chip name mapping.
     if (vid == 0x1A86 && pid == 0x7523) return 'CH340 ($deviceName)';
     if (vid == 0x10C4 && pid == 0xEA60) return 'CP2102 ($deviceName)';
     if (vid == 0x0403 && pid == 0x6001) return 'FTDI ($deviceName)';
@@ -38,8 +38,8 @@ class UsbDeviceInfo {
       'UsbDeviceInfo(name: $deviceName, vid: 0x${vid.toRadixString(16)}, pid: 0x${pid.toRadixString(16)})';
 }
 
-/// Android 手機 USB OTG 串口服務
-/// 用於透過 USB-C to USB-C 線連接安信可 UWB BU04 設備
+/// Android USB OTG serial service.
+/// Used to connect Aithinker UWB BU04 devices via USB-C cable.
 class MobileSerialService {
   static final MobileSerialService _instance = MobileSerialService._internal();
   factory MobileSerialService() => _instance;
@@ -49,27 +49,27 @@ class MobileSerialService {
   UsbDevice? _device;
   bool _isConnected = false;
 
-  // 字符串流 (向後兼容 DesktopSerialService 接口)
+  // Text stream (backward compatible with DesktopSerialService API).
   final StreamController<String> _dataController =
       StreamController<String>.broadcast();
   Stream<String> get dataStream => _dataController.stream;
 
-  // 原始字節流
+  // Raw byte stream.
   final StreamController<Uint8List> _rawDataController =
       StreamController<Uint8List>.broadcast();
   Stream<Uint8List> get rawDataStream => _rawDataController.stream;
 
-  // USB 設備連接/斷開事件
+  // USB attach/detach events.
   StreamSubscription? _usbEventSubscription;
 
-  // 連接狀態回調
+  // Connection state callbacks.
   VoidCallback? onDeviceConnected;
   VoidCallback? onDeviceDisconnected;
 
   bool get isConnected => _isConnected;
   String? get connectedDeviceName => _device?.deviceName;
 
-  /// 獲取所有已連接的 USB 串口設備
+  /// Get all connected USB serial devices.
   Future<List<UsbDeviceInfo>> getAvailableDevices() async {
     try {
       final devices = await UsbSerial.listDevices();
@@ -93,16 +93,16 @@ class MobileSerialService {
     }
   }
 
-  /// 獲取可用設備名稱列表 (兼容 DesktopSerialService.getAvailablePorts)
+  /// Get available device names (compatible with DesktopSerialService.getAvailablePorts).
   Future<List<String>> getAvailablePorts() async {
     final devices = await getAvailableDevices();
     return devices.map((d) => d.displayName).toList();
   }
 
-  /// 連接到指定的 USB 設備
+  /// Connect to a specified USB device.
   Future<bool> connect(UsbDevice device, {int baudRate = 115200}) async {
     try {
-      // 先斷開現有連接
+      // Disconnect any existing connection first.
       if (_isConnected) {
         await disconnect();
       }
@@ -122,7 +122,7 @@ class MobileSerialService {
         return false;
       }
 
-      // 設置串口參數
+      // Configure serial port parameters.
       await _port!.setDTR(true);
       await _port!.setRTS(true);
       _port!.setPortParameters(
@@ -135,11 +135,10 @@ class MobileSerialService {
       _device = device;
       _isConnected = true;
 
-      // 開始讀取數據
+      // Start reading data.
       _startReading();
 
-      debugPrint(
-          '[USB] Connected: ${device.deviceName} (baud: $baudRate)');
+      debugPrint('[USB] Connected: ${device.deviceName} (baud: $baudRate)');
       return true;
     } catch (e) {
       debugPrint('[USB] Connection failed: $e');
@@ -149,7 +148,7 @@ class MobileSerialService {
     }
   }
 
-  /// 自動連接第一個可用的 USB 串口設備
+  /// Auto-connect to the first available USB serial device.
   Future<bool> autoConnect({int baudRate = 115200}) async {
     final devices = await getAvailableDevices();
 
@@ -160,7 +159,7 @@ class MobileSerialService {
 
     debugPrint('[USB] Found ${devices.length} device(s), trying first');
 
-    // 優先連接 CH340/CP210x（BU04 常用芯片）
+    // Prefer CH340/CP210x devices (common BU04 chipsets).
     UsbDeviceInfo? preferredDevice;
     for (final d in devices) {
       if (d.vid == 0x1A86 || d.vid == 0x10C4) {
@@ -173,14 +172,14 @@ class MobileSerialService {
     return connect(targetDevice.rawDevice, baudRate: baudRate);
   }
 
-  /// 連接到指定索引的設備
+  /// Connect to the device at the specified index.
   Future<bool> connectByIndex(int index, {int baudRate = 115200}) async {
     final devices = await getAvailableDevices();
     if (index < 0 || index >= devices.length) return false;
     return connect(devices[index].rawDevice, baudRate: baudRate);
   }
 
-  /// 斷開連接
+  /// Disconnect.
   Future<void> disconnect() async {
     _isConnected = false;
 
@@ -194,10 +193,10 @@ class MobileSerialService {
     }
   }
 
-  // 記錄收到的原始字節數 (用於調試)
+  // Track received raw byte count (for debugging).
   int _totalBytesReceived = 0;
 
-  /// 開始讀取串口數據
+  /// Start reading serial data.
   void _startReading() {
     if (_port == null || !_isConnected) return;
 
@@ -214,13 +213,13 @@ class MobileSerialService {
                   '[USB] Received $_totalBytesReceived bytes, current chunk: ${data.length} bytes');
             }
 
-            // 添加新數據到緩衝區
+            // Append incoming data to the buffer.
             byteBuffer.addAll(data);
 
-            // 發送原始數據流
+            // Emit raw data stream.
             _rawDataController.add(data);
 
-            // BU04 TWR 數據格式: "CmdM:4[" + 91 bytes data + "]"
+            // BU04 TWR packet format: "CmdM:4[" + 91 bytes data + "]".
             while (byteBuffer.length >= 100) {
               final firstCmdM = _findCmdMStart(byteBuffer);
               if (firstCmdM < 0) {
@@ -257,7 +256,7 @@ class MobileSerialService {
               }
             }
 
-            // 防止緩衝區過大
+            // Prevent the buffer from growing too large.
             if (byteBuffer.length > 500) {
               byteBuffer = byteBuffer.sublist(byteBuffer.length - 200);
             }
@@ -283,7 +282,7 @@ class MobileSerialService {
     }
   }
 
-  /// 在緩衝區中查找 CmdM 數據包的開始位置
+  /// Find the start index of a CmdM packet in the buffer.
   int _findCmdMStart(List<int> buffer) {
     for (int i = 0; i < buffer.length - 7; i++) {
       if (buffer[i] == 0x43 &&
@@ -296,7 +295,7 @@ class MobileSerialService {
     return -1;
   }
 
-  /// 發送數據到串口
+  /// Send data to the serial port.
   Future<bool> write(String data) async {
     if (_port == null || !_isConnected) {
       debugPrint('[USB] Serial port not connected');
@@ -313,12 +312,12 @@ class MobileSerialService {
     }
   }
 
-  /// 監聽 USB 設備插拔事件
+  /// Listen for USB attach/detach events.
   void startUsbEventListening() {
     _usbEventSubscription?.cancel();
-    _usbEventSubscription =
-        UsbSerial.usbEventStream?.listen((UsbEvent event) {
-      debugPrint('[USB] Event: ${event.event}, Device: ${event.device?.deviceName}');
+    _usbEventSubscription = UsbSerial.usbEventStream?.listen((UsbEvent event) {
+      debugPrint(
+          '[USB] Event: ${event.event}, Device: ${event.device?.deviceName}');
       if (event.event == UsbEvent.ACTION_USB_ATTACHED) {
         onDeviceConnected?.call();
       } else if (event.event == UsbEvent.ACTION_USB_DETACHED) {
@@ -333,13 +332,13 @@ class MobileSerialService {
     });
   }
 
-  /// 停止監聽 USB 設備事件
+  /// Stop listening for USB events.
   void stopUsbEventListening() {
     _usbEventSubscription?.cancel();
     _usbEventSubscription = null;
   }
 
-  /// 清理資源
+  /// Dispose resources.
   void dispose() {
     disconnect();
     stopUsbEventListening();

@@ -4,7 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ConnectivityProvider extends ChangeNotifier {
   bool _isOnline = true;
-  bool _manualOfflineMode = false; // 手動離線模式
+  bool _manualOfflineMode = false; // Mode.
   late StreamSubscription<ConnectivityResult> _subscription;
 
   bool get isOnline => _manualOfflineMode ? false : _isOnline;
@@ -36,13 +36,13 @@ class ConnectivityProvider extends ChangeNotifier {
     }
   }
 
-  // 切換手動離線模式
+  // Count occurrences of detected offset patterns.
   void toggleManualOfflineMode() {
     _manualOfflineMode = !_manualOfflineMode;
     notifyListeners();
   }
 
-  // 設置手動離線模式
+  // Count occurrences of detected offset patterns.
   void setManualOfflineMode(bool offline) {
     _manualOfflineMode = offline;
     notifyListeners();

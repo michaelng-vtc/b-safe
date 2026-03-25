@@ -3,7 +3,7 @@ import 'package:bsafe_app/models/uwb_model.dart';
 import 'package:bsafe_app/services/uwb_service.dart';
 import 'package:bsafe_app/theme/app_theme.dart';
 
-/// 基站列表组件 - 复制安信可应用的基站表格
+/// Anchor - anchor.
 class AnchorListTable extends StatefulWidget {
   final List<UwbAnchor> anchors;
   final Function(int, UwbAnchor)? onAnchorChanged;
@@ -89,7 +89,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 表头
+          // Translated legacy note.
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
@@ -108,7 +108,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
             ),
           ),
           const Divider(height: 1),
-          // 数据行
+          // Simulation timer.
           ...widget.anchors.asMap().entries.map((entry) {
             final index = entry.key;
             final anchor = entry.value;
@@ -146,7 +146,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
       ),
       child: Row(
         children: [
-          // 复选框 + ID
+          // + ID.
           Expanded(
             flex: 2,
             child: Row(
@@ -344,7 +344,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
     );
   }
 
-  // 显示重命名对话框
+  // Showrename.
   void _showRenameDialog(BuildContext context, int index, UwbAnchor anchor) {
     final controller = TextEditingController(text: anchor.id);
 
@@ -382,7 +382,7 @@ class _AnchorListTableState extends State<AnchorListTable> {
   }
 }
 
-/// 标签列表组件 - 复制安信可应用的标签表格
+/// Tag - tag.
 class TagListTable extends StatelessWidget {
   final UwbTag? currentTag;
   final List<UwbAnchor> anchors;
@@ -404,7 +404,7 @@ class TagListTable extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 基站辨識提示
+          // Anchor hint.
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(8),
@@ -440,7 +440,7 @@ class TagListTable extends StatelessWidget {
               ],
             ),
           ),
-          // 表头
+          // Translated legacy note.
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             decoration: BoxDecoration(
@@ -455,7 +455,7 @@ class TagListTable extends StatelessWidget {
                   _buildHeaderCell('Y-axis\n(m)', width: 50),
                   _buildHeaderCell('Z-axis\n(m)', width: 50),
                   _buildHeaderCell('R95\n(m)', width: 50),
-                  // 基站距离列 - 顯示 D0, D1, D2, D3
+                  // Anchordistance - show D0, D1, D2, D3.
                   for (int i = 0; i < anchors.length && i < 8; i++)
                     _buildHeaderCell('D$i\nDist(m)', width: 60),
                 ],
@@ -463,7 +463,7 @@ class TagListTable extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
-          // 数据行
+          // Simulation timer.
           if (currentTag != null) _buildTagRow(currentTag!),
           if (currentTag == null)
             const Padding(
@@ -496,7 +496,7 @@ class TagListTable extends StatelessWidget {
   }
 
   Widget _buildTagRow(UwbTag tag) {
-    // 找出最小距離的基站索引
+    // Distance anchor.
     int? minDistanceIndex;
     double minDistance = double.infinity;
     for (int i = 0; i < anchors.length && i < 8; i++) {
@@ -513,7 +513,7 @@ class TagListTable extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            // 复选框 + ID
+            // + ID.
             SizedBox(
               width: 60,
               child: Row(
@@ -578,7 +578,7 @@ class TagListTable extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ),
-            // 基站距离 - 高亮顯示最小距離
+            // Anchordistance - show distance.
             for (int i = 0; i < anchors.length && i < 8; i++)
               Container(
                 width: 60,
@@ -608,7 +608,7 @@ class TagListTable extends StatelessWidget {
   }
 }
 
-/// 完整的数据面板 - 包含基站和标签表格
+/// Data - anchor tag.
 class UwbDataPanel extends StatefulWidget {
   final UwbService uwbService;
 
@@ -624,7 +624,7 @@ class UwbDataPanel extends StatefulWidget {
 class _UwbDataPanelState extends State<UwbDataPanel> {
   UwbService get uwbService => widget.uwbService;
 
-  // 显示新增基站对话框
+  // Show anchor.
   void _showAddAnchorDialog(BuildContext context) {
     final idController =
         TextEditingController(text: 'Anchor${uwbService.anchors.length}');
@@ -732,11 +732,11 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // 基站表格
+        // Anchor list.
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 基站列表
+            // Anchor list.
             Expanded(
               flex: 3,
               child: Column(
@@ -754,7 +754,7 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
                           ),
                         ),
                         const Spacer(),
-                        // 新增基站按钮
+                        // Anchorbutton.
                         SizedBox(
                           height: 28,
                           child: ElevatedButton.icon(
@@ -790,7 +790,7 @@ class _UwbDataPanelState extends State<UwbDataPanel> {
               ),
             ),
             const SizedBox(width: 16),
-            // 标签列表和原始数据
+            // Tag data.
             Expanded(
               flex: 5,
               child: Column(

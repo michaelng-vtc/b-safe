@@ -10,6 +10,7 @@ import 'package:bsafe_app/widgets/uwb_settings_panel.dart';
 import 'package:bsafe_app/widgets/uwb_data_tables.dart';
 import 'package:bsafe_app/theme/app_theme.dart';
 
+/// UWB location dashboard with map and data tabs.
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
 
@@ -22,13 +23,13 @@ class _LocationScreenState extends State<LocationScreen>
   late UwbService _uwbService;
   late TabController _tabController;
   bool _showSettings = false;
-  bool _showFullSettings = false; // 显示完整设置面板
+  bool _showFullSettings = false; // Show full settings panel.
 
   @override
   void initState() {
     super.initState();
     _uwbService = UwbService();
-    _uwbService.loadAnchorsFromStorage(); // 从存储加载基站配置
+    _uwbService.loadAnchorsFromStorage(); // Load persisted anchor config.
     _tabController = TabController(length: 2, vsync: this);
   }
 
@@ -91,12 +92,12 @@ class _LocationScreenState extends State<LocationScreen>
                 ],
               ),
 
-              // 错误提示 (只在有错误时显示)
+              // Errorhint ( error show).
               Consumer<UwbService>(
                 builder: (context, uwbService, _) {
                   if (uwbService.lastError == null) return const SizedBox();
 
-                  // 3秒后自动清除错误
+                  // Auto-clear error after 3 seconds.
                   Future.delayed(const Duration(seconds: 3), () {
                     if (mounted) {
                       uwbService.clearError();
@@ -221,7 +222,7 @@ class _LocationScreenState extends State<LocationScreen>
                                 fontSize: 14,
                               ),
                             ),
-                            // 數據接收指示燈
+                            // Simulation timer.
                             if (uwbService.isConnected &&
                                 uwbService.lastDataTime != null)
                               Padding(
@@ -249,7 +250,7 @@ class _LocationScreenState extends State<LocationScreen>
                 ],
               ),
               const SizedBox(height: 12),
-              // 连接按钮行
+              // Connectbutton.
               Row(
                 children: [
                   Expanded(
@@ -362,14 +363,14 @@ class _LocationScreenState extends State<LocationScreen>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 主要内容区域
+              // Content.
               Expanded(
                 child: Column(
                   children: [
-                    // 工具栏
+                    // Translated legacy note.
                     Row(
                       children: [
-                        // 显示设置按钮
+                        // Showsettingsbutton.
                         IconButton(
                           onPressed: () {
                             setState(() {
@@ -384,7 +385,7 @@ class _LocationScreenState extends State<LocationScreen>
                           ),
                           tooltip: 'Quick Settings',
                         ),
-                        // 完整设置面板按钮
+                        // Settings button.
                         IconButton(
                           onPressed: () {
                             setState(() {
@@ -400,7 +401,7 @@ class _LocationScreenState extends State<LocationScreen>
                           ),
                           tooltip: 'Full Settings',
                         ),
-                        // 清除轨迹
+                        // Cleartrajectory.
                         IconButton(
                           onPressed: () {
                             uwbService.clearTrajectory();
@@ -410,7 +411,7 @@ class _LocationScreenState extends State<LocationScreen>
                           tooltip: 'Clear Trajectory',
                         ),
                         const Spacer(),
-                        // 基站数量
+                        // Anchor list.
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
@@ -438,12 +439,12 @@ class _LocationScreenState extends State<LocationScreen>
                       ],
                     ),
 
-                    // 设置面板 (快捷)
+                    // Settings ( ).
                     if (_showSettings) _buildSettingsPanel(uwbService),
 
                     const SizedBox(height: 8),
 
-                    // 定位画布
+                    // Translated legacy note.
                     Expanded(
                       child: UwbPositionCanvas(
                         anchors: uwbService.anchors,
@@ -458,7 +459,7 @@ class _LocationScreenState extends State<LocationScreen>
                 ),
               ),
 
-              // 完整设置面板 (右侧)
+              // Settings ( ).
               if (_showFullSettings) ...[
                 const SizedBox(width: 16),
                 UwbSettingsPanel(
@@ -532,7 +533,7 @@ class _LocationScreenState extends State<LocationScreen>
             ],
           ),
           const SizedBox(height: 12),
-          // 围栏半径设置
+          // Fence settings.
           if (uwbService.config.showFence) ...[
             Row(
               children: [
@@ -569,7 +570,7 @@ class _LocationScreenState extends State<LocationScreen>
             ),
           ],
 
-          // 平面圖透明度（只在已載入平面圖時顯示）
+          // ( load show).
           if (uwbService.floorPlanImage != null) ...[
             const SizedBox(height: 12),
             Container(
@@ -719,12 +720,12 @@ class _LocationScreenState extends State<LocationScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 数据表格区域（类似安信可应用）
+              // Data ( ).
               UwbDataPanel(uwbService: uwbService),
 
               const SizedBox(height: 24),
 
-              // 标签数据卡片
+              // Tagdata.
               _buildInfoCard(
                 title: 'Tag Data',
                 icon: Icons.person_pin_circle,
@@ -756,7 +757,7 @@ class _LocationScreenState extends State<LocationScreen>
               ),
               const SizedBox(height: 16),
 
-              // 距离数据卡片
+              // Distancedata.
               _buildInfoCard(
                 title: 'Anchor Distances',
                 icon: Icons.radar,
@@ -789,13 +790,13 @@ class _LocationScreenState extends State<LocationScreen>
               ),
               const SizedBox(height: 16),
 
-              // 基站配置卡片
+              // Anchorconfig.
               _buildInfoCard(
                 title: 'Anchor Configuration',
                 icon: Icons.settings_input_antenna,
                 child: Column(
                   children: [
-                    // 基站列表
+                    // Anchor list.
                     ...uwbService.anchors.asMap().entries.map((entry) {
                       final index = entry.key;
                       final anchor = entry.value;
@@ -812,7 +813,7 @@ class _LocationScreenState extends State<LocationScreen>
               ),
               const SizedBox(height: 16),
 
-              // 操作卡片
+              // Translated legacy note.
               _buildInfoCard(
                 title: 'Actions',
                 icon: Icons.tune,
@@ -847,7 +848,7 @@ class _LocationScreenState extends State<LocationScreen>
               ),
               const SizedBox(height: 16),
 
-              // 提示信息
+              // Hint.
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1090,7 +1091,7 @@ class _LocationScreenState extends State<LocationScreen>
     );
   }
 
-  // 显示连接对话框
+  // Showconnect.
   void _showConnectDialog(BuildContext context, UwbService uwbService) {
     showModalBottomSheet(
       context: context,
@@ -1106,7 +1107,7 @@ class _LocationScreenState extends State<LocationScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 标题
+            // Title.
             Row(
               children: [
                 const Icon(Icons.usb, color: AppTheme.primaryColor),
@@ -1128,7 +1129,7 @@ class _LocationScreenState extends State<LocationScreen>
             const Divider(),
             const SizedBox(height: 8),
 
-            // 连接选项
+            // Connect.
             _buildConnectOption(
               icon: Icons.wifi_tethering,
               title: 'Auto Connect BU04',
@@ -1166,7 +1167,7 @@ class _LocationScreenState extends State<LocationScreen>
 
             const SizedBox(height: 20),
 
-            // 提示
+            // Hint.
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1254,9 +1255,9 @@ class _LocationScreenState extends State<LocationScreen>
     );
   }
 
-  // 串口连接对话框 - 显示可选择的串口列表
+  // Serialconnect - show serial.
   void _showSerialConnectDialog(BuildContext context, UwbService uwbService) {
-    // 检查平台
+    // Platform.
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1268,7 +1269,7 @@ class _LocationScreenState extends State<LocationScreen>
       return;
     }
 
-    // 获取可用串口列表
+    // Serial.
     List<String> ports = [];
     if (!kIsWeb &&
         (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
@@ -1309,7 +1310,7 @@ class _LocationScreenState extends State<LocationScreen>
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                // 重新检测
+                // Translated legacy note.
                 _showSerialConnectDialog(context, uwbService);
               },
               child: const Text('Rescan'),
@@ -1320,7 +1321,7 @@ class _LocationScreenState extends State<LocationScreen>
       return;
     }
 
-    // 显示串口选择对话框
+    // Showserial.
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1335,7 +1336,7 @@ class _LocationScreenState extends State<LocationScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 标题
+            // Title.
             Row(
               children: [
                 const Icon(Icons.usb, color: AppTheme.primaryColor),
@@ -1348,7 +1349,7 @@ class _LocationScreenState extends State<LocationScreen>
                   ),
                 ),
                 const Spacer(),
-                // 刷新按钮
+                // Button.
                 IconButton(
                   onPressed: () {
                     Navigator.pop(context);
@@ -1365,7 +1366,7 @@ class _LocationScreenState extends State<LocationScreen>
             ),
             const Divider(),
 
-            // 串口数量提示
+            // Serial hint.
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
@@ -1377,7 +1378,7 @@ class _LocationScreenState extends State<LocationScreen>
               ),
             ),
 
-            // 串口列表
+            // Serial.
             ...ports.map((port) => _buildPortItem(
                   context,
                   port: port,
@@ -1386,7 +1387,7 @@ class _LocationScreenState extends State<LocationScreen>
 
             const SizedBox(height: 16),
 
-            // 提示
+            // Hint.
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1417,17 +1418,17 @@ class _LocationScreenState extends State<LocationScreen>
     );
   }
 
-  // 构建串口选项
+  // Serial.
   Widget _buildPortItem(
     BuildContext context, {
     required String port,
     required UwbService uwbService,
   }) {
-    // 解析端口信息
+    // Translated legacy note.
     final String portName = port;
     String portDescription = 'Serial Device';
 
-    // 尝试识别常见设备
+    // Device.
     if (port.contains('COM')) {
       portDescription = 'Windows Serial Port';
     } else if (port.contains('ttyUSB')) {
@@ -1499,13 +1500,13 @@ class _LocationScreenState extends State<LocationScreen>
     );
   }
 
-  // 连接到指定串口
+  // Connect serial.
   Future<void> _connectToPort(
     BuildContext context,
     UwbService uwbService,
     String portName,
   ) async {
-    // 显示连接中对话框
+    // Showconnect.
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1533,10 +1534,10 @@ class _LocationScreenState extends State<LocationScreen>
       ),
     );
 
-    // 尝试连接指定端口
+    // Connect.
     final success = await uwbService.connectToPort(portName);
 
-    // 关闭对话框
+    // Translated legacy note.
     if (context.mounted) Navigator.pop(context);
 
     if (success) {
@@ -1561,7 +1562,7 @@ class _LocationScreenState extends State<LocationScreen>
     }
   }
 
-  // 手动输入对话框
+  // Translated legacy note.
   void _showManualInputDialog(BuildContext context, UwbService uwbService) {
     final xController = TextEditingController(text: '4.533');
     final yController = TextEditingController(text: '1.868');
@@ -1647,11 +1648,11 @@ class _LocationScreenState extends State<LocationScreen>
               final z = double.tryParse(zController.text) ?? 0.0;
 
               if (x != null && y != null) {
-                // 使用手动输入的坐标
+                // Coordinate.
                 final dataStr = '$x,$y,$z';
                 uwbService.processSerialData(dataStr);
 
-                // 标记为已连接（手动模式）
+                // Connect( mode).
                 if (!uwbService.isConnected) {
                   uwbService.connect(simulate: false);
                   uwbService.stopSimulation();

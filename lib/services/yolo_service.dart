@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 // Conditional import: ultralytics_yolo only works on Android/iOS
 import 'package:ultralytics_yolo/yolo.dart';
 
-/// YOLO 物件偵測結果
+/// YOLO result.
 class YoloDetection {
   final String className;
   final double confidence;
@@ -22,7 +22,7 @@ class YoloDetection {
     required this.height,
   });
 
-  /// 建構 bounding box 在實際圖片上的座標 (pixel values)
+  /// Bounding box image coordinate (pixel values).
   Map<String, double> toPixelBox(double imgWidth, double imgHeight) {
     return {
       'left': (x - width / 2) * imgWidth,
@@ -44,7 +44,7 @@ class YoloDetection {
       };
 }
 
-/// YOLO 偵測服務 - 包裝 ultralytics_yolo 套件
+/// YOLO - ultralytics_yolo.
 class YoloService {
   static YoloService? _instance;
   YOLO? _yolo;
@@ -58,7 +58,7 @@ class YoloService {
     return _instance!;
   }
 
-  /// 檢查平台是否支援 YOLO (目前僅 Android/iOS)
+  /// Platform YOLO ( Android/iOS).
   static bool get isSupported {
     if (kIsWeb) return false;
     return Platform.isAndroid || Platform.isIOS;
@@ -67,7 +67,7 @@ class YoloService {
   bool get isLoaded => _isLoaded;
   bool get isLoading => _isLoading;
 
-  /// 初始化 YOLO 模型
+  /// Initialize YOLO.
   Future<bool> loadModel({String modelPath = 'yolo11n'}) async {
     if (!isSupported) {
       debugPrint('YOLO: Platform not supported (Android/iOS only)');
@@ -80,7 +80,7 @@ class YoloService {
     _isLoading = true;
 
     try {
-      // Android 用 .tflite，iOS 用模型名稱
+      // Android .tflite，iOS.
       final path = Platform.isAndroid ? '$modelPath.tflite' : modelPath;
 
       _yolo = YOLO(
@@ -102,11 +102,11 @@ class YoloService {
     }
   }
 
-  /// 對圖片執行物件偵測
+  /// Floor plan image cache.
   Future<List<YoloDetection>> detect(Uint8List imageBytes,
       {double confidenceThreshold = 0.25}) async {
     if (!_isLoaded || _yolo == null) {
-      // 嘗試自動載入
+      // Autoload.
       final loaded = await loadModel();
       if (!loaded) return [];
     }
@@ -141,7 +141,7 @@ class YoloService {
     }
   }
 
-  /// 將偵測結果轉換為建築安全風險分析
+  /// Result riskanalysis.
   static Map<String, dynamic> toSafetyAnalysis(List<YoloDetection> detections) {
     if (detections.isEmpty) {
       return {
@@ -154,20 +154,20 @@ class YoloService {
       };
     }
 
-    // 分類偵測物件為安全相關類別
+    // Translated legacy note.
     final safetyHazards = <String>[];
     final structuralItems = <String>[];
     final normalItems = <String>[];
 
-    // COCO dataset 中與建築安全相關的類別
+    // COCO dataset.
     const hazardClasses = {
-      'fire hydrant', 'stop sign', 'traffic light', // 消防/安全設備
-      'scissors', 'knife', // 尖銳物品
+      'fire hydrant', 'stop sign', 'traffic light', // / device.
+      'scissors', 'knife', // Translated note.
     };
     const structuralClasses = {
-      'chair', 'couch', 'bed', 'dining table', 'toilet', 'sink', // 家具
-      'tv', 'laptop', 'microwave', 'oven', 'refrigerator', // 電器
-      'door', 'window', // 建築結構
+      'chair', 'couch', 'bed', 'dining table', 'toilet', 'sink', // Translated note.
+      'tv', 'laptop', 'microwave', 'oven', 'refrigerator', // Translated note.
+      'door', 'window', // Translated note.
     };
     const personClasses = {'person'};
 
@@ -186,15 +186,15 @@ class YoloService {
       }
     }
 
-    // 計算風險分數
-    int riskScore = 10; // 基礎分
+    // Risk.
+    int riskScore = 10; // Translated note.
     String riskLevel = 'low';
 
     if (safetyHazards.isNotEmpty) {
       riskScore += safetyHazards.length * 20;
     }
     if (personCount > 3) {
-      riskScore += 15; // 人員密集
+      riskScore += 15; // Translated note.
     }
     riskScore = riskScore.clamp(0, 100);
 
@@ -204,7 +204,7 @@ class YoloService {
       riskLevel = 'medium';
     }
 
-    // 組合分析說明
+    // Analysis.
     final analysisLines = <String>[];
     analysisLines.add('YOLO detected ${detections.length} object(s):');
     if (personCount > 0) {
@@ -220,7 +220,7 @@ class YoloService {
       analysisLines.add('- Other objects: ${normalItems.join(', ')}');
     }
 
-    // 建議
+    // Recommendation.
     final recommendations = <String>[];
     if (safetyHazards.isNotEmpty) {
       recommendations.add('Safety-related objects detected. Verify fire equipment status.');
@@ -246,7 +246,7 @@ class YoloService {
     };
   }
 
-  /// 釋放模型資源
+  /// Translated legacy note.
   Future<void> dispose() async {
     try {
       await _yolo?.dispose();

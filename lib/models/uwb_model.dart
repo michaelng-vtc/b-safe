@@ -1,13 +1,13 @@
-/// UWB定位系统数据模型
-/// 基于安信可UWB TWR系统
+/// UWB positioning system data models.
+/// Based on the Aithinker UWB TWR system.
 library;
 
-/// 基站数据模型
+/// Anchor data model.
 class UwbAnchor {
   final String id;
-  final double x; // X坐标 (米)
-  final double y; // Y坐标 (米)
-  final double z; // Z坐标/高度 (米)
+  final double x; // X coordinate (meters)
+  final double y; // Y coordinate (meters)
+  final double z; // Z coordinate / height (meters)
   final bool isActive;
 
   UwbAnchor({
@@ -42,14 +42,14 @@ class UwbAnchor {
   String toString() => 'Anchor($id: $x, $y, $z)';
 }
 
-/// 标签数据模型 (追踪目标)
+/// Tag data model (tracking target).
 class UwbTag {
   final String id;
-  final double x; // X坐标 (米)
-  final double y; // Y坐标 (米)
-  final double z; // Z坐标 (米)
-  final double r95; // 定位精度
-  final Map<String, double> anchorDistances; // 到各基站的距离
+  final double x; // X coordinate (meters)
+  final double y; // Y coordinate (meters)
+  final double z; // Z coordinate (meters)
+  final double r95; // Positioning accuracy
+  final Map<String, double> anchorDistances; // Distance to each anchor
   final DateTime timestamp;
 
   UwbTag({
@@ -99,36 +99,38 @@ class UwbTag {
   String toString() => 'Tag($id: $x, $y, $z)';
 }
 
-/// UWB系统配置
+/// UWB system configuration.
 class UwbConfig {
-  final String positioningMode; // 二维定位 / 三维定位
-  final String algorithm; // 卡尔曼/平均算法
-  final double areaRadius1; // 区域1半径 (米)
-  final double areaRadius2; // 区域2半径 (米)
-  final bool showTrajectory; // 显示轨迹
-  final bool showHistoryTrajectory; // 显示历史轨迹
-  final bool showFence; // 显示围栏
-  final bool innerFenceAlarm; // 内围报警 (true) / 外围报警 (false)
-  final double correctionA; // 距离校正系数a
-  final double correctionB; // 距离校正系数b
-  final double gridWidth; // 网格宽度 (米)
-  final double gridHeight; // 网格高度 (米)
-  final bool showGrid; // 显示网格
-  final bool showAnchorList; // 显示基站列表
-  final bool showTagList; // 显示标签列表
-  final bool autoGetAnchorCoords; // 自动获取基站坐标
-  final double xOffset; // X偏移 (像素)
-  final double yOffset; // Y偏移 (像素)
-  final double xScale; // X比例 (像素/米)
-  final double yScale; // Y比例 (像素/米)
-  final bool flipX; // 翻转X
-  final bool flipY; // 翻转Y
-  final bool showOrigin; // 显示原点
-  final String? floorPlanImagePath; // 平面地圖圖片路徑
-  final bool showFloorPlan; // 是否顯示平面地圖
-  final double floorPlanOpacity; // 平面地圖透明度
-  final String floorPlanFileType; // 平面地圖檔案類型 (image/svg/pdf/dwg)
-  final List<int> distanceIndexMap; // 距離索引映射 [0,1,2,3] = 預設, 可調整數據D0~D3對應哪個基站
+  final String positioningMode; // 2D positioning / 3D positioning
+  final String algorithm; // Kalman / averaging algorithm
+  final double areaRadius1; // Area 1 radius (meters)
+  final double areaRadius2; // Area 2 radius (meters)
+  final bool showTrajectory; // Show trajectory
+  final bool showHistoryTrajectory; // Show trajectory history
+  final bool showFence; // Show fence
+  final bool
+      innerFenceAlarm; // Inner-fence alarm (true) / outer-fence alarm (false)
+  final double correctionA; // Distance correction coefficient a
+  final double correctionB; // Distance correction coefficient b
+  final double gridWidth; // Grid width (meters)
+  final double gridHeight; // Grid height (meters)
+  final bool showGrid; // Show grid
+  final bool showAnchorList; // Show anchor list
+  final bool showTagList; // Show tag list
+  final bool autoGetAnchorCoords; // Auto-detect anchor coordinates
+  final double xOffset; // X offset (pixels)
+  final double yOffset; // Y offset (pixels)
+  final double xScale; // X scale (pixels per meter)
+  final double yScale; // Y scale (pixels per meter)
+  final bool flipX; // Flip X
+  final bool flipY; // Flip Y
+  final bool showOrigin; // Show origin
+  final String? floorPlanImagePath; // Floor plan image path
+  final bool showFloorPlan; // Show floor plan
+  final double floorPlanOpacity; // Floor plan opacity
+  final String floorPlanFileType; // Floor plan file type (image/svg/pdf/dwg)
+  final List<int>
+      distanceIndexMap; // Distance index mapping for D0~D3 to anchors
 
   UwbConfig({
     this.positioningMode = '2D Positioning',
@@ -225,7 +227,7 @@ class UwbConfig {
   }
 }
 
-/// 轨迹点
+/// Trajectory point.
 class TrajectoryPoint {
   final double x;
   final double y;

@@ -23,10 +23,10 @@ class _ReportScreenState extends State<ReportScreen> {
   bool _isAnalyzing = false;
   bool _isSubmitting = false;
   bool _isScanning = false;
-  // Timer? _scanTimer; // 暫時未使用
+  // Timer? _scanTimer; //.
   Map<String, dynamic>? _aiResult;
 
-  // AI 分析後的結果
+  // AI analysis result.
   String? _aiCategory;
   String? _aiSeverity;
   String? _aiTitle;
@@ -45,11 +45,11 @@ class _ReportScreenState extends State<ReportScreen> {
         maxWidth: 1200,
         maxHeight: 1200,
         imageQuality: 85,
-        preferredCameraDevice: CameraDevice.rear, // 優先使用後置相機
+        preferredCameraDevice: CameraDevice.rear, // Translated note.
       );
 
       if (image != null) {
-        // 模擬 AI 分析延遲
+        // AI analysis.
         await Future.delayed(const Duration(milliseconds: 1500));
 
         final bytes = await image.readAsBytes();
@@ -64,7 +64,7 @@ class _ReportScreenState extends State<ReportScreen> {
           _isScanning = false;
         });
 
-        // 自動觸發 AI 分析
+        // Auto AI analysis.
         _analyzeWithAI();
 
         if (mounted) {
@@ -83,12 +83,12 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
-  // 直接打開相機
+  // Translated legacy note.
   void _openCamera() {
     _pickImage(ImageSource.camera);
   }
 
-  // 直接打開相簿
+  // Translated legacy note.
   void _openGallery() {
     _pickImage(ImageSource.gallery);
   }
@@ -107,7 +107,7 @@ class _ReportScreenState extends State<ReportScreen> {
       final reportProvider =
           Provider.of<ReportProvider>(context, listen: false);
 
-      // 調用 POE API 進行 AI 分析
+      // POE API AI analysis.
       final result = await reportProvider.analyzeImage(_imageBase64!);
 
       if (result != null && result['damage_detected'] == true) {
@@ -162,7 +162,7 @@ class _ReportScreenState extends State<ReportScreen> {
         severity: _aiSeverity ?? 'moderate',
         imagePath: _selectedImage!.path,
         imageBase64: _imageBase64,
-        location: 'Locating (UWB)', // 之後會透過 UWB 自動填入
+        location: 'Locating (UWB)', // UWB auto.
         isOnline: connectivity.isOnline,
       );
 
@@ -170,7 +170,7 @@ class _ReportScreenState extends State<ReportScreen> {
         _resetForm();
         _showSuccess('✅ Report submitted! Redirecting to history...');
         
-        // 等待一下讓用戶看到成功消息，然後自動切換到歷史記錄頁面
+        // ， auto history.
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
             navigationProvider.goToHistory();
@@ -295,7 +295,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 children: [
                   // Image Preview or Upload Button
                   if (_selectedImage == null)
-                    // Upload Buttons - 拍照 & 相簿
+                    // Upload Buttons - &.
                     Stack(
                       children: [
                         Row(

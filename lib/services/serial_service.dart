@@ -5,8 +5,8 @@ import 'dart:js_interop_unsafe';
 import 'package:web/web.dart' as web;
 import 'package:flutter/foundation.dart';
 
-/// Web Serial API 串口服務
-/// 用於連接安信可 UWB BU04 設備
+/// Web Serial API service.
+/// Used to connect Aithinker UWB BU04 devices.
 class SerialService {
   static final SerialService _instance = SerialService._internal();
   factory SerialService() => _instance;
@@ -23,7 +23,7 @@ class SerialService {
 
   bool get isConnected => _isConnected;
 
-  /// 檢查瀏覽器是否支持 Web Serial API
+  /// Check whether the browser supports the Web Serial API.
   bool get isSupported {
     try {
       final navigator = web.window.navigator;
@@ -33,7 +33,7 @@ class SerialService {
     }
   }
 
-  /// 請求連接串口
+  /// Request a serial port connection.
   Future<bool> connect({int baudRate = 115200}) async {
     if (!isSupported) {
       debugPrint('Web Serial API not supported');
@@ -41,18 +41,18 @@ class SerialService {
     }
 
     try {
-      // 請求用戶選擇串口
+      // Ask the user to select a serial port.
       final serial = _getSerial();
       if (serial == null) return false;
 
       _port = await _requestPort(serial);
       if (_port == null) return false;
 
-      // 打開串口
+      // Open the serial port.
       await _openPort(_port, baudRate);
       _isConnected = true;
 
-      // 開始讀取數據
+      // Start reading data.
       _startReading();
 
       debugPrint('Serial port connected');
@@ -64,7 +64,7 @@ class SerialService {
     }
   }
 
-  /// 關閉串口連接
+  /// Close the serial connection.
   Future<void> disconnect() async {
     _isReading = false;
 
@@ -85,7 +85,7 @@ class SerialService {
     _isConnected = false;
   }
 
-  /// 開始讀取串口數據
+  /// Start reading serial data.
   void _startReading() async {
     if (_port == null || _isReading) return;
 
@@ -102,7 +102,7 @@ class SerialService {
         final chunk = result;
         buffer += chunk;
 
-        // 解析分割數據
+        // Parse split lines.
         while (buffer.contains('\n')) {
           final index = buffer.indexOf('\n');
           final line = buffer.substring(0, index).trim();
@@ -119,7 +119,7 @@ class SerialService {
     }
   }
 
-  /// 發送數據到串口
+  /// Send data to the serial port.
   Future<void> send(String data) async {
     if (_port == null || !_isConnected) return;
 
@@ -135,7 +135,7 @@ class SerialService {
     _dataController.close();
   }
 
-  // ===== JS Interop 方法 =====
+  // ===== JS interop methods =====
 
   dynamic _getSerial() {
     try {
@@ -186,7 +186,7 @@ class SerialService {
       final value = JsUtil.getProperty(result, 'value');
       if (value == null) return null;
 
-      // 將 Uint8Array 轉換為字符串
+      // Convert Uint8Array to a string.
       final decoder = web.TextDecoder();
       return decoder.decode(value);
     } catch (e) {
@@ -208,8 +208,8 @@ class SerialService {
   }
 }
 
-/// JS 互操作工具
-/// 注意: 此文件僅供 Web 平台使用，桌面平台使用 desktop_serial_service.dart
+/// JS interop utilities.
+/// Note: This file is for web only. Desktop uses desktop_serial_service.dart.
 class JsUtil {
   static bool hasProperty(dynamic o, String name) {
     try {
@@ -226,7 +226,7 @@ class JsUtil {
   static dynamic callMethod(dynamic o, String method, List<dynamic> args) {
     final obj = o as JSObject;
     final jsMethod = obj.getProperty(method.toJS) as JSFunction;
-    // 將參數轉換為 JS 類型，根據參數數量調用
+    // Convert arguments to JS types and call by argument count.
     switch (args.length) {
       case 0:
         return jsMethod.callAsFunction(obj);

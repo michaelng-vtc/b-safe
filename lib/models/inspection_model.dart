@@ -1,5 +1,4 @@
-
-/// AI 聊天訊息
+/// AI chat message.
 class ChatMessage {
   final String id;
   final String role; // 'user' or 'ai'
@@ -30,7 +29,7 @@ class ChatMessage {
       );
 }
 
-/// 單一缺陷記錄 - 包含照片、AI 分析結果、聊天記錄
+/// Single defect record with photo, AI results, and chat history.
 class Defect {
   final String id;
   final String? imagePath;
@@ -43,7 +42,7 @@ class Defect {
   final String? description;
   final List<String> recommendations;
   final String status; // pending / analyzed / reviewed
-  final List<ChatMessage> chatMessages; // AI 對話記錄
+  final List<ChatMessage> chatMessages; // AI chat history
   final DateTime createdAt;
   // Structured input fields for AI analysis
   final String? buildingElement;
@@ -213,8 +212,7 @@ class Defect {
             [],
         status: json['status'] as String? ?? 'pending',
         chatMessages: (json['chatMessages'] as List<dynamic>?)
-                ?.map(
-                    (e) => ChatMessage.fromJson(e as Map<String, dynamic>))
+                ?.map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             [],
         createdAt: json['createdAt'] != null
@@ -255,25 +253,25 @@ class Defect {
   }
 }
 
-/// Inspection Pin Data Model - 在 floor plan 上的標記點
+/// Inspection pin model for markers on the floor plan.
 class InspectionPin {
   final String id;
-  final double x; // UWB 座標 X (米)
-  final double y; // UWB 座標 Y (米)
-  final List<Defect> defects; // 多個缺陷記錄
+  final double x; // UWB X coordinate (meters)
+  final double y; // UWB Y coordinate (meters)
+  final List<Defect> defects; // Multiple defect records
   // Legacy fields for backward compatibility
-  final String? imagePath; // 拍攝照片路徑
-  final String? imageBase64; // 照片 Base64 編碼
-  final Map<String, dynamic>? aiResult; // AI 分析結果
-  final String? category; // 問題類別
-  final String? severity; // 嚴重程度
-  final int riskScore; // 風險評分 0-100
+  final String? imagePath; // Captured photo path
+  final String? imageBase64; // Photo Base64 data
+  final Map<String, dynamic>? aiResult; // AI analysis result
+  final String? category; // Defect category
+  final String? severity; // Severity level
+  final int riskScore; // Risk score 0-100
   final String riskLevel; // low / medium / high
-  final String? description; // AI 分析說明
-  final List<String> recommendations; // 處理建議
+  final String? description; // AI analysis description
+  final List<String> recommendations; // Recommended actions
   final String status; // pending / analyzed / reviewed
   final DateTime createdAt;
-  final String? note; // 用戶備註
+  final String? note; // User note
 
   InspectionPin({
     required this.id,
@@ -410,10 +408,10 @@ class InspectionPin {
     }
   }
 
-  /// 是否已完成分析
+  /// Whether analysis is completed.
   bool get isAnalyzed => status == 'analyzed' || status == 'reviewed';
 
-  /// 所有缺陷中最高風險分數
+  /// Highest risk score among all defects.
   int get maxDefectRiskScore {
     if (defects.isEmpty) return riskScore;
     final scores = defects.map((d) => d.riskScore).toList();
@@ -421,7 +419,7 @@ class InspectionPin {
     return scores.isEmpty ? 0 : scores.reduce((a, b) => a > b ? a : b);
   }
 
-  /// 所有缺陷中最高風險等級
+  /// Highest risk level among all defects.
   String get maxDefectRiskLevel {
     if (defects.isEmpty) return riskLevel;
     const order = {'high': 3, 'medium': 2, 'low': 1};
@@ -437,19 +435,19 @@ class InspectionPin {
     return maxLevel;
   }
 
-  /// 總缺陷數
+  /// Total number of defects.
   int get defectCount => defects.length;
 
-  /// 是否有任何缺陷已分析
+  /// Whether any defect has been analyzed.
   bool get hasAnalyzedDefects => defects.any((d) => d.isAnalyzed);
 }
 
-/// 巡檢會話 - 一次完整的樓層巡檢
+/// Inspection session for a complete floor inspection.
 class InspectionSession {
   final String id;
   final String name;
-  final String? projectId; // 所屬專案 ID
-  final int floor; // 樓層號碼 (1-based)
+  final String? projectId; // Parent project ID
+  final int floor; // Floor number (1-based)
   final String? floorPlanPath;
   final List<InspectionPin> pins;
   final DateTime createdAt;
@@ -527,33 +525,31 @@ class InspectionSession {
     );
   }
 
-  /// 總 pin 數
+  /// Total number of pins.
   int get totalPins => pins.length;
 
-  /// 已分析的 pin 數
+  /// Number of analyzed pins.
   int get analyzedPins => pins.where((p) => p.isAnalyzed).length;
 
-  /// 高風險 pin 數
-  int get highRiskPins =>
-      pins.where((p) => p.riskLevel == 'high').length;
+  /// Number of high-risk pins.
+  int get highRiskPins => pins.where((p) => p.riskLevel == 'high').length;
 
-  /// 全部缺陷列表
-  List<Defect> get allDefects =>
-      pins.expand((p) => p.defects).toList();
+  /// Flattened list of all defects.
+  List<Defect> get allDefects => pins.expand((p) => p.defects).toList();
 
-  /// 低風險缺陷數
+  /// Number of low-risk defects.
   int get lowRiskDefects =>
       allDefects.where((d) => d.riskLevel == 'low').length;
 
-  /// 中風險缺陷數
+  /// Number of medium-risk defects.
   int get mediumRiskDefects =>
       allDefects.where((d) => d.riskLevel == 'medium').length;
 
-  /// 高風險缺陷數
+  /// Number of high-risk defects.
   int get highRiskDefects =>
       allDefects.where((d) => d.riskLevel == 'high').length;
 
-  /// 平均風險分數
+  /// Average risk score.
   double get averageRiskScore {
     if (pins.isEmpty) return 0;
     final analyzed = pins.where((p) => p.isAnalyzed).toList();

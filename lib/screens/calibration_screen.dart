@@ -9,7 +9,7 @@ import 'package:bsafe_app/models/uwb_model.dart';
 import 'package:bsafe_app/services/uwb_service.dart';
 import 'package:bsafe_app/theme/app_theme.dart';
 
-/// 校正模式：平面圖上點擊放置基站，輸入距離自動計算座標
+/// Mode： anchor， distanceauto coordinate.
 class CalibrationScreen extends StatefulWidget {
   final UwbService uwbService;
 
@@ -20,48 +20,48 @@ class CalibrationScreen extends StatefulWidget {
 }
 
 class _CalibrationScreenState extends State<CalibrationScreen> {
-  // 模式：floor_plan 或 room_dimension
+  // Mode：floor_plan room_dimension.
   String _mode = 'choose'; // choose, floor_plan, room_dimension
 
-  // 房間尺寸
+  // Translated legacy note.
   final _roomWidthController = TextEditingController(text: '4.85');
   final _roomHeightController = TextEditingController(text: '5.44');
   double _roomWidth = 4.85;
   double _roomHeight = 5.44;
 
-  // 平面圖
+  // Translated legacy note.
   ui.Image? _floorPlanImage;
   String? _floorPlanPath;
 
-  // 放置的基站 (像素座標)
+  // Anchor ( coordinate).
   final List<_CalibrationAnchor> _placedAnchors = [];
 
-  // 距離配對
+  // Distance.
   final List<_DistancePair> _distancePairs = [];
 
-  // 基站高度 (統一)
+  // Anchorheight ( ).
   double _anchorHeight = 3.0;
 
-  // 選中的基站 index（用於設定距離）
+  // Anchor index( settingsdistance).
   int? _selectedAnchorIndex;
   int? _secondAnchorIndex;
 
-  // 參考點（用於單基站模式量測比例尺）
+  // ( anchormode ).
   final List<Offset> _referencePoints = [];
   double _referenceRealDistance = 0;
   bool _isPlacingRefPoints = false;
 
-  // 校正結果
-  double? _calculatedScale; // 米/像素
+  // Result.
+  double? _calculatedScale; // /.
   bool _isCalibrated = false;
 
-  // 互動鍵
+  // Translated legacy note.
   final GlobalKey _canvasKey = GlobalKey();
 
-  // 縮放/平移控制
+  // Translated legacy comment.
   final TransformationController _transformController = TransformationController();
   double _currentZoom = 1.0;
-  int _activePointers = 0; // 追蹤同時按下的手指數量，防止縮放時誤放基站
+  int _activePointers = 0; // ， anchor.
 
   void _zoomIn() {
     final zoom = (_currentZoom * 1.3).clamp(1.0, 8.0);
@@ -79,13 +79,13 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   }
 
   void _setZoom(double zoom) {
-    // 取得畫布中心
+    // Translated legacy note.
     final RenderBox? box = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
     final center = box.size.center(Offset.zero);
     final oldMatrix = _transformController.value.clone();
     final scale = zoom / _currentZoom;
-    // 以中心點為基準縮放
+    // Translated legacy note.
     final newMatrix = oldMatrix
       ..translateByDouble(center.dx, center.dy, 0, 1)
       ..scaleByDouble(scale, scale, 1, 1)
@@ -133,7 +133,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 選擇模式 =====
+  // ===== mode =====.
   Widget _buildModeChooser() {
     return Center(
       child: ConstrainedBox(
@@ -157,7 +157,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
               ),
               const SizedBox(height: 40),
 
-              // 方式一：載入平面圖
+              // ：load.
               _buildModeCard(
                 icon: Icons.image,
                 title: 'Load Floor Plan',
@@ -168,7 +168,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
 
               const SizedBox(height: 16),
 
-              // 方式二：輸入房間尺寸
+              // Translated legacy comment.
               _buildModeCard(
                 icon: Icons.square_foot,
                 title: 'Enter Room Dimensions',
@@ -235,7 +235,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 校正主視圖 =====
+  // Translated legacy comment.
   Widget _buildCalibrationView() {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
@@ -246,21 +246,21 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
 
     return Row(
       children: [
-        // 左側：畫布
+        // Translated legacy comment.
         Expanded(
           flex: 3,
           child: Column(
             children: [
-              // 工具欄
+              // Translated legacy note.
               _buildToolBar(),
-              // 畫布（支援雙指縮放和拖動）
+              // Translated legacy comment.
               Expanded(
                 child: _buildZoomableCanvas(),
               ),
             ],
           ),
         ),
-        // 右側：設定面板
+        // ：settings.
         SizedBox(
           width: 320,
           child: _buildSidePanel(),
@@ -269,18 +269,18 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 手機版校正視圖 =====
+  // ===== mobile =====.
   Widget _buildMobileCalibrationView() {
     return Column(
       children: [
-        // 簡化工具欄
+        // Translated legacy note.
         _buildMobileToolBar(),
-        // 畫布（支援雙指縮放和拖動，佔上半部分）
+        // Translated legacy comment.
         Expanded(
           flex: 3,
           child: _buildZoomableCanvas(),
         ),
-        // 底部設定面板（可滑動）
+        // Settings ( ).
         Expanded(
           flex: 4,
           child: Container(
@@ -298,7 +298,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
             ),
             child: Column(
               children: [
-                // 拖動指示器
+                // Translated legacy note.
                 Container(
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   width: 40,
@@ -308,36 +308,36 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                // 滾動內容
+                // Content.
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 基站高度
+                        // Anchorheight.
                         _buildHeightSetting(),
                         const Divider(height: 24),
 
-                        // 已放置的基站列表
+                        // Anchor list.
                         _buildAnchorList(),
                         const Divider(height: 24),
 
-                        // 距離設定
+                        // Distancesettings.
                         _buildDistanceSection(),
                         const Divider(height: 24),
 
-                        // 校正結果（不含應用按鈕）
+                        // Result( button).
                         if (_isCalibrated) _buildCalibrationResultInfo(),
 
-                        // 操作提示
+                        // Hint.
                         _buildInstructions(),
                         const SizedBox(height: 20),
                       ],
                     ),
                   ),
                 ),
-                // 固定在底部的「應用到系統」按鈕
+                // 「 」button.
                 if (_isCalibrated)
                   SafeArea(
                     top: false,
@@ -372,8 +372,8 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 手機版工具欄 =====
-  /// 可縮放的畫布區域（含 InteractiveViewer + 縮放按鈕）
+  // ===== mobile =====.
+  /// ( InteractiveViewer + button).
   Widget _buildZoomableCanvas() {
     return Stack(
       children: [
@@ -391,7 +391,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                 panEnabled: true,
                 scaleEnabled: true,
                 onInteractionEnd: (details) {
-                  // 更新當前縮放倍率
+                  // Update.
                   final scale = _transformController.value.getMaxScaleOnAxis();
                   setState(() => _currentZoom = scale);
                 },
@@ -419,14 +419,14 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
           ),
         ),
       ),
-        // 縮放控制按鈕
+        // Button.
         Positioned(
           right: 8,
           bottom: 8,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 縮放倍率顯示
+              // Show.
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
@@ -439,13 +439,13 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              // 放大
+              // Translated legacy note.
               _zoomButton(Icons.add, _zoomIn),
               const SizedBox(height: 4),
-              // 縮小
+              // Translated legacy note.
               _zoomButton(Icons.remove, _zoomOut),
               const SizedBox(height: 4),
-              // 重置
+              // Translated legacy note.
               _zoomButton(Icons.fit_screen, _resetZoom),
             ],
           ),
@@ -530,7 +530,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 工具欄 =====
+  // Translated legacy comment.
   Widget _buildToolBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -593,7 +593,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 右側面板 =====
+  // Translated legacy comment.
   Widget _buildSidePanel() {
     return Container(
       decoration: BoxDecoration(
@@ -625,22 +625,22 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 基站高度
+                  // Anchorheight.
                   _buildHeightSetting(),
                   const Divider(height: 24),
 
-                  // 已放置的基站列表
+                  // Anchor list.
                   _buildAnchorList(),
                   const Divider(height: 24),
 
-                  // 距離設定
+                  // Distancesettings.
                   _buildDistanceSection(),
                   const Divider(height: 24),
 
-                  // 校正結果
+                  // Result.
                   if (_isCalibrated) _buildCalibrationResult(),
 
-                  // 操作提示
+                  // Hint.
                   _buildInstructions(),
                 ],
               ),
@@ -651,7 +651,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 統一高度設定 =====
+  // ===== heightsettings =====.
   Widget _buildHeightSetting() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -690,7 +690,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 基站列表 =====
+  // ===== anchor =====.
   Widget _buildAnchorList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -781,7 +781,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
                       ],
                     ),
                   ),
-                  // 選擇用於距離對
+                  // Distance.
                   InkWell(
                     onTap: () => _selectAnchorForDistance(i),
                     child: Container(
@@ -816,20 +816,20 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 距離設定區 =====
+  // ===== distancesettings =====.
   Widget _buildDistanceSection() {
-    // 房間模式：已知尺寸，不需要距離設定
+    // Mode： ， distancesettings.
     if (_mode == 'room_dimension' && _placedAnchors.length <= 1) {
       return _buildRoomSingleAnchorInfo();
     }
-    // 平面圖單基站模式：顯示參考距離 UI
+    // Anchormode：show distance UI.
     if (_placedAnchors.length == 1 && _mode == 'floor_plan') {
       return _buildReferenceDistanceSection();
     }
     return _buildMultiAnchorDistanceSection();
   }
 
-  // 房間模式單基站提示
+  // Mode anchorhint.
   Widget _buildRoomSingleAnchorInfo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -863,7 +863,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // 單基站模式：用參考兩點確定比例尺
+  // Anchormode：.
   Widget _buildReferenceDistanceSection() {
     final refPixelDist = _referencePoints.length == 2
         ? sqrt(pow(_referencePoints[1].dx - _referencePoints[0].dx, 2) +
@@ -1028,7 +1028,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // 多基站模式
+  // Anchormode.
   Widget _buildMultiAnchorDistanceSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1185,7 +1185,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 校正結果 =====
+  // ===== result =====.
   Widget _buildCalibrationResult() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1250,7 +1250,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 校正結果（僅資訊，不含按鈕，用於手機版）=====
+  // ===== result( ， button， mobile )=====.
   Widget _buildCalibrationResultInfo() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1301,7 +1301,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 操作說明 =====
+  // Translated legacy comment.
   Widget _buildInstructions() {
     final isSingleAnchorFloorPlan = _mode == 'floor_plan';
     final isRoomMode = _mode == 'room_dimension';
@@ -1371,7 +1371,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     );
   }
 
-  // ===== 事件處理 =====
+  // Translated legacy comment.
 
   Future<void> _pickFloorPlan() async {
     final result = await FilePicker.platform.pickFiles(
@@ -1517,16 +1517,16 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
         _canvasKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
 
-    // 如果有超過 1 根手指（縮放手勢），忽略此次點擊，不放置基站
+    // 1 ( )， ， anchor.
     if (_activePointers > 1) return;
 
-    // InteractiveViewer 的 Transform 已自動將 hit test 座標轉為畫布座標
-    // 因此 details.localPosition 已經是正確的畫布座標，無需再反向轉換
+    // InteractiveViewer Transform auto hit test coordinate coordinate.
+    // Details.localPosition coordinate，.
     final localPosition = details.localPosition;
     final size = box.size;
 
     if (_mode == 'room_dimension') {
-      // 房間模式：直接將像素轉換為米
+      // Mode：.
       const padding = 60.0;
       final drawWidth = size.width - padding * 2;
       final drawHeight = size.height - padding * 2;
@@ -1536,16 +1536,16 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       final ox = (size.width - _roomWidth * scale) / 2;
       final oy = (size.height - _roomHeight * scale) / 2;
 
-      // 檢查是否在房間內
+      // Translated legacy note.
       final px = localPosition.dx;
       final py = localPosition.dy;
       if (px >= ox &&
           px <= ox + _roomWidth * scale &&
           py >= oy &&
           py <= oy + _roomHeight * scale) {
-        // 轉換為米座標
+        // Coordinate.
         final realX = (px - ox) / scale;
-        final realY = _roomHeight - (py - oy) / scale; // Y軸翻轉
+        final realY = _roomHeight - (py - oy) / scale; // Y.
 
         setState(() {
           _placedAnchors.add(_CalibrationAnchor(
@@ -1556,15 +1556,15 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
             realY: realY,
           ));
           _isCalibrated = false;
-          // 房間模式下自動更新距離對的像素距離
+          // Mode autoupdatedistance distance.
           _updatePixelDistances();
-          // 房間模式直接有座標，檢查是否能自動校正
+          // Mode coordinate， auto.
           _autoCalibRoomMode();
         });
       }
     } else if (_mode == 'floor_plan') {
       if (_isPlacingRefPoints) {
-        // 放置參考點模式
+        // Count occurrences of detected offset patterns.
         if (_referencePoints.length < 2) {
           setState(() {
             _referencePoints.add(localPosition);
@@ -1574,7 +1574,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
           });
         }
       } else {
-        // 放置基站模式
+        // Anchormode.
         setState(() {
           _placedAnchors.add(_CalibrationAnchor(
             name: 'Anchor${_placedAnchors.length}',
@@ -1598,7 +1598,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
         _secondAnchorIndex = null;
       } else {
         _secondAnchorIndex = index;
-        // 自動添加距離對
+        // Auto distance.
         _addDistancePairFromSelection();
         _selectedAnchorIndex = null;
         _secondAnchorIndex = null;
@@ -1611,7 +1611,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
     final a = _selectedAnchorIndex!;
     final b = _secondAnchorIndex!;
 
-    // 檢查這對是否已存在
+    // Translated legacy note.
     final exists = _distancePairs.any((p) =>
         (p.anchorA == a && p.anchorB == b) ||
         (p.anchorA == b && p.anchorB == a));
@@ -1625,7 +1625,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
 
   void _addDistancePair() {
     if (_placedAnchors.length < 2) return;
-    // 找一對尚未添加的
+    // Translated legacy note.
     for (int i = 0; i < _placedAnchors.length; i++) {
       for (int j = i + 1; j < _placedAnchors.length; j++) {
         final exists = _distancePairs.any((p) =>
@@ -1640,7 +1640,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
         }
       }
     }
-    // 全都加了
+    // Translated legacy note.
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('All anchor pair distances added')),
@@ -1651,7 +1651,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   void _removeAnchor(int index) {
     setState(() {
       _placedAnchors.removeAt(index);
-      // 更新距離對的引用
+      // Updatedistance.
       _distancePairs
           .removeWhere((p) => p.anchorA == index || p.anchorB == index);
       for (int i = 0; i < _distancePairs.length; i++) {
@@ -1688,10 +1688,10 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   }
 
   void _autoCalibRoomMode() {
-    // 房間模式已有真實座標，不需要距離校正
+    // Mode coordinate， distance.
     if (_mode == 'room_dimension' && _placedAnchors.isNotEmpty) {
       setState(() {
-        _calculatedScale = 1.0; // 房間模式比例尺已內含
+        _calculatedScale = 1.0; // Mode.
         _isCalibrated = true;
       });
     }
@@ -1703,7 +1703,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       return;
     }
 
-    // 單基站 + 參考點模式
+    // Anchor + mode.
     if (_placedAnchors.length == 1 && _referencePoints.length == 2 && _referenceRealDistance > 0) {
       final dx = _referencePoints[1].dx - _referencePoints[0].dx;
       final dy = _referencePoints[1].dy - _referencePoints[0].dy;
@@ -1725,14 +1725,14 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       return;
     }
 
-    // 多基站模式：用距離對計算比例尺
+    // Anchormode： distance.
     final validPairs = _distancePairs.where((p) => p.distance > 0).toList();
     if (validPairs.isEmpty) return;
 
-    // 先確保 pixelDistance 已更新
+    // PixelDistance update.
     _updatePixelDistances();
 
-    // 計算平均比例尺
+    // Moving average window size.
     double totalScale = 0;
     int count = 0;
     for (final pair in validPairs) {
@@ -1749,7 +1749,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
 
     final avgScale = totalScale / count;
 
-    // 用第一個基站作為原點，計算所有基站的真實座標
+    // Anchor ， anchor coordinate.
     final originX = _placedAnchors[0].pixelX;
     final originY = _placedAnchors[0].pixelY;
 
@@ -1793,12 +1793,12 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
 
     final uwb = widget.uwbService;
 
-    // 清除現有基站
+    // Clear anchor.
     while (uwb.anchors.isNotEmpty) {
       uwb.removeAnchor(0);
     }
 
-    // 添加校正後的基站
+    // Anchor list.
     for (final a in _placedAnchors) {
       final x = a.realX ?? 0.0;
       final y = a.realY ?? 0.0;
@@ -1811,7 +1811,7 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       ));
     }
 
-    // 如果有平面圖，也設置 floor plan 的比例尺和偏移
+    // ， floor plan.
     if (_mode == 'floor_plan' &&
         _floorPlanPath != null &&
         _calculatedScale != null &&
@@ -1820,35 +1820,35 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
       final imgWidth = img.width.toDouble();
       final imgHeight = img.height.toDouble();
 
-      // 取得畫布尺寸，計算校正畫面中圖片的顯示變換
+      // ， image show.
       final RenderBox? box =
           _canvasKey.currentContext?.findRenderObject() as RenderBox?;
       if (box != null) {
         final widgetSize = box.size;
-        // 與 _CalibrationPainter._drawFloorPlan 相同的變換
+        // _CalibrationPainter._drawFloorPlan.
         final scaleX = widgetSize.width / imgWidth;
         final scaleY = widgetSize.height / imgHeight;
         final displayScale = min(scaleX, scaleY) * 0.9;
         final ox = (widgetSize.width - imgWidth * displayScale) / 2;
         final oy = (widgetSize.height - imgHeight * displayScale) / 2;
 
-        // 將原點基站從 widget 座標轉換為實際圖片像素座標
+        // Anchor widget coordinate image coordinate.
         final originImageX =
             (_placedAnchors[0].pixelX - ox) / displayScale;
         final originImageY =
             (_placedAnchors[0].pixelY - oy) / displayScale;
 
-        // 計算圖片像素的比例尺
-        // _calculatedScale = 米/widget像素
-        // 圖片像素 = widget像素 / displayScale
-        // 米/圖片像素 = _calculatedScale * displayScale
+        // Floor plan image cache.
+        // _calculatedScale = /widget.
+        // Image = widget / displayScale.
+        // /image = _calculatedScale * displayScale.
         final metersPerImagePixel = _calculatedScale! * displayScale;
         final pixelsPerMeter = 1.0 / metersPerImagePixel;
 
-        // 平面圖偏移：圖片邊緣在 UWB 座標系中的位置
-        // 圖片左邊 (X=0) 的真實座標
+        // ：image UWB coordinate.
+        // Image (X=0) coordinate.
         final offsetX = -originImageX * metersPerImagePixel;
-        // 圖片底邊 (Y=imgHeight) 的真實座標
+        // Image (Y=imgHeight) coordinate.
         final offsetY =
             -(imgHeight - originImageY) * metersPerImagePixel;
 
@@ -1870,10 +1870,10 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
         debugPrint('[Calibration] config after update: showFloorPlan=${uwb.config.showFloorPlan}, xScale=${uwb.config.xScale}, yScale=${uwb.config.yScale}, xOffset=${uwb.config.xOffset}, yOffset=${uwb.config.yOffset}');
       }
 
-      // 載入平面圖 (await 確保圖片載入完成後再返回)
+      // Load (await imageload ).
       await uwb.loadFloorPlanImage(_floorPlanPath!);
     } else if (_mode == 'room_dimension') {
-      // 房間模式，不需要平面圖
+      // Mode，.
       uwb.updateConfig(uwb.config.copyWith(
         showFloorPlan: false,
       ));
@@ -1903,12 +1903,12 @@ class _CalibrationScreenState extends State<CalibrationScreen> {
   }
 }
 
-// ===== 校正資料模型 =====
+// Translated legacy comment.
 class _CalibrationAnchor {
   final String name;
   final double pixelX;
   final double pixelY;
-  final double? realX; // 真實座標 (米)
+  final double? realX; // Coordinate ( ).
   final double? realY;
 
   _CalibrationAnchor({
@@ -1923,14 +1923,14 @@ class _CalibrationAnchor {
 class _DistancePair {
   final int anchorA;
   final int anchorB;
-  final double distance; // 實際距離 (米)
-  final double pixelDistance; // 像素距離
+  final double distance; // Distance ( ).
+  final double pixelDistance; // Distance.
 
   _DistancePair(this.anchorA, this.anchorB, this.distance,
       {this.pixelDistance = 0});
 }
 
-// ===== 校正畫布 Painter =====
+// ===== Painter =====.
 class _CalibrationPainter extends CustomPainter {
   final String mode;
   final ui.Image? floorPlanImage;
@@ -1975,13 +1975,13 @@ class _CalibrationPainter extends CustomPainter {
       _drawFloorPlan(canvas, size);
     }
 
-    // 繪製距離線
+    // Distance.
     _drawDistanceLines(canvas, size);
 
-    // 繪製參考點
+    // Translated legacy note.
     _drawReferencePoints(canvas, size);
 
-    // 繪製基站
+    // Anchor list.
     for (int i = 0; i < anchors.length; i++) {
       _drawAnchor(canvas, anchors[i], i);
     }
@@ -1997,7 +1997,7 @@ class _CalibrationPainter extends CustomPainter {
     final ox = (size.width - roomWidth * scale) / 2;
     final oy = (size.height - roomHeight * scale) / 2;
 
-    // 房間背景
+    // Translated legacy note.
     final roomRect =
         Rect.fromLTWH(ox, oy, roomWidth * scale, roomHeight * scale);
     canvas.drawRect(roomRect, Paint()..color = Colors.white);
@@ -2009,7 +2009,7 @@ class _CalibrationPainter extends CustomPainter {
         ..strokeWidth = 3,
     );
 
-    // 網格線 (每米)
+    // Translated legacy comment.
     final gridPaint = Paint()
       ..color = Colors.grey.shade300
       ..strokeWidth = 0.5;
@@ -2028,14 +2028,14 @@ class _CalibrationPainter extends CustomPainter {
       );
     }
 
-    // 尺寸標註 - 底邊 (寬度)
+    // Translated legacy comment.
     _drawDimensionLabel(
         canvas,
         Offset(ox, oy + roomHeight * scale + 20),
         Offset(ox + roomWidth * scale, oy + roomHeight * scale + 20),
         '${roomWidth}m');
 
-    // 尺寸標註 - 右邊 (長度)
+    // Translated legacy comment.
     _drawDimensionLabel(
         canvas,
         Offset(ox + roomWidth * scale + 20, oy),
@@ -2043,7 +2043,7 @@ class _CalibrationPainter extends CustomPainter {
         '${roomHeight}m',
         vertical: true);
 
-    // 角落標註坐標
+    // Translated legacy note.
     _drawCornerLabel(canvas, Offset(ox, oy + roomHeight * scale), '(0, 0)');
     _drawCornerLabel(
         canvas,
@@ -2074,7 +2074,7 @@ class _CalibrationPainter extends CustomPainter {
 
     canvas.drawLine(start, end, paint);
 
-    // 箭頭
+    // Translated legacy note.
     if (!vertical) {
       canvas.drawLine(start, start + const Offset(8, -4), paint);
       canvas.drawLine(start, start + const Offset(8, 4), paint);
@@ -2112,7 +2112,7 @@ class _CalibrationPainter extends CustomPainter {
     final imgWidth = img.width.toDouble();
     final imgHeight = img.height.toDouble();
 
-    // 縮放將圖片適配到畫布
+    // Floor plan image cache.
     final scaleX = size.width / imgWidth;
     final scaleY = size.height / imgHeight;
     final scale = min(scaleX, scaleY) * 0.9;
@@ -2122,14 +2122,14 @@ class _CalibrationPainter extends CustomPainter {
     final srcRect = Rect.fromLTWH(0, 0, imgWidth, imgHeight);
     final dstRect = Rect.fromLTWH(ox, oy, imgWidth * scale, imgHeight * scale);
 
-    // 背景
+    // Translated legacy note.
     canvas.drawRect(dstRect, Paint()..color = Colors.white);
 
-    // 圖片
+    // Floor plan image cache.
     canvas.drawImageRect(
         img, srcRect, dstRect, Paint()..filterQuality = FilterQuality.medium);
 
-    // 邊框
+    // Translated legacy note.
     canvas.drawRect(
       dstRect,
       Paint()
@@ -2191,7 +2191,7 @@ class _CalibrationPainter extends CustomPainter {
       final start = Offset(a.pixelX, a.pixelY);
       final end = Offset(b.pixelX, b.pixelY);
 
-      // 虛線
+      // Translated legacy note.
       final paint = Paint()
         ..color = Colors.blue.shade400
         ..strokeWidth = 2
@@ -2199,7 +2199,7 @@ class _CalibrationPainter extends CustomPainter {
 
       canvas.drawLine(start, end, paint);
 
-      // 距離標籤
+      // Distancetag.
       if (pair.distance > 0) {
         final mid = Offset((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
         final labelBg = Paint()..color = Colors.white;
@@ -2243,7 +2243,7 @@ class _CalibrationPainter extends CustomPainter {
     final isSecond = index == secondIndex;
     final s = 1.0 / zoom; // inverse scale so markers stay constant screen size
 
-    // 選中光暈
+    // Translated legacy note.
     if (isSelected || isSecond) {
       canvas.drawCircle(
         pos,
@@ -2255,7 +2255,7 @@ class _CalibrationPainter extends CustomPainter {
       );
     }
 
-    // 陰影
+    // Translated legacy note.
     canvas.drawCircle(
       pos + Offset(2 * s, 2 * s),
       14 * s,
@@ -2264,7 +2264,7 @@ class _CalibrationPainter extends CustomPainter {
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3 * s),
     );
 
-    // 基站圓圈
+    // Anchor list.
     canvas.drawCircle(pos, 14 * s, Paint()..color = color);
     canvas.drawCircle(
       pos,
@@ -2275,7 +2275,7 @@ class _CalibrationPainter extends CustomPainter {
         ..strokeWidth = 2.5 * s,
     );
 
-    // 序號
+    // Translated legacy note.
     final tp = TextPainter(
       text: TextSpan(
         text: '${index + 1}',
@@ -2287,7 +2287,7 @@ class _CalibrationPainter extends CustomPainter {
     tp.layout();
     tp.paint(canvas, Offset(pos.dx - tp.width / 2, pos.dy - tp.height / 2));
 
-    // 名稱標籤
+    // Current tag data.
     final nameTp = TextPainter(
       text: TextSpan(
         text: anchor.name,
@@ -2300,7 +2300,7 @@ class _CalibrationPainter extends CustomPainter {
     );
     nameTp.layout();
 
-    // 標籤背景
+    // Current tag data.
     final labelRect = Rect.fromLTWH(
       pos.dx - nameTp.width / 2 - 4 * s,
       pos.dy + 18 * s,
@@ -2313,7 +2313,7 @@ class _CalibrationPainter extends CustomPainter {
     );
     nameTp.paint(canvas, Offset(pos.dx - nameTp.width / 2, pos.dy + 20 * s));
 
-    // 座標標籤
+    // Coordinatetag.
     if (anchor.realX != null && anchor.realY != null) {
       final coordTp = TextPainter(
         text: TextSpan(

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:bsafe_app/models/uwb_model.dart';
 import 'package:bsafe_app/theme/app_theme.dart';
 
-/// UWB定位可视化画布
-/// 显示基站、标签和轨迹的2D平面图
+/// UWB service.
+/// Showanchor、tag trajectory 2D.
 class UwbPositionCanvas extends StatelessWidget {
   final List<UwbAnchor> anchors;
   final UwbTag? currentTag;
@@ -82,13 +82,13 @@ class UwbCanvasPainter extends CustomPainter {
       return;
     }
 
-    // 计算坐标范围 - 支援負數座標
+    // Coordinate - coordinate.
     double minX = anchors.map((a) => a.x).reduce(min) - 1;
     double maxX = anchors.map((a) => a.x).reduce(max) + 1;
     double minY = anchors.map((a) => a.y).reduce(min) - 1;
     double maxY = anchors.map((a) => a.y).reduce(max) + 1;
 
-    // 如果有平面圖，擴展視圖範圍以包含整個平面圖
+    // Translated legacy comment.
     if (config.showFloorPlan && floorPlanImage != null) {
       final img = floorPlanImage!;
       final realWidth = img.width.toDouble() / config.xScale;
@@ -103,56 +103,56 @@ class UwbCanvasPainter extends CustomPainter {
       maxY = max(maxY, imgTop + 0.5);
     }
 
-    // 計算座標範圍寬度
+    // Coordinate.
     final double rangeX = maxX - minX;
     final double rangeY = maxY - minY;
 
-    // 计算缩放比例
+    // Translated legacy note.
     final double scaleX = (size.width - padding * 2) / rangeX;
     final double scaleY = (size.height - padding * 2) / rangeY;
     final double scale = min(scaleX, scaleY);
 
-    // 居中偏移
+    // Translated legacy note.
     final double offsetX = (size.width - rangeX * scale) / 2;
     final double offsetY = (size.height - rangeY * scale) / 2;
 
-    // 坐标转换函数 - 支援負數座標
+    // Coordinate - coordinate.
     Offset toCanvas(double x, double y) {
       return Offset(
         offsetX + (x - minX) * scale,
-        size.height - offsetY - (y - minY) * scale, // Y轴翻转
+        size.height - offsetY - (y - minY) * scale, // Y.
       );
     }
 
-    // 绘制背景网格
+    // Translated legacy note.
     _drawGrid(canvas, size, minX, maxX, minY, maxY, scale, offsetX, offsetY,
         toCanvas);
 
-    // 繪製平面地圖背景
+    // Translated legacy note.
     if (config.showFloorPlan && floorPlanImage != null) {
       _drawFloorPlan(canvas, size, minX, minY, scale, offsetX, offsetY);
     }
 
-    // 绘制区域围栏
+    // Fence.
     if (config.showFence && currentTag != null) {
       _drawFence(canvas, toCanvas, scale, currentTag!);
     }
 
-    // 绘制轨迹
+    // Trajectory.
     if (config.showTrajectory && trajectory.isNotEmpty) {
       _drawTrajectory(canvas, toCanvas);
     }
 
-    // 绘制基站
+    // Anchor list.
     for (var anchor in anchors) {
       _drawAnchor(canvas, toCanvas(anchor.x, anchor.y), anchor);
     }
 
-    // 绘制标签
+    // Current tag data.
     if (currentTag != null) {
       _drawTag(canvas, toCanvas(currentTag!.x, currentTag!.y), currentTag!);
 
-      // 绘制到基站的连线 (距离)
+      // Anchor (distance).
       for (var anchor in anchors) {
         if (currentTag!.anchorDistances.containsKey(anchor.id)) {
           _drawDistanceLine(
@@ -165,12 +165,12 @@ class UwbCanvasPainter extends CustomPainter {
       }
     }
 
-    // 绘制坐标轴标签
+    // Coordinate tag.
     _drawAxisLabels(canvas, size, minX, maxX, minY, maxY, scale, offsetX,
         offsetY, toCanvas);
   }
 
-  /// 繪製平面地圖背景圖片
+  /// Floor plan image cache.
   void _drawFloorPlan(Canvas canvas, Size size, double minX, double minY,
       double scale, double offsetX, double offsetY) {
     if (floorPlanImage == null) return;
@@ -179,25 +179,25 @@ class UwbCanvasPainter extends CustomPainter {
     final imgWidth = img.width.toDouble();
     final imgHeight = img.height.toDouble();
 
-    // xScale/yScale = 像素/米 (圖片上每米對應多少像素)
-    // xOffset/yOffset = 實際座標 (米) - 圖片左上角在 UWB 座標系中的位置
+    // XScale/yScale = / (image ).
+    // XOffset/yOffset = coordinate ( ) - image UWB coordinate.
     
-    // 計算圖片對應的實際尺寸 (米)
+    // Image ( ).
     final double realWidth = imgWidth / config.xScale;
     final double realHeight = imgHeight / config.yScale;
 
-    // 圖片左上角的實際座標 (米)
+    // Image coordinate ( ).
     final double imgRealX = config.xOffset;
     final double imgRealY = config.yOffset;
 
-    // 轉換到畫布座標
-    // 注意：畫布的 Y 軸是反向的 (從上到下遞增)
+    // Coordinate.
+    // ： Y ( ).
     final double canvasLeft = offsetX + (imgRealX - minX) * scale;
     final double canvasTop = size.height - offsetY - ((imgRealY + realHeight) - minY) * scale;
     final double canvasWidth = realWidth * scale;
     final double canvasHeight = realHeight * scale;
 
-    // 翻轉處理
+    // Translated legacy note.
     if (config.flipX) {
       canvas.save();
       canvas.scale(-1, 1);
@@ -218,7 +218,7 @@ class UwbCanvasPainter extends CustomPainter {
 
     canvas.drawImageRect(img, srcRect, dstRect, paint);
 
-    // 恢復畫布狀態
+    // Translated legacy note.
     if (config.flipY) {
       canvas.restore();
     }
@@ -267,26 +267,26 @@ class UwbCanvasPainter extends CustomPainter {
       ..color = Colors.grey.shade600
       ..strokeWidth = 1.5;
 
-    // 原點線加粗並使用更明顯的顏色
+    // Translated legacy note.
     final originPaint = Paint()
       ..color = Colors.blue.shade800
       ..strokeWidth = 2.5;
     
-    // 外邊框線
+    // Translated legacy note.
     final borderPaint = Paint()
       ..color = Colors.grey.shade800
       ..strokeWidth = 2.0;
 
-    // 從整數開始的 minX
+    // Start minX.
     final double startX = (minX).floorToDouble();
     final double startY = (minY).floorToDouble();
 
-    // 垂直线
+    // Translated legacy note.
     for (double x = startX; x <= maxX; x += 0.5) {
       Paint paint;
       if ((x - 0.0).abs() < 0.01) {
-        // 使用容差比較避免浮點誤差
-        paint = originPaint; // 原點 X=0 線
+        // Translated legacy note.
+        paint = originPaint; // X=0.
       } else if (x % 1 == 0) {
         paint = majorGridPaint;
       } else {
@@ -297,12 +297,12 @@ class UwbCanvasPainter extends CustomPainter {
       canvas.drawLine(p1, p2, paint);
     }
 
-    // 水平线
+    // Translated legacy note.
     for (double y = startY; y <= maxY; y += 0.5) {
       Paint paint;
       if ((y - 0.0).abs() < 0.01) {
-        // 使用容差比較避免浮點誤差
-        paint = originPaint; // 原點 Y=0 線
+        // Translated legacy note.
+        paint = originPaint; // Y=0.
       } else if (y % 1 == 0) {
         paint = majorGridPaint;
       } else {
@@ -313,23 +313,23 @@ class UwbCanvasPainter extends CustomPainter {
       canvas.drawLine(p1, p2, paint);
     }
     
-    // 繪製邊框（座標軸）
+    // (coordinate ).
     final borderTopLeft = toCanvas(minX, maxY);
     final borderTopRight = toCanvas(maxX, maxY);
     final borderBottomLeft = toCanvas(minX, minY);
     final borderBottomRight = toCanvas(maxX, minY);
     
-    canvas.drawLine(borderBottomLeft, borderBottomRight, borderPaint); // 底部 X 軸
-    canvas.drawLine(borderBottomLeft, borderTopLeft, borderPaint); // 左側 Y 軸
-    canvas.drawLine(borderTopRight, borderBottomRight, borderPaint); // 右側
-    canvas.drawLine(borderTopLeft, borderTopRight, borderPaint); // 頂部
+    canvas.drawLine(borderBottomLeft, borderBottomRight, borderPaint); // X.
+    canvas.drawLine(borderBottomLeft, borderTopLeft, borderPaint); // Y.
+    canvas.drawLine(borderTopRight, borderBottomRight, borderPaint); // Translated note.
+    canvas.drawLine(borderTopLeft, borderTopRight, borderPaint); // Translated note.
   }
 
   void _drawFence(Canvas canvas, Offset Function(double, double) toCanvas,
       double scale, UwbTag tag) {
     final center = toCanvas(tag.x, tag.y);
 
-    // 内围栏
+    // Fence.
     final innerPaint = Paint()
       ..color = Colors.green.withValues(alpha: 0.2)
       ..style = PaintingStyle.fill;
@@ -341,7 +341,7 @@ class UwbCanvasPainter extends CustomPainter {
       ..strokeWidth = 2;
     canvas.drawCircle(center, config.areaRadius1 * scale, innerBorderPaint);
 
-    // 外围栏
+    // Fence.
     final outerPaint = Paint()
       ..color = Colors.orange.withValues(alpha: 0.1)
       ..style = PaintingStyle.fill;
@@ -353,7 +353,7 @@ class UwbCanvasPainter extends CustomPainter {
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
 
-    // 虚线效果
+    // Translated legacy note.
     const dashWidth = 10.0;
     const dashSpace = 5.0;
     final radius = config.areaRadius2 * scale;
@@ -386,7 +386,7 @@ class UwbCanvasPainter extends CustomPainter {
       path.lineTo(point.dx, point.dy);
     }
 
-    // 渐变轨迹
+    // Trajectory.
     for (int i = 1; i < trajectory.length; i++) {
       final opacity = i / trajectory.length;
       final paint = Paint()
@@ -401,19 +401,19 @@ class UwbCanvasPainter extends CustomPainter {
   }
 
   void _drawAnchor(Canvas canvas, Offset position, UwbAnchor anchor) {
-    // 基站底座
+    // Anchor list.
     final basePaint = Paint()
       ..color = Colors.brown.shade700
       ..style = PaintingStyle.fill;
     canvas.drawCircle(position, 8, basePaint);
 
-    // 基站图标 (塔形)
+    // Anchor ( ).
     final towerPaint = Paint()
       ..color = anchor.isActive ? Colors.green.shade700 : Colors.grey
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
-    // 绘制信号塔
+    // Translated legacy note.
     final iconPath = Path();
     iconPath.moveTo(position.dx, position.dy - 25);
     iconPath.lineTo(position.dx - 8, position.dy);
@@ -423,7 +423,7 @@ class UwbCanvasPainter extends CustomPainter {
     iconPath.lineTo(position.dx + 5, position.dy - 10);
     canvas.drawPath(iconPath, towerPaint);
 
-    // 信号波
+    // Translated legacy note.
     if (anchor.isActive) {
       final wavePaint = Paint()
         ..color = Colors.green.withValues(alpha: 0.5)
@@ -445,7 +445,7 @@ class UwbCanvasPainter extends CustomPainter {
       }
     }
 
-    // 基站标签
+    // Anchortag.
     final textPainter = TextPainter(
       text: TextSpan(
         text: anchor.id,
@@ -465,48 +465,48 @@ class UwbCanvasPainter extends CustomPainter {
   }
 
   void _drawTag(Canvas canvas, Offset position, UwbTag tag) {
-    // 标签阴影
+    // Current tag data.
     final shadowPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.2)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
     canvas.drawCircle(position + const Offset(2, 2), 12, shadowPaint);
 
-    // 标签主体
+    // Current tag data.
     final tagPaint = Paint()
       ..color = AppTheme.primaryColor
       ..style = PaintingStyle.fill;
     canvas.drawCircle(position, 12, tagPaint);
 
-    // 标签边框
+    // Current tag data.
     final borderPaint = Paint()
       ..color = Colors.white
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(position, 12, borderPaint);
 
-    // 人形图标
+    // Translated legacy note.
     final iconPaint = Paint()
       ..color = Colors.white
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    // 头
+    // Translated legacy note.
     canvas.drawCircle(position - const Offset(0, 4), 3, iconPaint);
-    // 身体
+    // Translated legacy note.
     canvas.drawLine(
       position - const Offset(0, 1),
       position + const Offset(0, 5),
       iconPaint,
     );
-    // 手臂
+    // Translated legacy note.
     canvas.drawLine(
       position + const Offset(-4, 1),
       position + const Offset(4, 1),
       iconPaint,
     );
 
-    // 标签名称
+    // Current tag data.
     final textPainter = TextPainter(
       text: TextSpan(
         text: tag.id,
@@ -532,7 +532,7 @@ class UwbCanvasPainter extends CustomPainter {
       ..strokeWidth = 1
       ..style = PaintingStyle.stroke;
 
-    // 虚线
+    // Translated legacy note.
     final path = Path();
     path.moveTo(tagPos.dx, tagPos.dy);
     path.lineTo(anchorPos.dx, anchorPos.dy);
@@ -571,11 +571,11 @@ class UwbCanvasPainter extends CustomPainter {
       backgroundColor: Colors.white.withValues(alpha: 0.8),
     );
 
-    // 計算合適的標籤間隔
+    // Current tag data.
     final double rangeX = (maxX - minX).abs();
     final double rangeY = (maxY - minY).abs();
     
-    // 根據範圍決定標籤間隔
+    // Current tag data.
     double intervalX = 1.0;
     if (rangeX > 30) {
       intervalX = 5.0;
@@ -590,13 +590,13 @@ class UwbCanvasPainter extends CustomPainter {
       intervalY = 2.0;
     }
 
-    // 從整數開始（對齊到間隔）
+    // Start( ).
     final double startX = (minX / intervalX).ceilToDouble() * intervalX;
     final double endX = (maxX / intervalX).floorToDouble() * intervalX;
     final double startY = (minY / intervalY).ceilToDouble() * intervalY;
     final double endY = (maxY / intervalY).floorToDouble() * intervalY;
 
-    // X轴标签 (在底部)
+    // X tag ( ).
     for (double x = startX; x <= endX; x += intervalX) {
       final pos = toCanvas(x, minY);
       final textPainter = TextPainter(
@@ -613,7 +613,7 @@ class UwbCanvasPainter extends CustomPainter {
       );
     }
 
-    // Y轴标签 (在左側)
+    // Y tag ( ).
     for (double y = startY; y <= endY; y += intervalY) {
       final pos = toCanvas(minX, y);
       final textPainter = TextPainter(
@@ -633,20 +633,20 @@ class UwbCanvasPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant UwbCanvasPainter oldDelegate) {
-    // 標籤位置變化時需要重繪
+    // Current tag data.
     if (oldDelegate.currentTag?.x != currentTag?.x ||
         oldDelegate.currentTag?.y != currentTag?.y) {
       return true;
     }
-    // 軌跡變化
+    // Trajectory.
     if (oldDelegate.trajectory.length != trajectory.length) {
       return true;
     }
-    // 基站或配置變化
+    // Anchor config.
     if (oldDelegate.anchors != anchors || oldDelegate.config != config) {
       return true;
     }
-    // 平面地圖變化
+    // Translated legacy note.
     if (oldDelegate.floorPlanImage != floorPlanImage) {
       return true;
     }

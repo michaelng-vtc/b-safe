@@ -4,7 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_libserialport/flutter_libserialport.dart';
 
-/// 串口数据包 - 包含原始字节和解析后的字符串
+/// Serial data packet containing raw bytes and parsed text.
 class SerialDataPacket {
   final Uint8List rawBytes;
   final String text;
@@ -12,8 +12,8 @@ class SerialDataPacket {
   SerialDataPacket(this.rawBytes, this.text);
 }
 
-/// 桌面平台串口服务
-/// 用于 Windows/Linux/macOS 连接安信可 UWB BU04 设备
+/// Desktop serial service.
+/// Used on Windows/Linux/macOS to connect Aithinker UWB BU04 devices.
 class DesktopSerialService {
   static final DesktopSerialService _instance =
       DesktopSerialService._internal();
@@ -24,34 +24,34 @@ class DesktopSerialService {
   SerialPortReader? _reader;
   bool _isConnected = false;
 
-  // 字符串流 (向后兼容)
+  // Text stream (backward compatible).
   final StreamController<String> _dataController =
       StreamController<String>.broadcast();
   Stream<String> get dataStream => _dataController.stream;
 
-  // 原始字节流 (用于二进制协议解析)
+  // Raw byte stream (for binary protocol parsing).
   final StreamController<Uint8List> _rawDataController =
       StreamController<Uint8List>.broadcast();
   Stream<Uint8List> get rawDataStream => _rawDataController.stream;
 
   bool get isConnected => _isConnected;
 
-  /// 获取所有可用的串口列表
+  /// Get all available serial ports.
   List<String> getAvailablePorts() {
     return SerialPort.availablePorts;
   }
 
-  /// 连接指定的串口
+  /// Connect to a specified serial port.
   Future<bool> connect(String portName, {int baudRate = 115200}) async {
     try {
-      // 断开现有连接
+      // Disconnect any existing connection.
       if (_isConnected) {
         await disconnect();
       }
 
       _port = SerialPort(portName);
 
-      // 配置串口参数
+      // Configure serial port parameters.
       final config = SerialPortConfig();
       config.baudRate = baudRate;
       config.bits = 8;
@@ -61,7 +61,7 @@ class DesktopSerialService {
 
       _port!.config = config;
 
-      // 打开串口
+      // Open the serial port.
       if (!_port!.openReadWrite()) {
         final error = SerialPort.lastError;
         debugPrint('Cannot open port $portName: ${error?.message}');
@@ -70,7 +70,7 @@ class DesktopSerialService {
 
       _isConnected = true;
 
-      // 开始读取数据
+      // Start reading data.
       _startReading();
 
       debugPrint('Port $portName connected (baud: $baudRate)');
@@ -82,7 +82,7 @@ class DesktopSerialService {
     }
   }
 
-  /// 自动连接第一个可用的串口（通常是 BU04 设备）
+  /// Auto-connect to the first available serial port (usually a BU04 device).
   Future<bool> autoConnect({int baudRate = 115200}) async {
     final ports = getAvailablePorts();
 
@@ -93,10 +93,10 @@ class DesktopSerialService {
 
     debugPrint('Found ${ports.length} port(s): $ports');
 
-    // Linux 平台優先嘗試常見 USB/UART 設備路徑
+    // On Linux, prefer common USB/UART device paths first.
     final prioritizedPorts = _prioritizePortsForPlatform(ports);
 
-    // 尝试连接第一个串口
+    // Try each port in priority order.
     for (final port in prioritizedPorts) {
       debugPrint('Trying to connect: $port');
       if (await connect(port, baudRate: baudRate)) {
@@ -126,7 +126,7 @@ class DesktopSerialService {
     return [...preferred, ...others];
   }
 
-  /// 断开串口连接
+  /// Disconnect the serial port.
   Future<void> disconnect() async {
     _isConnected = false;
 
@@ -144,10 +144,10 @@ class DesktopSerialService {
     }
   }
 
-  // 記錄收到的原始字節數 (用於調試)
+  // Track received raw byte count (for debugging).
   int _totalBytesReceived = 0;
 
-  /// 开始读取串口数据
+  /// Start reading serial data.
   void _startReading() {
     if (_port == null || !_isConnected) return;
 
@@ -160,60 +160,60 @@ class DesktopSerialService {
           try {
             _totalBytesReceived += data.length;
 
-            // 調試：每收到一些數據就打印
+            // Debug: print periodically as data arrives.
             if (_totalBytesReceived % 500 < data.length) {
               debugPrint(
                   '[Serial] Received $_totalBytesReceived bytes, chunk: ${data.length} bytes');
             }
 
-            // 添加新数据到缓冲区
+            // Append incoming data to the buffer.
             byteBuffer.addAll(data);
 
-            // 同时发送原始数据流
+            // Emit raw data stream.
             _rawDataController.add(data);
 
-            // BU04 TWR 數據格式: "CmdM:4[" + 91 bytes data + "]"
-            // 固定數據包長度約 100 字節 (7 + 91 + 1 + 換行符)
-            // 使用兩個連續 CmdM 之間的數據作為一個完整數據包
+            // BU04 TWR packet format: "CmdM:4[" + 91 bytes data + "]".
+            // Typical packet length is about 100 bytes (7 + 91 + 1 + newline).
+            // Use bytes between two consecutive CmdM markers as one packet.
             while (byteBuffer.length >= 100) {
-              // 找第一個 CmdM 開頭
+              // Find the first CmdM marker.
               final firstCmdM = _findCmdMStart(byteBuffer);
               if (firstCmdM < 0) {
-                // 沒有找到 CmdM，丟棄部分緩衝區
+                // If no CmdM is found, trim part of the buffer.
                 if (byteBuffer.length > 200) {
                   byteBuffer = byteBuffer.sublist(byteBuffer.length - 100);
                 }
                 break;
               }
 
-              // 丟棄 CmdM 之前的垃圾數據
+              // Drop bytes before CmdM.
               if (firstCmdM > 0) {
                 byteBuffer = byteBuffer.sublist(firstCmdM);
               }
 
-              // 找下一個 CmdM 或使用固定長度
+              // Find next CmdM marker or fall back to fixed packet length.
               final secondCmdM = _findCmdMStart(byteBuffer.sublist(7));
               int packetEnd;
 
               if (secondCmdM > 0) {
-                // 找到下一個 CmdM，當前數據包到這裡結束
+                // Next CmdM found: current packet ends here.
                 packetEnd = 7 + secondCmdM;
               } else if (byteBuffer.length >= 100) {
-                // 沒找到下一個 CmdM，使用固定長度（約100字節）
+                // No next CmdM: use fixed packet length (~100 bytes).
                 packetEnd = 100;
               } else {
-                // 數據不足，等待更多數據
+                // Not enough data yet.
                 break;
               }
 
-              // 提取數據包
+              // Extract packet.
               final packetBytes =
                   Uint8List.fromList(byteBuffer.sublist(0, packetEnd));
               byteBuffer = byteBuffer.sublist(packetEnd);
 
-              // 只處理足夠長的數據包（至少包含距離數據）
+              // Process only sufficiently long packets (must include distance data).
               if (packetBytes.length >= 20) {
-                // 發送 RAWBIN 格式
+                // Emit RAWBIN payload.
                 final hexData = packetBytes
                     .map((b) => b.toRadixString(16).padLeft(2, '0'))
                     .join(' ');
@@ -221,7 +221,7 @@ class DesktopSerialService {
               }
             }
 
-            // 防止缓冲区过大
+            // Prevent oversized buffers.
             if (byteBuffer.length > 500) {
               byteBuffer = byteBuffer.sublist(byteBuffer.length - 200);
             }
@@ -245,10 +245,10 @@ class DesktopSerialService {
     }
   }
 
-  /// 检查是否是 CmdM 二进制数据包
+  /// Check whether data is a CmdM binary packet.
   // ignore: unused_element
   bool _isCmdMPacket(Uint8List data) {
-    // CmdM 的 ASCII: 43 6d 64 4d
+    // CmdM ASCII bytes: 43 6d 64 4d.
     if (data.length >= 7) {
       return data[0] == 0x43 && // C
           data[1] == 0x6d && // m
@@ -258,9 +258,9 @@ class DesktopSerialService {
     return false;
   }
 
-  /// 在緩衝區中查找 CmdM 數據包的開始位置
+  /// Find the start index of a CmdM packet in the buffer.
   int _findCmdMStart(List<int> buffer) {
-    // 查找 "CmdM" 標識 (43 6d 64 4d)
+    // Search for the "CmdM" marker (43 6d 64 4d).
     for (int i = 0; i < buffer.length - 7; i++) {
       if (buffer[i] == 0x43 &&
           buffer[i + 1] == 0x6d &&
@@ -272,7 +272,7 @@ class DesktopSerialService {
     return -1;
   }
 
-  /// 发送数据到串口
+  /// Send data to the serial port.
   Future<bool> write(String data) async {
     if (_port == null || !_isConnected) {
       debugPrint('Serial port not connected');
@@ -289,7 +289,7 @@ class DesktopSerialService {
     }
   }
 
-  /// 清理资源
+  /// Dispose resources.
   void dispose() {
     disconnect();
     _dataController.close();

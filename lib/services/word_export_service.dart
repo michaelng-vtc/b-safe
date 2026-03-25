@@ -5,22 +5,22 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:bsafe_app/models/inspection_model.dart';
 
-/// 產生 .docx (Office Open XML) 格式的巡檢報告
+/// Docx (Office Open XML) inspection.
 class WordExportService {
-  /// 匯出 Word 文件，包含專案所有樓層的缺陷與 AI 分析
+  /// Word ， project floor defect AI analysis.
   static Future<void> exportReport({
     required String outputPath,
     required String buildingName,
     required List<InspectionSession> sessions,
   }) async {
-    // 依樓層排序
+    // Floor.
     final sorted = List<InspectionSession>.from(sessions)
       ..sort((a, b) => a.floor.compareTo(b.floor));
 
-    // 建立 document.xml body 內容
+    // Document.xml body content.
     final body = StringBuffer();
 
-    // 標題
+    // Title.
     body.writeln(_heading('B-SAFE Inspection Report', level: 1));
     body.writeln(_paragraph('Project: $buildingName'));
     body.writeln(_paragraph(
@@ -28,7 +28,7 @@ class WordExportService {
     body.writeln(_paragraph('Floors: ${sorted.length}'));
     body.writeln(_paragraph(''));
 
-    // 收集所有圖片
+    // Floor plan image cache.
     final images = <_ImageEntry>[];
 
     for (final session in sorted) {
@@ -56,7 +56,7 @@ class WordExportService {
 
           body.writeln(_heading('Defect $defectNum — $riskLabel', level: 4));
 
-          // 風險等級
+          // Risk.
           body.writeln(_paragraph('Risk Level: $riskLabel'));
 
           // Structured fields
@@ -114,12 +114,12 @@ class WordExportService {
             body.writeln(_paragraph('Remarks: ${defect.remarks}'));
           }
 
-          // AI 分析描述
+          // AI analysis.
           if (defect.description != null && defect.description!.isNotEmpty) {
             body.writeln(_paragraph('AI Analysis: ${defect.description}'));
           }
 
-          // 建議
+          // Recommendation.
           if (defect.recommendations.isNotEmpty) {
             body.writeln(_paragraph('Recommendations:'));
             for (final rec in defect.recommendations) {
@@ -127,7 +127,7 @@ class WordExportService {
             }
           }
 
-          // AI 對話記錄
+          // AI.
           if (defect.chatMessages.isNotEmpty) {
             body.writeln(_paragraph('Chat History:'));
             for (final msg in defect.chatMessages) {
@@ -136,7 +136,7 @@ class WordExportService {
             }
           }
 
-          // 缺陷圖片
+          // Defectimage.
           if (defect.imageBase64 != null && defect.imageBase64!.isNotEmpty) {
             final imgId = 'rId${100 + images.length}';
             final imgFileName = 'image${images.length + 1}.jpg';
@@ -158,7 +158,7 @@ class WordExportService {
       }
     }
 
-    // 組裝 DOCX zip
+    // DOCX zip.
     final archive = Archive();
 
     // [Content_Types].xml
@@ -177,7 +177,7 @@ class WordExportService {
     // word/styles.xml
     archive.addFile(_textFile('word/styles.xml', _stylesXml()));
 
-    // 圖片檔案
+    // Floor plan image cache.
     for (final img in images) {
       final bytes = base64Decode(img.base64Data);
       archive.addFile(ArchiveFile(
@@ -187,13 +187,13 @@ class WordExportService {
       ));
     }
 
-    // 寫入檔案
+    // Translated legacy note.
     final encoded = ZipEncoder().encode(archive);
     final file = File(outputPath);
     await file.writeAsBytes(Uint8List.fromList(encoded));
   }
 
-  // ===== XML 建構輔助 =====
+  // ===== XML =====.
 
   static String _xmlEscape(String text) {
     return text
@@ -214,7 +214,7 @@ class WordExportService {
   }
 
   static String _paragraph(String text) {
-    // 支援多行：每行一個 run，用 w:br 換行
+    // ： run， w:br.
     final lines = text.split('\n');
     final runs = StringBuffer();
     for (int i = 0; i < lines.length; i++) {
@@ -236,7 +236,7 @@ class WordExportService {
   }
 
   static String _imageBlock(String rId) {
-    // 圖片寬度約 15cm = 5400000 EMU，高度按比例
+    // Image 15cm = 5400000 EMU，height.
     const cx = 5400000;
     const cy = 3600000;
     return '''
@@ -273,7 +273,7 @@ class WordExportService {
 </w:p>''';
   }
 
-  // ===== OOXML 結構檔案 =====
+  // ===== OOXML =====.
 
   static String _contentTypes(List<_ImageEntry> images) {
     final imgOverrides = StringBuffer();

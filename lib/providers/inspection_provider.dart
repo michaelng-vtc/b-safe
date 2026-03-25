@@ -6,27 +6,27 @@ import 'package:bsafe_app/models/inspection_model.dart';
 import 'package:bsafe_app/services/api_service.dart';
 
 class InspectionProvider extends ChangeNotifier {
-  // 當前巡檢會話
+  // Inspection.
   InspectionSession? _currentSession;
   InspectionSession? get currentSession => _currentSession;
 
-  // 所有歷史會話
+  // History.
   List<InspectionSession> _sessions = [];
   List<InspectionSession> get sessions => _sessions;
 
-  // 當前選中的 pin
+  // Pin.
   InspectionPin? _selectedPin;
   InspectionPin? get selectedPin => _selectedPin;
 
-  // 是否處於 pin 放置模式
+  // Pin mode.
   bool _isPinMode = false;
   bool get isPinMode => _isPinMode;
 
-  // 載入狀態
+  // Load.
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  // AI 分析中
+  // AI analysis.
   bool _isAnalyzing = false;
   bool get isAnalyzing => _isAnalyzing;
 
@@ -40,9 +40,9 @@ class InspectionProvider extends ChangeNotifier {
     loadSessions();
   }
 
-  // ===== 會話管理 =====
+  // Translated legacy comment.
 
-  /// 建立新的巡檢會話
+  /// Inspection.
   Future<InspectionSession> createSession(String name,
       {String? floorPlanPath, String? projectId, int floor = 1}) async {
     final session = InspectionSession(
@@ -60,7 +60,7 @@ class InspectionProvider extends ChangeNotifier {
     return session;
   }
 
-  /// 載入所有會話
+  /// Load.
   Future<void> loadSessions() async {
     _isLoading = true;
     notifyListeners();
@@ -76,7 +76,7 @@ class InspectionProvider extends ChangeNotifier {
             .toList();
       }
 
-      // 恢復上一個使用的會話
+      // Translated legacy note.
       final currentId = prefs.getString(_currentSessionKey);
       if (currentId != null && _sessions.isNotEmpty) {
         _currentSession = _sessions.firstWhere(
@@ -92,7 +92,7 @@ class InspectionProvider extends ChangeNotifier {
     }
   }
 
-  /// 保存所有會話
+  /// Save.
   Future<void> _saveSessions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -107,7 +107,7 @@ class InspectionProvider extends ChangeNotifier {
     }
   }
 
-  /// 切換到指定會話
+  /// Translated legacy note.
   void switchSession(String sessionId) {
     _currentSession = _sessions.firstWhere(
       (s) => s.id == sessionId,
@@ -118,7 +118,7 @@ class InspectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 刪除會話
+  /// Translated legacy note.
   Future<void> deleteSession(String sessionId) async {
     _sessions.removeWhere((s) => s.id == sessionId);
     if (_currentSession?.id == sessionId) {
@@ -128,7 +128,7 @@ class InspectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 更新當前會話的 floor plan 路徑
+  /// Update floor plan path.
   void updateFloorPlan(String path) {
     if (_currentSession == null) return;
     _currentSession = _currentSession!.copyWith(
@@ -140,9 +140,9 @@ class InspectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ===== Pin 管理 =====
+  // ===== Pin =====.
 
-  /// 切換 pin 放置模式
+  /// Pin mode.
   void togglePinMode() {
     _isPinMode = !_isPinMode;
     if (_isPinMode) {
@@ -151,13 +151,13 @@ class InspectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 關閉 pin 模式
+  /// Pin mode.
   void disablePinMode() {
     _isPinMode = false;
     notifyListeners();
   }
 
-  /// 在指定位置添加 pin
+  /// Pin.
   InspectionPin addPin(double x, double y) {
     if (_currentSession == null) {
       createSession('Inspection ${DateTime.now().toString().substring(0, 16)}');
@@ -184,7 +184,7 @@ class InspectionProvider extends ChangeNotifier {
     return pin;
   }
 
-  /// 更新 pin（例如添加照片+AI分析）
+  /// Update pin( photo+AIanalysis).
   void updatePin(InspectionPin updatedPin) {
     if (_currentSession == null) return;
 
@@ -205,7 +205,7 @@ class InspectionProvider extends ChangeNotifier {
     }
   }
 
-  /// 刪除 pin
+  /// Pin.
   void removePin(String pinId) {
     if (_currentSession == null) return;
 
@@ -224,21 +224,21 @@ class InspectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 選擇 pin
+  /// Pin.
   void selectPin(InspectionPin? pin) {
     _selectedPin = pin;
     notifyListeners();
   }
 
-  /// 取消選擇
+  /// Translated legacy note.
   void deselectPin() {
     _selectedPin = null;
     notifyListeners();
   }
 
-  // ===== AI 分析 =====
+  // ===== AI analysis =====.
 
-  /// 對指定 pin 進行 AI 分析
+  /// Pin AI analysis.
   Future<InspectionPin> analyzePin(
     InspectionPin pin, {
     required String imageBase64,
@@ -254,7 +254,7 @@ class InspectionProvider extends ChangeNotifier {
         analysis = await _api.analyzeImageWithAI(imageBase64);
         debugPrint('[InspectionProvider] POE AI analysis success');
       } catch (e) {
-        // 使用本地分析作為後備
+        // Analysis.
         debugPrint('[InspectionProvider] POE AI analysis failed, using local fallback: $e');
         analysis = ApiService.localAnalysis('moderate', 'structural');
       }
@@ -279,7 +279,7 @@ class InspectionProvider extends ChangeNotifier {
       return updatedPin;
     } catch (e) {
       debugPrint('AI analysis failed: $e');
-      // 返回帶有基本分析的 pin
+      // Analysis pin.
       final fallbackPin = pin.copyWith(
         imagePath: imagePath,
         imageBase64: imageBase64,
@@ -297,7 +297,7 @@ class InspectionProvider extends ChangeNotifier {
     }
   }
 
-  /// 分析單一 defect（帶聊天上下文）
+  /// Analysis defect( ).
   Future<Defect> analyzeDefect(
     Defect defect, {
     required String imageBase64,
@@ -360,9 +360,9 @@ class InspectionProvider extends ChangeNotifier {
     }
   }
 
-  // ===== 內部方法 =====
+  // Translated legacy comment.
 
-  /// 更新 sessions 列表中的當前 session
+  /// Update sessions session.
   void _updateSessionInList() {
     if (_currentSession == null) return;
 
@@ -372,7 +372,7 @@ class InspectionProvider extends ChangeNotifier {
     }
   }
 
-  /// 完成巡檢會話
+  /// Inspection.
   Future<void> completeSession() async {
     if (_currentSession == null) return;
 
@@ -385,7 +385,7 @@ class InspectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 標記為已導出
+  /// Translated legacy note.
   Future<void> markExported() async {
     if (_currentSession == null) return;
 
@@ -398,6 +398,6 @@ class InspectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 當前會話的 pins 列表 (快捷存取)
+  /// Pins ( ).
   List<InspectionPin> get currentPins => _currentSession?.pins ?? [];
 }
