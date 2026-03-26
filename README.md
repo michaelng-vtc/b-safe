@@ -1,103 +1,204 @@
 # B-SAFE Flutter App
 
-智慧城市建築安全應用 - Flutter 前端
+智慧城市建築安全應用 - Flutter 前端（**Feature-First 架構**）
 
 ## 功能特點
 
 ### ✅ 已實現功能
 
-1. **問題描述和嚴重程度分類**
-   - 輕微 / 中度 / 嚴重 三級分類
-   - 視覺化選擇器
+1. **UWB 定位系統** 📡
+   - 超寬帶實時位置追蹤
+   - 精準建築物內導航
+   - 多錨點校準
 
-2. **標籤系統**
-   - 結構性問題 🏗️
-   - 外牆問題 🧱
-   - 公共區域 🚪
-   - 電氣問題 ⚡
-   - 水管問題 🚰
-   - 其他 📋
+2. **檢查工作流** 🏗️
+   - 樓層平面圖上標記問題點
+   - AI 分析缺陷照片
+   - 實時風險評分（0-100）
 
-3. **拍照上傳**
-   - 相機拍照
-   - 相簿選取
-   - 圖片預覽
+3. **缺陷上報** 📸
+   - 相機拍照 / 相簿選取
+   - 類別分類（結構、外牆、電氣、水管等）
+   - AI 自動評估嚴重程度
 
-4. **AI圖像識別自動評估損壞程度**
-   - POE API 整合接口（需配置API Key）
-   - 離線時使用本地規則評估
+4. **智能 AI 分析** 🤖
+   - POE API / 本地離線評估
+   - 損壞類型識別
+   - 緊急程度自動判斷
 
-5. **生成建築安全風險評分**
-   - 0-100 分數評估
-   - 圓形進度顯示
+5. **數據分析儀表板** 📊
+   - 風險分佈圖表
+   - 近期趨勢可視化
+   - 統計卡片
 
-6. **自動判斷是否需要緊急處理**
-   - 基於嚴重程度和類別自動判斷
-   - 緊急標籤顯示
+6. **在線/離線支持** 🔄
+   - 自動網絡檢測
+   - SQLite 本地緩存
+   - 恢復連線自動同步
 
-7. **損壞趨勢分析**
-   - 近7天趨勢折線圖
-   - 風險分佈餅圖
-   - 處理狀態柱狀圖
+## 架構設計
 
-8. **顏色標識風險等級**
-   - 🔴 高風險 (紅色)
-   - 🟡 中風險 (黃色)
-   - 🟢 低風險 (綠色)
-
-9. **在線/離線功能**
-   - 自動檢測網絡狀態
-   - 離線時數據存儲到本地 SQLite
-   - 恢復連線後自動同步
-
-## 項目結構
+### Feature-First 結構（模塊化架構）
 
 ```
-flutter_app/
-├── lib/
-│   ├── main.dart                 # 應用入口
+lib/
+├── core/                           # 核心層
 │   ├── theme/
-│   │   └── app_theme.dart        # 主題配置
-│   ├── models/
-│   │   └── report_model.dart     # 報告數據模型
-│   ├── providers/
-│   │   ├── report_provider.dart       # 報告狀態管理
-│   │   └── connectivity_provider.dart # 網絡狀態管理
-│   ├── services/
-│   │   ├── database_service.dart # 本地數據庫服務
-│   │   └── api_service.dart      # API 服務 (含 POE AI)
-│   ├── screens/
-│   │   ├── home_screen.dart      # 首頁
-│   │   ├── report_screen.dart    # 上報頁面
-│   │   ├── history_screen.dart   # 歷史記錄
-│   │   ├── analysis_screen.dart  # 數據分析
-│   │   └── report_detail_screen.dart # 報告詳情
-│   └── widgets/
-│       ├── stat_card.dart        # 統計卡片
-│       ├── recent_report_card.dart    # 最近報告卡片
-│       ├── report_detail_card.dart    # 報告詳情卡片
-│       ├── category_selector.dart     # 類別選擇器
-│       ├── severity_selector.dart     # 嚴重程度選擇器
-│       └── ai_analysis_result.dart    # AI分析結果組件
-├── assets/
-│   ├── images/
-│   ├── icons/
-│   └── fonts/
-└── pubspec.yaml
+│   │   └── app_theme.dart         # 全局主題
+│   └── providers/
+│       └── connectivity_provider.dart  # 全局連接狀態
+│
+├── features/                       # 特性模塊層
+│   ├── start/                      # 啟動/項目選擇
+│   │   ├── view/
+│   │   │   └── start_page.dart
+│   │   └── widgets/
+│   │
+│   ├── main_layout/                # 應用殼層 (底部導航)
+│   │   ├── view/
+│   │   │   └── main_screen.dart
+│   │   ├── controller/
+│   │   │   └── main_layout_controller.dart
+│   │   └── providers/
+│   │       └── navigation_provider.dart
+│   │
+│   ├── home/                       # 首頁儀表板
+│   │   ├── view/
+│   │   │   └── home_page.dart
+│   │   └── widgets/
+│   │       ├── stat_card.dart
+│   │       ├── recent_report_card.dart
+│   │       ├── animated_counter.dart
+│   │       └── shimmer_loading.dart
+│   │
+│   ├── inspection/                 # UWB 檢查工作流
+│   │   ├── view/
+│   │   │   ├── inspection_page.dart
+│   │   │   └── calibration_page.dart
+│   │   ├── widgets/
+│   │   │   ├── pins/
+│   │   │   │   └── mobile_pin_list_sheet.dart
+│   │   │   └── settings/
+│   │   │       └── mobile_settings_sheet.dart
+│   │   └── providers/
+│   │       └── inspection_provider.dart
+│   │
+│   ├── monitor/                    # UWB 數據監控
+│   │   ├── view/
+│   │   │   └── monitor_page.dart
+│   │   └── widgets/
+│   │       ├── position_canvas.dart
+│   │       ├── settings_panel.dart
+│   │       └── data_tables.dart
+│   │
+│   ├── report/                     # 缺陷上報
+│   │   ├── view/
+│   │   │   └── report_page.dart
+│   │   ├── widgets/
+│   │   │   ├── ai_analysis_result.dart
+│   │   │   ├── category_selector.dart
+│   │   │   └── severity_selector.dart
+│   │   └── providers/
+│   │       └── report_provider.dart
+│   │
+│   ├── history/                    # 報告歷史
+│   │   ├── view/
+│   │   │   ├── history_page.dart
+│   │   │   └── report_detail_page.dart
+│   │   └── widgets/
+│   │       └── report_detail_card.dart
+│   │
+│   ├── analysis/                   # 數據分析
+│   │   └── view/
+│   │       └── analysis_page.dart
+│   │
+│   └── settings/                   # 應用設置
+│       └── view/
+│           └── settings_page.dart
+│
+├── models/                         # 全局數據模型
+│   ├── project_model.dart
+│   ├── report_model.dart
+│   ├── inspection_model.dart
+│   └── uwb_model.dart
+│
+├── services/                       # 全局業務服務
+│   ├── api_service.dart           # API 與 AI 集成
+│   ├── database_service.dart      # SQLite 本地存儲
+│   ├── uwb_service.dart           # UWB 通信
+│   ├── desktop_serial_service.dart
+│   ├── mobile_serial_service.dart
+│   └── yolo_service.dart          # YOLO 本地推理
+│
+├── main.dart                       # 應用入口
+└── providers/                      # 空 (遷移至 features)
 ```
+
+## 核心概念
+
+### 特性模塊職責
+
+每個 `features/<feature>/` 擁有：
+- **view/** - 主要頁面 (`*_page.dart`)
+- **widgets/** - 特性專屬 UI 組件（非共享）
+- **controller/** - 本地狀態邏輯
+- **providers/** - 特性狀態管理（可選）
+
+### 分層設計
+
+| 層級 | 職責 | 示例 |
+|------|------|------|
+| **core/** | 全局主題、連接狀態 | `app_theme.dart`、`connectivity_provider.dart` |
+| **features/** | 功能模塊、UI、狀態 | `inspection/`、`report/` |
+| **services/** | 邏輯服務、API、數據庫 | `api_service.dart`、`uwb_service.dart` |
+| **models/** | 數據結構 | `ReportModel`、`InspectionSession` |
+
+## 主要特性模塊
+
+### 🏠 **home** - 儀表板
+- 統計卡片（高/中/低風險計數）
+- 最近上報列表
+- 實時動畫計數器
+
+### 🔍 **inspection** - UWB 檢查工作流
+- 平面圖顯示與交互
+- 缺陷點標記 (`InspectionPin`)
+- 底部表單（類別、嚴重程度）
+- AI 分析觸發
+- 校準頁面
+
+### 📍 **monitor** - UWB 實時監控
+- 位置畫布渲染
+- 設置面板
+- 數據表格
+
+### 📝 **report** - 缺陷上報
+- 圖片選取 + 預覽
+- 類別與嚴重程度選擇
+- AI 分析結果展示
+- 在線/離線模式切換
+
+### 📊 **history** - 報告瀏覽
+- 列表篩選
+- 詳情頁面
+- 狀態/風險級別標籤
+
+### ⚙️ **main_layout** - 應用殼層
+- 底部導航條（首頁 / 監控 / 設置）
+- Tab 切換狀態管理
+- 全局儀表板
 
 ## 安裝和運行
 
 ### 1. 安裝依賴
 
 ```bash
-cd flutter_app
 flutter pub get
 ```
 
 ### 2. 配置 POE API
 
-在 `lib/services/api_service.dart` 中設置你的 POE API Key：
+在 `lib/services/api_service.dart` 設置 API Key：
 
 ```dart
 static const String poeApiKey = 'YOUR_POE_API_KEY';
@@ -106,35 +207,84 @@ static const String poeApiKey = 'YOUR_POE_API_KEY';
 ### 3. 運行應用
 
 ```bash
-# 運行在模擬器
+# 調試模式
 flutter run
 
-# 運行在特定設備
+# 特定設備
 flutter run -d <device_id>
 
 # 構建 APK
-flutter build apk
+flutter build apk --release
 
 # 構建 iOS
-flutter build ios
+flutter build ios --release
+```
+
+### 4. 代碼分析
+
+```bash
+# 檢查代碼質量
+flutter analyze lib
+
+# 格式化 Dart 代碼
+dart format lib/
 ```
 
 ## 技術棧
 
-- **Flutter 3.x** - 跨平台 UI 框架
-- **Provider** - 狀態管理
-- **sqflite** - 本地 SQLite 數據庫
-- **connectivity_plus** - 網絡狀態檢測
-- **image_picker** - 圖片選取
-- **fl_chart** - 圖表可視化
-- **http** - HTTP 請求
+| 技術 | 用途 |
+|------|------|
+| **Flutter 3.x** | 跨平台 UI 框架 |
+| **Provider** | 狀態管理 |
+| **sqflite** | 本地 SQLite 數據庫 |
+| **connectivity_plus** | 網絡狀態檢測 |
+| **image_picker** | 圖片選取 |
+| **fl_chart** | 圖表可視化 |
+| **pdfrx** | PDF 樓層平面圖 |
+| **http** | HTTP 請求 |
+
+## 開發指南
+
+### 添加新特性模塊
+
+```
+lib/features/my_feature/
+├── view/
+│   └── my_feature_page.dart     # 主頁面
+├── widgets/                      # 本地 UI 組件
+├── controller/                   # 狀態邏輯
+├── providers/                    # 狀態管理（可選）
+└── models/                       # 特性專屬模型（可選）
+```
+
+### 命名約定
+
+- **頁面**: `*_page.dart` (如 `home_page.dart`)
+- **提供者**: `*_provider.dart` (如 `report_provider.dart`)
+- **控制器**: `*_controller.dart` (如 `main_layout_controller.dart`)
+- **組件**: `*_widget.dart` 或描述性名稱 (如 `stat_card.dart`)
+
+### 導入規則
+
+```dart
+// ✅ 推薦：完整路徑
+import 'package:bsafe_app/features/home/widgets/stat_card.dart';
+import 'package:bsafe_app/core/theme/app_theme.dart';
+import 'package:bsafe_app/services/api_service.dart';
+
+// ❌ 避免：相對導入
+import '../../../widgets/stat_card.dart';
+```
 
 ## 下一步：後端開發
 
-前端已完成，接下來需要開發：
+前端架構已完成，接下來需要開發：
 
-1. **PHP REST API** - 後端接口
-2. **MariaDB 數據庫** - 數據存儲
-3. **POE API 整合** - AI 圖像分析
+1. **REST API** - Node.js / PHP 後端服務
+2. **數據庫** - MariaDB / PostgreSQL
+3. **雲存儲** - 圖片 / PDF 存儲
+4. **AI 服務** - POE API / 本地模型部署
 
-需要我繼續創建後端嗎？
+## 許可證
+
+MIT License

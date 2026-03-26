@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:pdfrx/pdfrx.dart';
-import 'package:bsafe_app/providers/report_provider.dart';
-import 'package:bsafe_app/providers/connectivity_provider.dart';
-import 'package:bsafe_app/providers/inspection_provider.dart';
-import 'package:bsafe_app/screens/start_screen.dart';
-import 'package:bsafe_app/theme/app_theme.dart';
+import 'package:bsafe_app/features/report/providers/report_provider.dart';
+import 'package:bsafe_app/core/providers/connectivity_provider.dart';
+import 'package:bsafe_app/features/inspection/providers/inspection_provider.dart';
+import 'package:bsafe_app/features/start/view/start_page.dart';
+import 'package:bsafe_app/core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

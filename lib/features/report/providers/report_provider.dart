@@ -1,0 +1,245 @@
+import 'package:flutter/material.dart';
+import 'package:bsafe_app/models/report_model.dart';
+import 'package:bsafe_app/services/database_service.dart';
+import 'package:bsafe_app/services/api_service.dart';
+
+class ReportProvider extends ChangeNotifier {
+  List<ReportModel> _reports = [];
+  Map<String, dynamic> _statistics = {};
+  List<Map<String, dynamic>> _trendData = [];
+  bool _isLoading = false;
+  String? _error;
+  int _pendingSyncCount = 0;
+
+  // Getters
+  List<ReportModel> get reports => _reports;
+  Map<String, dynamic> get statistics => _statistics;
+  List<Map<String, dynamic>> get trendData => _trendData;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  int get pendingSyncCount => _pendingSyncCount;
+
+  final DatabaseService _db = DatabaseService.instance;
+  final ApiService _api = ApiService.instance;
+
+  ReportProvider() {
+    loadReports();
+  }
+
+  // Load all reports from local database
+  Future<void> loadReports() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      debugPrint('📥 Loading reports from database...');
+      _reports = await _db.getAllReports();
+      debugPrint('📊 Loaded ${_reports.length} reports');
+
+      _statistics = await _db.getStatistics();
+      _trendData = await _db.getTrendData();
+
+      final syncQueue = await _db.getPendingSyncQueue();
+      _pendingSyncCount = syncQueue.length;
+
+      debugPrint('📋 Reports in provider: ${_reports.length}');
+      for (var report in _reports) {
+        debugPrint('  - ${report.id}: ${report.title} (${report.category})');
+      }
+    } catch (e) {
+      _error = 'Failed to load data: $e';
+      debugPrint('❌ Error loading reports: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Analyze image with AI (POE API)
+  Future<Map<String, dynamic>?> analyzeImage(String imageBase64) async {
+    try {
+      final analysis = await _api.analyzeImageWithAI(imageBase64);
+      return analysis;
+    } catch (e) {
+      debugPrint('AI analysis failed: $e');
+      // Return fallback local analysis
+      return {
+        'damage_detected': true,
+        'category': 'structural',
+        'severity': 'moderate',
+        'risk_level': 'medium',
+        'risk_score': 50,
+        'is_urgent': false,
+        'title': 'Building Safety Issue',
+        'analysis':
+            'AI analysis temporarily unavailable. Using local assessment.',
+        'recommendations': ['Recommend professional inspection'],
+      };
+    }
+  }
+
+  // Add a new report
+  Future<ReportModel?> addReport({
+    required String title,
+    required String description,
+    required String category,
+    required String severity,
+    String? imagePath,
+    String? imageBase64,
+    String? location,
+    double? latitude,
+    double? longitude,
+    bool isOnline = true,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      // Perform AI analysis or local analysis
+      Map<String, dynamic> analysis;
+
+      if (isOnline && imageBase64 != null) {
+        try {
+          analysis = await _api.analyzeImageWithAI(imageBase64);
+        } catch (e) {
+          // Fallback to local analysis
+          analysis = ApiService.localAnalysis(severity, category);
+        }
+      } else {
+        analysis = ApiService.localAnalysis(severity, category);
+      }
+
+      // Create report with analysis results
+      final report = ReportModel(
+        title: title,
+        description: description,
+        category: category,
+        severity: analysis['severity'] ?? severity,
+        riskLevel: analysis['risk_level'] ?? 'low',
+        riskScore: analysis['risk_score'] ?? 0,
+        isUrgent: analysis['is_urgent'] ?? false,
+        imagePath: imagePath,
+        imageBase64: imageBase64,
+        location: location,
+        latitude: latitude,
+        longitude: longitude,
+        aiAnalysis: analysis['analysis'],
+        synced: false,
+      );
+
+      // Save to local database
+      final id = await _db.insertReport(report);
+      final savedReport = report.copyWith(id: id);
+
+      debugPrint('✅ Report saved to database with ID: $id');
+      debugPrint(
+          'Report details: ${savedReport.title}, ${savedReport.category}, ${savedReport.severity}');
+
+      // Try to sync if online
+      if (isOnline) {
+        try {
+          await _api.submitReport(savedReport);
+          await _db.markReportAsSynced(id);
+          debugPrint('✅ Report synced to server');
+        } catch (e) {
+          // Will sync later
+          _pendingSyncCount++;
+          debugPrint('⚠️ Report saved locally, will sync later: $e');
+        }
+      } else {
+        _pendingSyncCount++;
+        debugPrint('📴 Offline mode - report saved locally');
+      }
+
+      // Reload reports
+      await loadReports();
+
+      debugPrint('📊 Total reports after save: ${_reports.length}');
+
+      return savedReport;
+    } catch (e) {
+      _error = 'Failed to submit report: $e';
+      notifyListeners();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Update report
+  Future<bool> updateReport(ReportModel report) async {
+    try {
+      await _db.updateReport(report);
+      await loadReports();
+      return true;
+    } catch (e) {
+      _error = 'Failed to update report: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Delete report
+  Future<bool> deleteReport(int id) async {
+    try {
+      await _db.deleteReport(id);
+      await loadReports();
+      return true;
+    } catch (e) {
+      _error = 'Failed to delete report: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Sync pending reports
+  Future<void> syncPendingReports() async {
+    if (_pendingSyncCount == 0) return;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final unsyncedReports = await _db.getUnsyncedReports();
+
+      for (final report in unsyncedReports) {
+        try {
+          await _api.submitReport(report);
+          if (report.id != null) {
+            await _db.markReportAsSynced(report.id!);
+          }
+        } catch (e) {
+          // Continue with other reports
+          debugPrint('Failed to sync report ${report.id}: $e');
+        }
+      }
+
+      await _db.clearSyncQueue();
+      await loadReports();
+    } catch (e) {
+      _error = 'Sync failed: $e';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Get reports filtered by risk level
+  List<ReportModel> getReportsByRiskLevel(String level) {
+    return _reports.where((r) => r.riskLevel == level).toList();
+  }
+
+  // Get urgent reports
+  List<ReportModel> get urgentReports {
+    return _reports.where((r) => r.isUrgent).toList();
+  }
+
+  // Clear error
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+}
