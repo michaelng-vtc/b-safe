@@ -258,6 +258,7 @@ class InspectionPin {
   final String id;
   final double x; // UWB X coordinate (meters)
   final double y; // UWB Y coordinate (meters)
+  final int? floorPlanOrder; // Belongs to which floor plan segment
   final List<Defect> defects; // Multiple defect records
   // Legacy fields for backward compatibility
   final String? imagePath; // Captured photo path
@@ -277,6 +278,7 @@ class InspectionPin {
     required this.id,
     required this.x,
     required this.y,
+    this.floorPlanOrder,
     this.defects = const [],
     this.imagePath,
     this.imageBase64,
@@ -296,6 +298,7 @@ class InspectionPin {
     String? id,
     double? x,
     double? y,
+    int? floorPlanOrder,
     List<Defect>? defects,
     String? imagePath,
     String? imageBase64,
@@ -314,6 +317,7 @@ class InspectionPin {
       id: id ?? this.id,
       x: x ?? this.x,
       y: y ?? this.y,
+      floorPlanOrder: floorPlanOrder ?? this.floorPlanOrder,
       defects: defects ?? this.defects,
       imagePath: imagePath ?? this.imagePath,
       imageBase64: imageBase64 ?? this.imageBase64,
@@ -335,6 +339,7 @@ class InspectionPin {
       'id': id,
       'x': x,
       'y': y,
+      'floorPlanOrder': floorPlanOrder,
       'defects': defects.map((d) => d.toJson()).toList(),
       'imagePath': imagePath,
       'imageBase64': imageBase64,
@@ -356,6 +361,7 @@ class InspectionPin {
       id: json['id'] as String? ?? '',
       x: (json['x'] as num?)?.toDouble() ?? 0,
       y: (json['y'] as num?)?.toDouble() ?? 0,
+      floorPlanOrder: json['floorPlanOrder'] as int?,
       defects: (json['defects'] as List<dynamic>?)
               ?.map((e) => Defect.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -443,12 +449,48 @@ class InspectionPin {
 }
 
 /// Inspection session for a complete floor inspection.
+class FloorPlanSegment {
+  final String path;
+  final int order;
+
+  const FloorPlanSegment({
+    required this.path,
+    required this.order,
+  });
+
+  FloorPlanSegment copyWith({
+    String? path,
+    int? order,
+  }) {
+    return FloorPlanSegment(
+      path: path ?? this.path,
+      order: order ?? this.order,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'path': path,
+      'order': order,
+    };
+  }
+
+  factory FloorPlanSegment.fromJson(Map<String, dynamic> json) {
+    return FloorPlanSegment(
+      path: json['path'] as String? ?? '',
+      order: json['order'] as int? ?? 1,
+    );
+  }
+}
+
 class InspectionSession {
   final String id;
   final String name;
   final String? projectId; // Parent project ID
   final int floor; // Floor number (1-based)
   final String? floorPlanPath;
+  final List<FloorPlanSegment> floorPlans;
+  final int? selectedFloorPlanOrder;
   final List<InspectionPin> pins;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -460,6 +502,8 @@ class InspectionSession {
     this.projectId,
     this.floor = 1,
     this.floorPlanPath,
+    this.floorPlans = const [],
+    this.selectedFloorPlanOrder,
     this.pins = const [],
     DateTime? createdAt,
     this.updatedAt,
@@ -472,6 +516,8 @@ class InspectionSession {
     String? projectId,
     int? floor,
     String? floorPlanPath,
+    List<FloorPlanSegment>? floorPlans,
+    int? selectedFloorPlanOrder,
     List<InspectionPin>? pins,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -483,6 +529,9 @@ class InspectionSession {
       projectId: projectId ?? this.projectId,
       floor: floor ?? this.floor,
       floorPlanPath: floorPlanPath ?? this.floorPlanPath,
+      floorPlans: floorPlans ?? this.floorPlans,
+      selectedFloorPlanOrder:
+          selectedFloorPlanOrder ?? this.selectedFloorPlanOrder,
       pins: pins ?? this.pins,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -497,6 +546,8 @@ class InspectionSession {
       'projectId': projectId,
       'floor': floor,
       'floorPlanPath': floorPlanPath,
+      'floorPlans': floorPlans.map((e) => e.toJson()).toList(),
+      'selectedFloorPlanOrder': selectedFloorPlanOrder,
       'pins': pins.map((p) => p.toJson()).toList(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
@@ -505,12 +556,37 @@ class InspectionSession {
   }
 
   factory InspectionSession.fromJson(Map<String, dynamic> json) {
+    final parsedFloorPlans = (json['floorPlans'] as List<dynamic>?)
+            ?.map((e) => FloorPlanSegment.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+    final legacyFloorPlanPath = json['floorPlanPath'] as String?;
+    if (parsedFloorPlans.isEmpty &&
+        legacyFloorPlanPath != null &&
+        legacyFloorPlanPath.isNotEmpty) {
+      parsedFloorPlans
+          .add(FloorPlanSegment(path: legacyFloorPlanPath, order: 1));
+    }
+
+    final selectedOrder = json['selectedFloorPlanOrder'] as int? ??
+        (parsedFloorPlans.isNotEmpty ? parsedFloorPlans.first.order : null);
+    final selectedPath = parsedFloorPlans
+        .where((segment) => segment.order == selectedOrder)
+        .map((segment) => segment.path)
+        .cast<String?>()
+        .firstWhere(
+          (p) => p != null,
+          orElse: () => legacyFloorPlanPath,
+        );
+
     return InspectionSession(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? 'Unnamed',
       projectId: json['projectId'] as String?,
       floor: json['floor'] as int? ?? 1,
-      floorPlanPath: json['floorPlanPath'] as String?,
+      floorPlanPath: selectedPath,
+      floorPlans: parsedFloorPlans,
+      selectedFloorPlanOrder: selectedOrder,
       pins: (json['pins'] as List<dynamic>?)
               ?.map((e) => InspectionPin.fromJson(e as Map<String, dynamic>))
               .toList() ??

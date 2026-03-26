@@ -11,7 +11,6 @@ class InspectionSettingsBottomSheet extends StatelessWidget {
     bool value,
     ValueChanged<bool> onChanged,
   ) buildToggle;
-  final Future<void> Function() onLoadFloorPlan;
   final Widget Function(String title, IconData icon) buildSectionHeader;
   final Widget Function(UwbAnchor anchor, int index, UwbService uwbService)
       buildAnchorTile;
@@ -20,18 +19,21 @@ class InspectionSettingsBottomSheet extends StatelessWidget {
   final Widget Function(UwbService uwbService, String label, int i, int j)
       buildDistanceSwapButton;
   final VoidCallback onShowRoomDimensions;
+  final VoidCallback onDeleteFloorPlan;
+  final bool showDeleteFloorPlanButton;
 
   const InspectionSettingsBottomSheet({
     super.key,
     required this.uwbService,
     required this.buildToggle,
-    required this.onLoadFloorPlan,
     required this.buildSectionHeader,
     required this.buildAnchorTile,
     required this.onAddAnchor,
     required this.distanceMappingDescription,
     required this.buildDistanceSwapButton,
     required this.onShowRoomDimensions,
+    required this.onDeleteFloorPlan,
+    required this.showDeleteFloorPlanButton,
   });
 
   @override
@@ -81,11 +83,6 @@ class InspectionSettingsBottomSheet extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        buildToggle('Trajectory', Icons.timeline,
-                            uwbService.config.showTrajectory, (v) {
-                          uwbService.updateConfig(
-                              uwbService.config.copyWith(showTrajectory: v));
-                        }),
                         buildToggle(
                             'Fence', Icons.fence, uwbService.config.showFence,
                             (v) {
@@ -167,28 +164,23 @@ class InspectionSettingsBottomSheet extends StatelessWidget {
                           ],
                         ),
                       ),
-                    ],
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
+                      if (showDeleteFloorPlanButton) ...[
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
                           child: OutlinedButton.icon(
-                            onPressed: uwbService.clearTrajectory,
-                            icon: const Icon(Icons.delete_sweep, size: 18),
-                            label: const Text('Clear Trajectory'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: onLoadFloorPlan,
-                            icon: const Icon(Icons.image, size: 18),
-                            label: const Text('Load Floor Plan'),
+                            onPressed: onDeleteFloorPlan,
+                            icon: const Icon(Icons.delete_outline,
+                                size: 18, color: Colors.red),
+                            label: const Text(
+                              'Delete Floor Plan',
+                              style: TextStyle(color: Colors.red),
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 8),
+                    ],
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(

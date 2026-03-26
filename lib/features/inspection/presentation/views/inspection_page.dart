@@ -101,7 +101,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
                                 const SizedBox(width: 8),
                                 SizedBox(
                                   width: 300,
-                                  child: _buildFullSettingsPanel(uwbService),
+                                  child: _buildFullSettingsPanel(
+                                      uwbService, inspection),
                                 ),
                               ],
                             ],
@@ -161,52 +162,53 @@ class _InspectionScreenState extends State<InspectionScreen> {
               ],
             ),
           ),
-          if (widget.project != null) ...[
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.orange.shade200),
-              ),
-              child: Text(
-                '${_currentFloor}F',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                  color: Colors.orange.shade800,
-                ),
-              ),
-            ),
-          ],
           const SizedBox(width: 8),
 
           // UWB connect.
           Expanded(
-            child: _buildConnectionChip(uwbService),
+            child: Center(
+              child: _buildConnectionChip(uwbService),
+            ),
           ),
 
-          const SizedBox(width: 8),
+          if (widget.project != null) ...[
+            const SizedBox(width: 6),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(6),
+                onTap: () => _showFloorSelector(inspection, uwbService),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${_currentFloor}F',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.orange.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
 
-          // Connectbutton.
-          _buildConnectButton(uwbService),
           // Translated legacy note.
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, size: 20),
             onSelected: (value) => _handleMenuAction(value, inspection),
             itemBuilder: (context) => [
-              if (widget.project != null)
-                PopupMenuItem(
-                  value: 'change_floor',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.layers, size: 18),
-                      const SizedBox(width: 8),
-                      Text('Switch Floor (Current: ${_currentFloor}F)'),
-                    ],
-                  ),
-                ),
               const PopupMenuItem(
                   value: 'export_word', child: Text('Export Word')),
               const PopupMenuItem(
@@ -235,11 +237,11 @@ class _InspectionScreenState extends State<InspectionScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // Inspection.
+              // Translated legacy note.
               _buildBottomBarItem(
-                icon: Icons.push_pin,
-                label: 'Pins (${inspection.currentPins.length})',
-                onTap: () => _showMobilePinListSheet(inspection),
+                icon: Icons.tune,
+                label: 'Settings',
+                onTap: () => _showMobileSettingsSheet(uwbService),
               ),
               // Coordinateshow.
               _buildBottomBarItem(
@@ -251,11 +253,11 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 color:
                     uwbService.currentTag != null ? Colors.indigo : Colors.grey,
               ),
-              // Translated legacy note.
+              // Inspection.
               _buildBottomBarItem(
-                icon: Icons.tune,
-                label: 'Settings',
-                onTap: () => _showMobileSettingsSheet(uwbService),
+                icon: Icons.push_pin,
+                label: 'Pins (${inspection.currentPins.length})',
+                onTap: () => _showMobilePinListSheet(inspection),
               ),
             ],
           ),
@@ -323,18 +325,44 @@ class _InspectionScreenState extends State<InspectionScreen> {
         initialChildSize: 0.5,
         minChildSize: 0.3,
         maxChildSize: 0.85,
-        builder: (context, scrollController) => InspectionSettingsBottomSheet(
-          uwbService: uwbService,
-          buildToggle: _buildToggle,
-          onLoadFloorPlan: () =>
-              _loadFloorPlan(uwbService, context.read<InspectionProvider>()),
-          buildSectionHeader: _buildSectionHeader,
-          buildAnchorTile: _buildAnchorTile,
-          onAddAnchor: () => _showAddAnchorDialog(uwbService),
-          distanceMappingDescription:
-              _describeDistanceMapping(uwbService.config.distanceIndexMap),
-          buildDistanceSwapButton: _buildDistanceSwapButton,
-          onShowRoomDimensions: () => _showRoomDimensionDialog(uwbService),
+        builder: (context, scrollController) => Consumer<InspectionProvider>(
+          builder: (context, inspection, _) => InspectionSettingsBottomSheet(
+            uwbService: uwbService,
+            buildToggle: _buildToggle,
+            buildSectionHeader: _buildSectionHeader,
+            buildAnchorTile: _buildAnchorTile,
+            onAddAnchor: () => _showAddAnchorDialog(uwbService),
+            distanceMappingDescription:
+                _describeDistanceMapping(uwbService.config.distanceIndexMap),
+            buildDistanceSwapButton: _buildDistanceSwapButton,
+            onShowRoomDimensions: () => _showRoomDimensionDialog(uwbService),
+            showDeleteFloorPlanButton: inspection.currentFloorPlans.isNotEmpty,
+            onDeleteFloorPlan: () async {
+              final selectedOrder = inspection.selectedFloorPlanOrder;
+              final fallbackOrder = inspection.currentFloorPlans.isNotEmpty
+                  ? inspection.currentFloorPlans.first.order
+                  : null;
+              final targetOrder = selectedOrder ?? fallbackOrder;
+              if (targetOrder == null) return;
+
+              final removed = inspection.deleteFloorPlanSegment(targetOrder);
+              if (!removed) return;
+
+              final updatedPlans = inspection.currentFloorPlans;
+              if (updatedPlans.isNotEmpty) {
+                final selected = inspection.selectedFloorPlanOrder;
+                final plan = updatedPlans.firstWhere(
+                  (segment) => segment.order == selected,
+                  orElse: () => updatedPlans.first,
+                );
+                await uwbService.loadFloorPlanImage(plan.path);
+                uwbService.updateConfig(
+                    uwbService.config.copyWith(showFloorPlan: true));
+              } else {
+                uwbService.clearFloorPlan();
+              }
+            },
+          ),
         ),
       ),
     );
@@ -387,14 +415,54 @@ class _InspectionScreenState extends State<InspectionScreen> {
           const SizedBox(width: 16),
 
           // UWB connect.
-          _buildConnectionChip(uwbService),
-          const SizedBox(width: 8),
+          Expanded(
+            child: Center(
+              child: _buildConnectionChip(uwbService),
+            ),
+          ),
+
+          if (widget.project != null) ...[
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _showFloorSelector(inspection, uwbService),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.layers,
+                          size: 14, color: Colors.orange.shade800),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${_currentFloor}F',
+                        style: TextStyle(
+                          color: Colors.orange.shade800,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(Icons.keyboard_arrow_down,
+                          size: 16, color: Colors.orange.shade800),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+          ],
 
           // Translated legacy note.
           if (uwbService.isConnected && uwbService.currentTag != null)
             _buildCoordinateChip(uwbService),
-
-          const Spacer(),
 
           // Translated legacy note.
           if (inspection.currentSession != null)
@@ -462,25 +530,11 @@ class _InspectionScreenState extends State<InspectionScreen> {
             tooltip: 'Inspection Points',
           ),
           const SizedBox(width: 4),
-          // Connectbutton.
-          _buildConnectButton(uwbService),
-          const SizedBox(width: 4),
           // Translated legacy note.
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) => _handleMenuAction(value, inspection),
             itemBuilder: (context) => [
-              if (widget.project != null)
-                PopupMenuItem(
-                  value: 'change_floor',
-                  child: Row(
-                    children: [
-                      const Icon(Icons.layers, size: 18),
-                      const SizedBox(width: 8),
-                      Text('Switch Floor (Current: ${_currentFloor}F)'),
-                    ],
-                  ),
-                ),
               const PopupMenuItem(
                   value: 'export_word', child: Text('Export Word')),
               const PopupMenuItem(
@@ -497,44 +551,54 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
   Widget _buildConnectionChip(UwbService uwbService) {
     final isConnected = uwbService.isConnected;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: isConnected ? Colors.green.shade50 : Colors.grey.shade100,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isConnected ? Colors.green.shade300 : Colors.grey.shade300,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: isConnected ? Colors.green : Colors.grey,
-              shape: BoxShape.circle,
+        onTap: isConnected
+            ? () => uwbService.disconnect()
+            : () => _showConnectDialog(uwbService),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          decoration: BoxDecoration(
+            color: isConnected ? Colors.green.shade50 : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isConnected ? Colors.green.shade300 : Colors.grey.shade300,
             ),
           ),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              isConnected
-                  ? (uwbService.isRealDevice
-                      ? 'UWB Connected'
-                      : 'Simulation Mode')
-                  : 'UWB Not Connected',
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color:
-                    isConnected ? Colors.green.shade700 : Colors.grey.shade600,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: isConnected ? Colors.green : Colors.grey,
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  isConnected
+                      ? (uwbService.isRealDevice
+                          ? 'UWB Connected'
+                          : 'Simulation Mode')
+                      : 'UWB Disconnected',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isConnected
+                        ? Colors.green.shade700
+                        : Colors.grey.shade600,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -565,30 +629,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildConnectButton(UwbService uwbService) {
-    return uwbService.isConnected
-        ? OutlinedButton.icon(
-            onPressed: () => uwbService.disconnect(),
-            icon: const Icon(Icons.stop, size: 16),
-            label: const Text('Disconnect'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            ),
-          )
-        : ElevatedButton.icon(
-            onPressed: () => _showConnectDialog(uwbService),
-            icon: const Icon(Icons.usb, size: 16),
-            label: const Text('Connect'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            ),
-          );
   }
 
   // Translated legacy comment.
@@ -773,7 +813,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 painter: InspectionCanvasPainter(
                   anchors: uwbService.anchors,
                   currentTag: uwbService.currentTag,
-                  trajectory: uwbService.trajectory,
                   config: uwbService.config,
                   floorPlanImage: uwbService.floorPlanImage,
                   pins: inspection.currentPins,
@@ -901,11 +940,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
               runSpacing: 8,
               alignment: WrapAlignment.center,
               children: [
-                _buildToggle('Trajectory', Icons.timeline,
-                    uwbService.config.showTrajectory, (v) {
-                  uwbService.updateConfig(
-                      uwbService.config.copyWith(showTrajectory: v));
-                }),
                 _buildToggle('Fence', Icons.fence, uwbService.config.showFence,
                     (v) {
                   uwbService
@@ -921,11 +955,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
             )
           : Row(
               children: [
-                _buildToggle('Trajectory', Icons.timeline,
-                    uwbService.config.showTrajectory, (v) {
-                  uwbService.updateConfig(
-                      uwbService.config.copyWith(showTrajectory: v));
-                }),
                 _buildToggle('Fence', Icons.fence, uwbService.config.showFence,
                     (v) {
                   uwbService
@@ -938,11 +967,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       uwbService.config.copyWith(showFloorPlan: v));
                 }),
                 const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.delete_sweep, color: Colors.orange),
-                  onPressed: () => uwbService.clearTrajectory(),
-                  tooltip: 'Clear Trajectory',
-                ),
                 IconButton(
                   icon: const Icon(Icons.image, color: AppTheme.primaryColor),
                   onPressed: () => _loadFloorPlan(
@@ -1335,6 +1359,12 @@ class _InspectionScreenState extends State<InspectionScreen> {
           onComplete: (updatedPin) {
             context.read<InspectionProvider>().updatePin(updatedPin);
           },
+          onDelete: () {
+            context.read<InspectionProvider>().removePin(pin.id);
+            if (Navigator.of(dialogContext).canPop()) {
+              Navigator.of(dialogContext).pop();
+            }
+          },
           allPins: provider.currentPins,
           allSessions: provider.sessions,
           currentFloor: provider.currentSession?.floor ?? 1,
@@ -1406,6 +1436,18 @@ class _InspectionScreenState extends State<InspectionScreen> {
       uwbService.updateConfig(uwbService.config.copyWith(showFloorPlan: true));
       inspection.updateFloorPlan(path);
     }
+  }
+
+  Future<void> _applySessionFloorPlan(
+      UwbService uwbService, InspectionSession session) async {
+    final path = session.floorPlanPath;
+    if (path == null || path.isEmpty) {
+      uwbService.clearFloorPlan();
+      return;
+    }
+
+    await uwbService.loadFloorPlanImage(path);
+    uwbService.updateConfig(uwbService.config.copyWith(showFloorPlan: true));
   }
 
   // ===== connect =====.
@@ -1654,7 +1696,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
   }
 
   // ===== settings =====.
-  Widget _buildFullSettingsPanel(UwbService uwbService) {
+  Widget _buildFullSettingsPanel(
+      UwbService uwbService, InspectionProvider inspection) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1749,6 +1792,29 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       ],
                     ],
                   ),
+
+                  if (inspection.currentFloorPlans.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: inspection.currentFloorPlans.map((segment) {
+                        final isSelected =
+                            inspection.selectedFloorPlanOrder == segment.order;
+                        return ChoiceChip(
+                          label: Text('Plan ${segment.order}'),
+                          selected: isSelected,
+                          onSelected: (_) async {
+                            inspection.selectFloorPlanOrder(segment.order);
+                            await uwbService.loadFloorPlanImage(segment.path);
+                            uwbService.updateConfig(
+                              uwbService.config.copyWith(showFloorPlan: true),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
 
                   // Show/.
                   SwitchListTile(
@@ -1891,15 +1957,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
                   // Show.
                   _buildSectionHeader('Display Settings', Icons.visibility),
-                  SwitchListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    value: uwbService.config.showTrajectory,
-                    onChanged: (v) => uwbService.updateConfig(
-                        uwbService.config.copyWith(showTrajectory: v)),
-                    title: const Text('Show Trajectory',
-                        style: TextStyle(fontSize: 13)),
-                  ),
                   SwitchListTile(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
@@ -2465,9 +2522,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
   // Translated legacy comment.
   void _handleMenuAction(String action, InspectionProvider inspection) {
     switch (action) {
-      case 'change_floor':
-        _showFloorSelector(inspection);
-        break;
       case 'new_session':
         _showNewSessionDialog(inspection);
         break;
@@ -2511,95 +2565,402 @@ class _InspectionScreenState extends State<InspectionScreen> {
     }
   }
 
-  void _showFloorSelector(InspectionProvider inspection) {
+  void _showFloorSelector(
+      InspectionProvider inspection, UwbService uwbService) {
     if (widget.project == null) return;
     final project = widget.project!;
 
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.layers, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
-                Text('Switch Floor - ${project.buildingName}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 200,
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 5,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1.6,
-                ),
-                itemCount: project.floorCount,
-                itemBuilder: (context, index) {
-                  final floor = index + 1;
-                  final isActive = floor == _currentFloor;
-                  // Check if this floor has pins
-                  final hasPins = inspection.sessions.any((s) =>
-                      s.projectId == project.id &&
-                      s.floor == floor &&
-                      s.pins.isNotEmpty);
+      builder: (ctx) {
+        int selectedFloor = _currentFloor;
+        int? selectedPlanOrder = inspection.selectedFloorPlanOrder;
+        final projectFloorSessions = inspection.sessions
+            .where((s) => s.projectId == project.id)
+            .toList();
+        final maxSessionFloor = projectFloorSessions.isEmpty
+            ? 1
+            : projectFloorSessions
+                .map((s) => s.floor)
+                .reduce((a, b) => a > b ? a : b);
+        int maxFloorNumber = max(1, max(project.floorCount, maxSessionFloor));
 
-                  return Material(
-                    color: isActive
-                        ? AppTheme.primaryColor
-                        : hasPins
-                            ? Colors.green.shade50
-                            : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _switchFloor(inspection, project, floor);
-                      },
-                      child: Center(
+        List<FloorPlanSegment> sortedPlansForFloor(int floor) {
+          final session = inspection.sessions.where((s) {
+            return s.projectId == project.id && s.floor == floor;
+          });
+          if (session.isEmpty) return <FloorPlanSegment>[];
+          final plans = List<FloorPlanSegment>.from(session.first.floorPlans);
+          plans.sort((a, b) => a.order.compareTo(b.order));
+          return plans;
+        }
+
+        void normalizeSelectedPlan(List<FloorPlanSegment> plans) {
+          if (plans.isEmpty) {
+            selectedPlanOrder = null;
+            return;
+          }
+          final exists = plans.any((p) => p.order == selectedPlanOrder);
+          if (!exists) {
+            selectedPlanOrder = plans.first.order;
+          }
+        }
+
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
                         child: Text(
-                          '${floor}F',
+                          'Switch Floor',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: isActive ? Colors.white : Colors.black87,
-                            fontSize: 14,
+                            fontSize: 18,
+                            color: Colors.black87,
                           ),
                         ),
                       ),
+                      IconButton.filled(
+                        onPressed: () async {
+                          final newFloor = maxFloorNumber + 1;
+                          await _switchFloor(
+                            inspection,
+                            project,
+                            newFloor,
+                            uwbService,
+                          );
+                          setSheetState(() {
+                            maxFloorNumber = newFloor;
+                            selectedFloor = newFloor;
+                            selectedPlanOrder = null;
+                          });
+                        },
+                        tooltip: 'Add Floor',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.teal.shade600,
+                          foregroundColor: Colors.white,
+                        ),
+                        icon: const Icon(Icons.add, size: 20),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: maxFloorNumber,
+                      itemBuilder: (context, index) {
+                        final floorNum = index + 1;
+                        final plans = sortedPlansForFloor(floorNum);
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildFloorGridCard(
+                                floorNum: floorNum,
+                                onTap: () {
+                                  setSheetState(() {
+                                    selectedFloor = floorNum;
+                                    normalizeSelectedPlan(plans);
+                                    if (plans.isNotEmpty) {
+                                      selectedPlanOrder = selectedPlanOrder ==
+                                                  null ||
+                                              !plans.any((p) =>
+                                                  p.order == selectedPlanOrder)
+                                          ? plans.first.order
+                                          : selectedPlanOrder;
+                                    } else {
+                                      selectedPlanOrder = null;
+                                    }
+                                  });
+                                },
+                                onDelete: () async {
+                                  if (maxFloorNumber <= 1) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'At least one floor is required')),
+                                      );
+                                    }
+                                    return;
+                                  }
+
+                                  final shouldDelete = await showDialog<bool>(
+                                    context: context,
+                                    builder: (dialogCtx) => AlertDialog(
+                                      title: const Text('Delete Floor'),
+                                      content: Text(
+                                          'Delete floor $floorNum and all its plan data?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(dialogCtx, false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () =>
+                                              Navigator.pop(dialogCtx, true),
+                                          style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (shouldDelete != true) return;
+
+                                  await inspection.removeProjectFloor(
+                                    project.id,
+                                    floorNum,
+                                  );
+
+                                  final remainingProjectSessions = inspection
+                                      .sessions
+                                      .where((s) => s.projectId == project.id)
+                                      .toList();
+                                  final remainingMaxFloor =
+                                      remainingProjectSessions.isEmpty
+                                          ? 1
+                                          : remainingProjectSessions
+                                              .map((s) => s.floor)
+                                              .reduce((a, b) => a > b ? a : b);
+
+                                  setSheetState(() {
+                                    maxFloorNumber = max(
+                                      1,
+                                      max(project.floorCount - 1,
+                                          remainingMaxFloor),
+                                    );
+                                    if (selectedFloor >= floorNum) {
+                                      selectedFloor = max(1, selectedFloor - 1);
+                                      final fallbackPlans =
+                                          sortedPlansForFloor(selectedFloor);
+                                      normalizeSelectedPlan(fallbackPlans);
+                                    }
+                                  });
+
+                                  await _switchFloor(
+                                    inspection,
+                                    project,
+                                    selectedFloor,
+                                    uwbService,
+                                    targetPlanOrder: selectedPlanOrder,
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              SizedBox(
+                                height: 44,
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      ...plans.map(
+                                        (plan) => Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 8),
+                                          child: _buildFloorSegmentCard(
+                                            label: '${floorNum}F${plan.order}',
+                                            isSelected: selectedFloor ==
+                                                    floorNum &&
+                                                selectedPlanOrder == plan.order,
+                                            onTap: () {
+                                              setSheetState(() {
+                                                selectedFloor = floorNum;
+                                                selectedPlanOrder = plan.order;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                      _buildFloorSegmentCard(
+                                        label: '+',
+                                        isSelected: false,
+                                        onTap: () async {
+                                          await _switchFloor(
+                                            inspection,
+                                            project,
+                                            floorNum,
+                                            uwbService,
+                                          );
+                                          await _loadFloorPlan(
+                                              uwbService, inspection);
+                                          final updatedPlans =
+                                              sortedPlansForFloor(floorNum);
+                                          setSheetState(() {
+                                            selectedFloor = floorNum;
+                                            if (updatedPlans.isNotEmpty) {
+                                              updatedPlans.sort((a, b) =>
+                                                  a.order.compareTo(b.order));
+                                              selectedPlanOrder =
+                                                  updatedPlans.last.order;
+                                            }
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            Navigator.pop(ctx);
+                            await _switchFloor(
+                              inspection,
+                              project,
+                              selectedFloor,
+                              uwbService,
+                              targetPlanOrder: selectedPlanOrder,
+                            );
+                          },
+                          child: const Text('Apply'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFloorGridCard({
+    required int floorNum,
+    required VoidCallback onTap,
+    required VoidCallback onDelete,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Floor $floorNum',
+                    textAlign: TextAlign.left,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: onDelete,
+                  tooltip: 'Delete floor',
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  color: Colors.red.shade500,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  void _switchFloor(InspectionProvider inspection, Project project, int floor) {
+  Widget _buildFloorSegmentCard({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      width: 72,
+      height: 44,
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: isSelected ? AppTheme.primaryColor : AppTheme.borderColor,
+          width: isSelected ? 2 : 1,
+        ),
+        borderRadius: BorderRadius.circular(8),
+        color: isSelected ? AppTheme.primaryColor : Colors.white,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onTap,
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : Colors.black87,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _switchFloor(InspectionProvider inspection, Project project,
+      int floor, UwbService uwbService,
+      {int? targetPlanOrder}) async {
     setState(() => _currentFloor = floor);
     // Find or create session for this floor
     final existing = inspection.sessions.where(
       (s) => s.projectId == project.id && s.floor == floor,
     );
+    late final InspectionSession session;
     if (existing.isNotEmpty) {
-      inspection.switchSession(existing.first.id);
+      session = existing.first;
+      inspection.switchSession(session.id);
     } else {
-      inspection.createSession(
+      session = await inspection.createSession(
         '${project.buildingName} - ${floor}F',
         projectId: project.id,
         floor: floor,
       );
+    }
+
+    if (targetPlanOrder != null &&
+        session.floorPlans.any((p) => p.order == targetPlanOrder)) {
+      inspection.selectFloorPlanOrder(targetPlanOrder);
+      final selectedSegment =
+          session.floorPlans.firstWhere((p) => p.order == targetPlanOrder);
+      await uwbService.loadFloorPlanImage(selectedSegment.path);
+      uwbService.updateConfig(uwbService.config.copyWith(showFloorPlan: true));
+    } else {
+      await _applySessionFloorPlan(uwbService, session);
     }
   }
 
@@ -3710,6 +4071,7 @@ class _PhotoAnalysisDialog extends StatefulWidget {
   final InspectionPin pin;
   final ImagePicker imagePicker;
   final ValueChanged<InspectionPin> onComplete;
+  final VoidCallback onDelete;
   final List<InspectionPin> allPins;
   final List<InspectionSession> allSessions;
   final int currentFloor;
@@ -3718,6 +4080,7 @@ class _PhotoAnalysisDialog extends StatefulWidget {
     required this.pin,
     required this.imagePicker,
     required this.onComplete,
+    required this.onDelete,
     this.allPins = const [],
     this.allSessions = const [],
     this.currentFloor = 1,
@@ -3926,53 +4289,34 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                         ),
                       )
                     else
-                      Container(
-                        height: 150,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _isAnalyzing ? null : _showImageSourceOptions,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: Colors.grey.shade300,
-                              style: BorderStyle.solid),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.add_a_photo,
-                                size: 48, color: Colors.grey.shade400),
-                            const SizedBox(height: 8),
-                            Text('Select or Take Photo',
-                                style: TextStyle(color: Colors.grey.shade500)),
-                          ],
+                          child: Container(
+                            height: 150,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: Colors.grey.shade300,
+                                  style: BorderStyle.solid),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_a_photo,
+                                    size: 48, color: Colors.grey.shade400),
+                                const SizedBox(height: 8),
+                                Text('Select or Take Photo',
+                                    style:
+                                        TextStyle(color: Colors.grey.shade500)),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-
-                    const SizedBox(height: 12),
-
-                    // / button.
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _isAnalyzing
-                                ? null
-                                : () => _pickImage(ImageSource.camera),
-                            icon: const Icon(Icons.camera_alt),
-                            label: const Text('Take Photo'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _isAnalyzing
-                                ? null
-                                : () => _pickImage(ImageSource.gallery),
-                            icon: const Icon(Icons.photo_library),
-                            label: const Text('From Files'),
-                          ),
-                        ),
-                      ],
-                    ),
 
                     const SizedBox(height: 12),
 
@@ -4152,16 +4496,17 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
               ),
               child: Row(
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text('Skip'),
-                  ),
                   const Spacer(),
+                  ElevatedButton(
+                    onPressed: _isAnalyzing ? null : _confirmDeletePin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    child: const Text('Delete'),
+                  ),
+                  const SizedBox(width: 8),
                   if (_photoTaken && !_isAnalyzing)
                     Flexible(
                       child: ElevatedButton(
@@ -4551,6 +4896,35 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     }
   }
 
+  Future<void> _showImageSourceOptions() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('From Files'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _analyzeImage() async {
     if (_imageBase64 == null) return;
 
@@ -4885,6 +5259,34 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 
     widget.onComplete(updatedPin);
     Navigator.pop(context);
+  }
+
+  void _confirmDeletePin() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Inspection Point'),
+        content: const Text(
+            'Are you sure you want to delete this inspection point?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              widget.onDelete();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildAnalysisResultCard() {
@@ -5344,7 +5746,6 @@ class _MobileUsbConnectDialogState extends State<_MobileUsbConnectDialog> {
 class InspectionCanvasPainter extends CustomPainter {
   final List<UwbAnchor> anchors;
   final UwbTag? currentTag;
-  final List<TrajectoryPoint> trajectory;
   final UwbConfig config;
   final ui.Image? floorPlanImage;
   final List<InspectionPin> pins;
@@ -5354,7 +5755,6 @@ class InspectionCanvasPainter extends CustomPainter {
   InspectionCanvasPainter({
     required this.anchors,
     this.currentTag,
-    this.trajectory = const [],
     required this.config,
     this.floorPlanImage,
     this.pins = const [],
@@ -5427,11 +5827,6 @@ class InspectionCanvasPainter extends CustomPainter {
     // Fence.
     if (config.showFence && currentTag != null) {
       _drawFence(canvas, toCanvas, scale, currentTag!);
-    }
-
-    // Trajectory.
-    if (config.showTrajectory && trajectory.isNotEmpty) {
-      _drawTrajectory(canvas, toCanvas);
     }
 
     // Anchor list.
@@ -5660,23 +6055,6 @@ class InspectionCanvasPainter extends CustomPainter {
           ..style = PaintingStyle.fill);
   }
 
-  void _drawTrajectory(
-      Canvas canvas, Offset Function(double, double) toCanvas) {
-    if (trajectory.length < 2) return;
-    for (int i = 1; i < trajectory.length; i++) {
-      final opacity = i / trajectory.length;
-      final paint = Paint()
-        ..color = Colors.blue.withValues(alpha: opacity * 0.8)
-        ..strokeWidth = 2
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(
-        toCanvas(trajectory[i - 1].x, trajectory[i - 1].y),
-        toCanvas(trajectory[i].x, trajectory[i].y),
-        paint,
-      );
-    }
-  }
-
   void _drawAnchor(Canvas canvas, Offset position, UwbAnchor anchor) {
     canvas.drawCircle(position, 8, Paint()..color = Colors.brown.shade700);
     final towerPaint = Paint()
@@ -5800,7 +6178,6 @@ class InspectionCanvasPainter extends CustomPainter {
   bool shouldRepaint(covariant InspectionCanvasPainter oldDelegate) {
     return oldDelegate.currentTag?.x != currentTag?.x ||
         oldDelegate.currentTag?.y != currentTag?.y ||
-        oldDelegate.trajectory.length != trajectory.length ||
         oldDelegate.anchors != anchors ||
         oldDelegate.config != config ||
         oldDelegate.floorPlanImage != floorPlanImage ||

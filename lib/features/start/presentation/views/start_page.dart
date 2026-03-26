@@ -57,7 +57,6 @@ class _StartScreenState extends State<StartScreen> {
 
   void _showCreateProjectDialog() {
     final nameController = TextEditingController();
-    final floorController = TextEditingController(text: '1');
 
     showDialog(
       context: context,
@@ -83,17 +82,6 @@ class _StartScreenState extends State<StartScreen> {
               ),
               autofocus: true,
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: floorController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Number of Floors',
-                hintText: 'E.g.: 25',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.layers),
-              ),
-            ),
           ],
         ),
         actions: [
@@ -102,19 +90,13 @@ class _StartScreenState extends State<StartScreen> {
           ElevatedButton.icon(
             onPressed: () {
               final name = nameController.text.trim();
-              final floors = int.tryParse(floorController.text.trim()) ?? 1;
               if (name.isEmpty) {
                 ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
                     content: Text('Please enter a building name')));
                 return;
               }
-              if (floors < 1) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                    content: Text('Number of floors must be at least 1')));
-                return;
-              }
               Navigator.pop(ctx);
-              _createProject(name, floors);
+              _createProject(name);
             },
             icon: const Icon(Icons.check),
             label: const Text('Create'),
@@ -128,11 +110,11 @@ class _StartScreenState extends State<StartScreen> {
     );
   }
 
-  void _createProject(String name, int floorCount) {
+  void _createProject(String name) {
     final project = Project(
       id: _uuid.v4(),
       buildingName: name,
-      floorCount: floorCount,
+      floorCount: 1,
     );
     setState(() {
       _projects.insert(0, project);
@@ -245,6 +227,15 @@ class _StartScreenState extends State<StartScreen> {
             const Text('Projects'),
           ],
         ),
+        actions: _projects.isNotEmpty
+            ? [
+                IconButton(
+                  onPressed: _showCreateProjectDialog,
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Create Project',
+                ),
+              ]
+            : null,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(height: 1, color: AppTheme.borderColor),

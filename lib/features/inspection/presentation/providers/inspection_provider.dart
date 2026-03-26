@@ -45,12 +45,19 @@ class InspectionProvider extends ChangeNotifier {
   /// Inspection.
   Future<InspectionSession> createSession(String name,
       {String? floorPlanPath, String? projectId, int floor = 1}) async {
+    final initialFloorPlans = floorPlanPath != null
+        ? [FloorPlanSegment(path: floorPlanPath, order: 1)]
+        : const <FloorPlanSegment>[];
+
     final session = InspectionSession(
       id: _uuid.v4(),
       name: name,
       projectId: projectId,
       floor: floor,
       floorPlanPath: floorPlanPath,
+      floorPlans: initialFloorPlans,
+      selectedFloorPlanOrder:
+          floorPlanPath != null ? initialFloorPlans.first.order : null,
     );
 
     _currentSession = session;
@@ -128,16 +135,150 @@ class InspectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> removeProjectFloor(String projectId, int floor) async {
+    _sessions = _sessions
+        .where((session) =>
+            !(session.projectId == projectId && session.floor == floor))
+        .map((session) {
+      if (session.projectId == projectId && session.floor > floor) {
+        return session.copyWith(
+          floor: session.floor - 1,
+          updatedAt: DateTime.now(),
+        );
+      }
+      return session;
+    }).toList();
+
+    if (_currentSession != null && _currentSession!.projectId == projectId) {
+      if (_currentSession!.floor == floor) {
+        final fallback = _sessions.where((s) => s.projectId == projectId);
+        _currentSession = fallback.isNotEmpty ? fallback.first : null;
+      } else if (_currentSession!.floor > floor) {
+        _currentSession = _currentSession!.copyWith(
+          floor: _currentSession!.floor - 1,
+          updatedAt: DateTime.now(),
+        );
+        _updateSessionInList();
+      } else {
+        final idx = _sessions.indexWhere((s) => s.id == _currentSession!.id);
+        if (idx >= 0) {
+          _currentSession = _sessions[idx];
+        }
+      }
+    }
+
+    await _saveSessions();
+    notifyListeners();
+  }
+
   /// Update floor plan path.
-  void updateFloorPlan(String path) {
+  void updateFloorPlan(String path, {int? order}) {
     if (_currentSession == null) return;
+    final existingPlans =
+        List<FloorPlanSegment>.from(_currentSession!.floorPlans);
+    final existingPins = List<InspectionPin>.from(_currentSession!.pins);
+    final normalizedOrder = order ??
+        (existingPlans.isEmpty
+            ? 1
+            : (existingPlans
+                    .map((e) => e.order)
+                    .reduce((a, b) => a > b ? a : b) +
+                1));
+
+    final idx = existingPlans.indexWhere((p) => p.order == normalizedOrder);
+    if (idx >= 0) {
+      existingPlans[idx] = existingPlans[idx].copyWith(path: path);
+    } else {
+      existingPlans.add(FloorPlanSegment(path: path, order: normalizedOrder));
+      existingPlans.sort((a, b) => a.order.compareTo(b.order));
+    }
+
+    final migratedPins = existingPins.map((pin) {
+      if (pin.floorPlanOrder == null) {
+        return pin.copyWith(floorPlanOrder: normalizedOrder);
+      }
+      return pin;
+    }).toList();
+
     _currentSession = _currentSession!.copyWith(
       floorPlanPath: path,
+      floorPlans: existingPlans,
+      selectedFloorPlanOrder: normalizedOrder,
+      pins: migratedPins,
       updatedAt: DateTime.now(),
     );
     _updateSessionInList();
     _saveSessions();
     notifyListeners();
+  }
+
+  void selectFloorPlanOrder(int order) {
+    if (_currentSession == null) return;
+    final selectedPlan = _currentSession!.floorPlans
+        .where((segment) => segment.order == order)
+        .cast<FloorPlanSegment?>()
+        .firstWhere((segment) => segment != null, orElse: () => null);
+    if (selectedPlan == null) return;
+
+    final migratedPins = _currentSession!.pins.map((pin) {
+      if (pin.floorPlanOrder == null) {
+        return pin.copyWith(floorPlanOrder: order);
+      }
+      return pin;
+    }).toList();
+
+    _currentSession = _currentSession!.copyWith(
+      floorPlanPath: selectedPlan.path,
+      selectedFloorPlanOrder: order,
+      pins: migratedPins,
+      updatedAt: DateTime.now(),
+    );
+    if (_selectedPin != null && _selectedPin!.floorPlanOrder != order) {
+      _selectedPin = null;
+    }
+    _updateSessionInList();
+    _saveSessions();
+    notifyListeners();
+  }
+
+  bool deleteFloorPlanSegment(int order) {
+    if (_currentSession == null) return false;
+
+    final plans = List<FloorPlanSegment>.from(_currentSession!.floorPlans);
+    final removeIndex = plans.indexWhere((segment) => segment.order == order);
+    if (removeIndex < 0) return false;
+
+    plans.removeAt(removeIndex);
+    final updatedPins = _currentSession!.pins
+        .where((pin) => pin.floorPlanOrder != order)
+        .toList();
+
+    int? nextSelectedOrder;
+    String? nextFloorPlanPath;
+
+    if (plans.isNotEmpty) {
+      plans.sort((a, b) => a.order.compareTo(b.order));
+      final fallbackIndex = removeIndex.clamp(0, plans.length - 1);
+      final selected = plans[fallbackIndex];
+      nextSelectedOrder = selected.order;
+      nextFloorPlanPath = selected.path;
+    }
+
+    _currentSession = _currentSession!.copyWith(
+      floorPlans: plans,
+      floorPlanPath: nextFloorPlanPath,
+      selectedFloorPlanOrder: nextSelectedOrder,
+      pins: updatedPins,
+      updatedAt: DateTime.now(),
+    );
+    if (_selectedPin != null && _selectedPin!.floorPlanOrder == order) {
+      _selectedPin = null;
+    }
+
+    _updateSessionInList();
+    _saveSessions();
+    notifyListeners();
+    return true;
   }
 
   // ===== Pin =====.
@@ -167,6 +308,7 @@ class InspectionProvider extends ChangeNotifier {
       id: _uuid.v4(),
       x: x,
       y: y,
+      floorPlanOrder: _currentSession?.selectedFloorPlanOrder,
     );
 
     final updatedPins = List<InspectionPin>.from(_currentSession!.pins)
@@ -255,7 +397,8 @@ class InspectionProvider extends ChangeNotifier {
         debugPrint('[InspectionProvider] POE AI analysis success');
       } catch (e) {
         // Analysis.
-        debugPrint('[InspectionProvider] POE AI analysis failed, using local fallback: $e');
+        debugPrint(
+            '[InspectionProvider] POE AI analysis failed, using local fallback: $e');
         analysis = ApiService.localAnalysis('moderate', 'structural');
       }
 
@@ -285,7 +428,8 @@ class InspectionProvider extends ChangeNotifier {
         imageBase64: imageBase64,
         riskScore: 50,
         riskLevel: 'medium',
-        description: 'AI analysis service temporarily unavailable. Using local assessment.',
+        description:
+            'AI analysis service temporarily unavailable. Using local assessment.',
         recommendations: ['Recommend professional inspection'],
         status: 'analyzed',
       );
@@ -350,7 +494,8 @@ class InspectionProvider extends ChangeNotifier {
         imageBase64: imageBase64,
         riskScore: 50,
         riskLevel: 'medium',
-        description: 'AI analysis service temporarily unavailable. Using local assessment.',
+        description:
+            'AI analysis service temporarily unavailable. Using local assessment.',
         recommendations: ['Recommend professional inspection'],
         status: 'analyzed',
       );
@@ -399,5 +544,22 @@ class InspectionProvider extends ChangeNotifier {
   }
 
   /// Pins ( ).
-  List<InspectionPin> get currentPins => _currentSession?.pins ?? [];
+  List<InspectionPin> get currentPins {
+    final session = _currentSession;
+    if (session == null) return [];
+
+    final selectedOrder = session.selectedFloorPlanOrder;
+    if (selectedOrder == null) {
+      return session.pins.where((pin) => pin.floorPlanOrder == null).toList();
+    }
+
+    return session.pins
+        .where((pin) => pin.floorPlanOrder == selectedOrder)
+        .toList();
+  }
+
+  List<FloorPlanSegment> get currentFloorPlans =>
+      _currentSession?.floorPlans ?? const [];
+
+  int? get selectedFloorPlanOrder => _currentSession?.selectedFloorPlanOrder;
 }

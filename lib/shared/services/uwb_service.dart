@@ -727,14 +727,6 @@ class UwbService extends ChangeNotifier {
     if (tag != null) {
       _currentTag = tag;
 
-      // Trajectory.
-      if (_config.showTrajectory && (tag.x != 0 || tag.y != 0)) {
-        _trajectory.add(TrajectoryPoint(x: tag.x, y: tag.y));
-        if (_trajectory.length > 500) {
-          _trajectory.removeAt(0);
-        }
-      }
-
       // UIupdate - show.
       notifyListeners();
     } else {
@@ -792,15 +784,6 @@ class UwbService extends ChangeNotifier {
         r95: double.parse((random.nextDouble() * 0.1).toStringAsFixed(3)),
         anchorDistances: distances,
       );
-
-      // Trajectory.
-      if (_config.showTrajectory) {
-        _trajectory.add(TrajectoryPoint(x: newX, y: newY));
-        // Trajectory.
-        if (_trajectory.length > 500) {
-          _trajectory.removeAt(0);
-        }
-      }
 
       notifyListeners();
     });
