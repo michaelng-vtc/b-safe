@@ -8,14 +8,14 @@ import 'package:bsafe_app/providers/inspection_provider.dart';
 import 'package:bsafe_app/screens/inspection_screen.dart';
 import 'package:bsafe_app/theme/app_theme.dart';
 
-class ProjectListScreen extends StatefulWidget {
-  const ProjectListScreen({super.key});
+class StartScreen extends StatefulWidget {
+  const StartScreen({super.key});
 
   @override
-  State<ProjectListScreen> createState() => _ProjectListScreenState();
+  State<StartScreen> createState() => _StartScreenState();
 }
 
-class _ProjectListScreenState extends State<ProjectListScreen> {
+class _StartScreenState extends State<StartScreen> {
   List<Project> _projects = [];
   bool _isLoading = true;
   static const String _projectsKey = 'bsafe_projects';
@@ -34,8 +34,9 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       final json = prefs.getString(_projectsKey);
       if (json != null && json.isNotEmpty) {
         final list = jsonDecode(json) as List<dynamic>;
-        _projects =
-            list.map((e) => Project.fromJson(e as Map<String, dynamic>)).toList();
+        _projects = list
+            .map((e) => Project.fromJson(e as Map<String, dynamic>))
+            .toList();
       }
     } catch (e) {
       debugPrint('Failed to load projects: $e');
@@ -103,13 +104,13 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               final name = nameController.text.trim();
               final floors = int.tryParse(floorController.text.trim()) ?? 1;
               if (name.isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Please enter a building name')));
+                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                    content: Text('Please enter a building name')));
                 return;
               }
               if (floors < 1) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                    const SnackBar(content: Text('Number of floors must be at least 1')));
+                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
+                    content: Text('Number of floors must be at least 1')));
                 return;
               }
               Navigator.pop(ctx);
@@ -179,7 +180,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Project'),
-        content: Text('Are you sure you want to delete "${project.buildingName}"?\nAll inspection data for all floors will be deleted.'),
+        content: Text(
+            'Are you sure you want to delete "${project.buildingName}"?\nAll inspection data for all floors will be deleted.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
@@ -253,11 +255,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           : _projects.isEmpty
               ? _buildEmptyState()
               : _buildProjectList(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateProjectDialog,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Project'),
-      ),
     );
   }
 
@@ -274,7 +271,9 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 color: AppTheme.primaryColor.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.business_rounded, size: 56, color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+              child: Icon(Icons.business_rounded,
+                  size: 56,
+                  color: AppTheme.primaryColor.withValues(alpha: 0.5)),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -287,7 +286,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             const SizedBox(height: 8),
             const Text(
               'Tap the button below to create your\nfirst building inspection project',
-              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
+              style: TextStyle(
+                  fontSize: 14, color: AppTheme.textSecondary, height: 1.5),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -361,7 +361,9 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                         children: [
                           Text(project.buildingName,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: -0.3)),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  letterSpacing: -0.3)),
                           const SizedBox(height: 4),
                           Text(
                             '${project.floorCount} Floors  \u00b7  ${project.createdAt.toString().substring(0, 10)}',
@@ -375,15 +377,18 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                       onSelected: (value) {
                         if (value == 'delete') _deleteProject(project);
                       },
-                      icon: const Icon(Icons.more_horiz_rounded, color: AppTheme.textHint),
+                      icon: const Icon(Icons.more_horiz_rounded,
+                          color: AppTheme.textHint),
                       itemBuilder: (ctx) => [
                         const PopupMenuItem(
                             value: 'delete',
                             child: Row(
                               children: [
-                                Icon(Icons.delete_outline_rounded, color: Colors.red, size: 18),
+                                Icon(Icons.delete_outline_rounded,
+                                    color: Colors.red, size: 18),
                                 SizedBox(width: 8),
-                                Text('Delete', style: TextStyle(color: Colors.red)),
+                                Text('Delete',
+                                    style: TextStyle(color: Colors.red)),
                               ],
                             )),
                       ],
@@ -392,7 +397,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 ),
                 const SizedBox(height: 14),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppTheme.backgroundColor,
                     borderRadius: BorderRadius.circular(10),
@@ -400,13 +406,15 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   child: Row(
                     children: [
                       _buildStatChip(
-                          Icons.layers_rounded, '${project.floorCount} Floors', AppTheme.primaryColor),
+                          Icons.layers_rounded,
+                          '${project.floorCount} Floors',
+                          AppTheme.primaryColor),
                       const SizedBox(width: 16),
-                      _buildStatChip(
-                          Icons.push_pin_rounded, '$totalPins Points', Colors.orange.shade700),
+                      _buildStatChip(Icons.push_pin_rounded,
+                          '$totalPins Points', Colors.orange.shade700),
                       const SizedBox(width: 16),
-                      _buildStatChip(
-                          Icons.check_circle_outline_rounded, '$analyzedPins Done', AppTheme.riskLow),
+                      _buildStatChip(Icons.check_circle_outline_rounded,
+                          '$analyzedPins Done', AppTheme.riskLow),
                     ],
                   ),
                 ),
@@ -426,7 +434,9 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         const SizedBox(width: 4),
         Text(label,
             style: const TextStyle(
-                fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w500)),
       ],
     );
   }

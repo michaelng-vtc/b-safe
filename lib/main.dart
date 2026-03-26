@@ -5,7 +5,7 @@ import 'package:pdfrx/pdfrx.dart';
 import 'package:bsafe_app/providers/report_provider.dart';
 import 'package:bsafe_app/providers/connectivity_provider.dart';
 import 'package:bsafe_app/providers/inspection_provider.dart';
-import 'package:bsafe_app/screens/project_list_screen.dart';
+import 'package:bsafe_app/screens/start_screen.dart';
 import 'package:bsafe_app/theme/app_theme.dart';
 
 void main() async {
@@ -40,9 +40,8 @@ class BSafeApp extends StatelessWidget {
         title: 'B-SAFE Building Safety',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        home: const ProjectListScreen(),
+        home: const StartScreen(),
       ),
     );
   }
 }
-
