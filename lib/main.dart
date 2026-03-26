@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:pdfrx/pdfrx.dart';
-import 'package:bsafe_app/features/report/providers/report_provider.dart';
-import 'package:bsafe_app/core/providers/connectivity_provider.dart';
 import 'package:bsafe_app/features/inspection/providers/inspection_provider.dart';
 import 'package:bsafe_app/features/start/view/start_page.dart';
 import 'package:bsafe_app/core/theme/app_theme.dart';
@@ -32,8 +30,6 @@ class BSafeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
-        ChangeNotifierProvider(create: (_) => ReportProvider()),
         ChangeNotifierProvider(create: (_) => InspectionProvider()),
       ],
       child: MaterialApp(

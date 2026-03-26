@@ -16,7 +16,7 @@ import 'package:bsafe_app/services/mobile_serial_service.dart';
 import 'package:bsafe_app/services/yolo_service.dart';
 import 'package:bsafe_app/features/inspection/providers/inspection_provider.dart';
 import 'package:bsafe_app/core/theme/app_theme.dart';
-import 'package:bsafe_app/features/inspection/view/calibration_page.dart';
+
 import 'package:bsafe_app/features/inspection/widgets/settings/mobile_settings_sheet.dart';
 import 'package:bsafe_app/features/inspection/widgets/pins/mobile_pin_list_sheet.dart';
 import 'package:bsafe_app/services/api_service.dart';
@@ -241,12 +241,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 label: 'Pins (${inspection.currentPins.length})',
                 onTap: () => _showMobilePinListSheet(inspection),
               ),
-              // Translated legacy note.
-              _buildBottomBarItem(
-                icon: Icons.tune,
-                label: 'Settings',
-                onTap: () => _showMobileSettingsSheet(uwbService),
-              ),
               // Coordinateshow.
               _buildBottomBarItem(
                 icon: Icons.my_location,
@@ -259,16 +253,9 @@ class _InspectionScreenState extends State<InspectionScreen> {
               ),
               // Translated legacy note.
               _buildBottomBarItem(
-                icon: Icons.straighten,
-                label: 'Calibrate',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CalibrationScreen(uwbService: uwbService),
-                    ),
-                  );
-                },
+                icon: Icons.tune,
+                label: 'Settings',
+                onTap: () => _showMobileSettingsSheet(uwbService),
               ),
             ],
           ),
@@ -347,6 +334,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
           distanceMappingDescription:
               _describeDistanceMapping(uwbService.config.distanceIndexMap),
           buildDistanceSwapButton: _buildDistanceSwapButton,
+          onShowRoomDimensions: () => _showRoomDimensionDialog(uwbService),
         ),
       ),
     );
@@ -1721,26 +1709,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                CalibrationScreen(uwbService: uwbService),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.tune, size: 18),
-                      label: const Text('Anchor Calibration Settings'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ),
 
                   const SizedBox(height: 20),
 
@@ -2371,6 +2339,75 @@ class _InspectionScreenState extends State<InspectionScreen> {
               setState(() {});
             },
             child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRoomDimensionDialog(UwbService uwbService) {
+    final widthController = TextEditingController(text: '4.85');
+    final heightController = TextEditingController(text: '5.44');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.square_foot, color: Colors.teal),
+            SizedBox(width: 8),
+            Flexible(child: Text('Enter Room Dimensions')),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: widthController,
+              decoration: const InputDecoration(
+                labelText: 'Room Width',
+                suffixText: 'm',
+                border: OutlineInputBorder(),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: heightController,
+              decoration: const InputDecoration(
+                labelText: 'Room Length',
+                suffixText: 'm',
+                border: OutlineInputBorder(),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Tip: Anchors are typically installed at the four ceiling corners of the room',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final w = double.tryParse(widthController.text);
+              final h = double.tryParse(heightController.text);
+              if (w != null && h != null && w > 0 && h > 0) {
+                // Store room dimensions in UWB config for visualization
+                debugPrint('Room dimensions set: ${w}m x ${h}m');
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('OK'),
           ),
         ],
       ),

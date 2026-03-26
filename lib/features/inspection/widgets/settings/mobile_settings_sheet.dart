@@ -19,6 +19,7 @@ class InspectionMobileSettingsSheet extends StatelessWidget {
   final String distanceMappingDescription;
   final Widget Function(UwbService uwbService, String label, int i, int j)
       buildDistanceSwapButton;
+  final VoidCallback onShowRoomDimensions;
 
   const InspectionMobileSettingsSheet({
     super.key,
@@ -30,6 +31,7 @@ class InspectionMobileSettingsSheet extends StatelessWidget {
     required this.onAddAnchor,
     required this.distanceMappingDescription,
     required this.buildDistanceSwapButton,
+    required this.onShowRoomDimensions,
   });
 
   @override
@@ -185,6 +187,15 @@ class InspectionMobileSettingsSheet extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: onShowRoomDimensions,
+                        icon: const Icon(Icons.square_foot, size: 18),
+                        label: const Text('Enter Room Dimensions'),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     buildSectionHeader('Anchor Management', Icons.cell_tower),

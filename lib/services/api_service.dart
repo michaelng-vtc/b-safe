@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:bsafe_app/models/report_model.dart';
 
 class ApiService {
   // Base URL for your PHP API
@@ -15,83 +14,6 @@ class ApiService {
   // Singleton pattern
   static final ApiService instance = ApiService._init();
   ApiService._init();
-
-  // Headers for API requests
-  Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
-
-  // ==================== Report API ====================
-
-  // Submit a new report
-  Future<Map<String, dynamic>> submitReport(ReportModel report) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/reports'),
-        headers: _headers,
-        body: jsonEncode(report.toJson()),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to submit report: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
-  }
-
-  // Get all reports from server
-  Future<List<ReportModel>> getReports() async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/reports'),
-        headers: _headers,
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => ReportModel.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to get reports: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
-  }
-
-  // Update report status
-  Future<Map<String, dynamic>> updateReportStatus(int id, String status) async {
-    try {
-      final response = await http.patch(
-        Uri.parse('$baseUrl/reports/$id'),
-        headers: _headers,
-        body: jsonEncode({'status': status}),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to update report: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Network error: $e');
-    }
-  }
-
-  // Sync pending reports
-  Future<void> syncReports(List<ReportModel> reports) async {
-    for (final report in reports) {
-      try {
-        await submitReport(report);
-      } catch (e) {
-        // Log error but continue with other reports
-        debugPrint('Failed to sync report ${report.id}: $e');
-      }
-    }
-  }
 
   // ==================== POE AI Analysis API ====================
 
