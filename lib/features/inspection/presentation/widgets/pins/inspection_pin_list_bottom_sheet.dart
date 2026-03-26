@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:bsafe_app/models/inspection_model.dart';
-import 'package:bsafe_app/features/inspection/providers/inspection_provider.dart';
+import 'package:bsafe_app/shared/models/inspection_model.dart';
+import 'package:bsafe_app/features/inspection/presentation/providers/inspection_provider.dart';
 import 'package:bsafe_app/core/theme/app_theme.dart';
 
-class InspectionMobilePinListSheet extends StatelessWidget {
+class InspectionPinListBottomSheet extends StatelessWidget {
   final ScrollController scrollController;
   final Widget Function(InspectionProvider inspection) buildPinSummary;
   final Widget Function() buildEmptyPinState;
@@ -14,7 +14,7 @@ class InspectionMobilePinListSheet extends StatelessWidget {
     InspectionProvider inspection,
   ) buildPinCard;
 
-  const InspectionMobilePinListSheet({
+  const InspectionPinListBottomSheet({
     super.key,
     required this.scrollController,
     required this.buildPinSummary,

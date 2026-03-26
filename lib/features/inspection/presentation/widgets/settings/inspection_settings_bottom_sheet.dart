@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:bsafe_app/models/uwb_model.dart';
-import 'package:bsafe_app/services/uwb_service.dart';
+import 'package:bsafe_app/shared/models/uwb_model.dart';
+import 'package:bsafe_app/shared/services/uwb_service.dart';
 import 'package:bsafe_app/core/theme/app_theme.dart';
 
-class InspectionMobileSettingsSheet extends StatelessWidget {
+class InspectionSettingsBottomSheet extends StatelessWidget {
   final UwbService uwbService;
   final Widget Function(
     String label,
@@ -21,7 +21,7 @@ class InspectionMobileSettingsSheet extends StatelessWidget {
       buildDistanceSwapButton;
   final VoidCallback onShowRoomDimensions;
 
-  const InspectionMobileSettingsSheet({
+  const InspectionSettingsBottomSheet({
     super.key,
     required this.uwbService,
     required this.buildToggle,

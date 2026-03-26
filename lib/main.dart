@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:pdfrx/pdfrx.dart';
-import 'package:bsafe_app/features/inspection/providers/inspection_provider.dart';
-import 'package:bsafe_app/features/start/view/start_page.dart';
-import 'package:bsafe_app/core/theme/app_theme.dart';
+import 'package:bsafe_app/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,24 +17,5 @@ void main() async {
     ),
   );
 
-  runApp(const BSafeApp());
-}
-
-class BSafeApp extends StatelessWidget {
-  const BSafeApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => InspectionProvider()),
-      ],
-      child: MaterialApp(
-        title: 'B-SAFE Building Safety',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const StartScreen(),
-      ),
-    );
-  }
+  runApp(const App());
 }
