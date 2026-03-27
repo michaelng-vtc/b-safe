@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:bsafe_app/features/ai_analysis/data/repositories/ai_repository_impl.dart';
 import 'package:bsafe_app/features/ai_analysis/domain/entities/detection_result_entity.dart';
 import 'package:bsafe_app/features/ai_analysis/domain/usecases/get_detection_history_usecase.dart';
