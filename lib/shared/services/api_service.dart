@@ -119,22 +119,32 @@ class ApiService {
       prompt.writeln('4. Calculate risk score (0-100)');
       prompt.writeln('5. Whether urgent action is needed (true/false)');
       prompt.writeln('6. Provide recommendations (at least 2)');
-      prompt.writeln();
-      prompt.writeln('Return in the following JSON format:');
-      prompt.writeln('{');
-      prompt.writeln('  "damage_detected": true,');
-      prompt.writeln('  "damage_types": ["crack", "spalling"],');
-      prompt.writeln('  "severity": "moderate",');
-      prompt.writeln('  "risk_level": "medium",');
-      prompt.writeln('  "risk_score": 65,');
-      prompt.writeln('  "is_urgent": false,');
-      prompt.writeln('  "analysis": "Moderate damage found...",');
       prompt.writeln(
-          '  "recommendations": ["Schedule professional inspection", "Monitor for deterioration"]');
+          '7. Return inspector observation fields: Building Element, Defect Type, Diagnosis, Suspected Cause, Recommendation, Defect Size');
+      prompt.writeln();
+      prompt.writeln(
+          'Return in the following JSON schema format (values must be inferred from the image/context, not copied):');
+      prompt.writeln('{');
+      prompt.writeln('  "damage_detected": <boolean>,');
+      prompt.writeln('  "damage_types": [<string>, ...],');
+      prompt.writeln('  "severity": "mild|moderate|severe",');
+      prompt.writeln('  "risk_level": "low|medium|high",');
+      prompt.writeln('  "risk_score": <integer_0_to_100>,');
+      prompt.writeln('  "is_urgent": <boolean>,');
+      prompt.writeln('  "analysis": <string>,');
+      prompt.writeln('  "building_element": <string_or_null>,');
+      prompt.writeln('  "defect_type": <string_or_null>,');
+      prompt.writeln('  "diagnosis": <string_or_null>,');
+      prompt.writeln('  "suspected_cause": <string_or_null>,');
+      prompt.writeln('  "recommendation": <string_or_null>,');
+      prompt.writeln('  "defect_size": <string_or_null>,');
+      prompt.writeln('  "recommendations": [<string>, ...]');
       prompt.writeln('}');
       prompt.writeln();
       prompt
           .writeln('⚠ IMPORTANT: Return JSON only. No extra text or markdown.');
+      prompt.writeln(
+          '⚠ IMPORTANT: Do NOT reuse any template/example values. Infer every value from the provided image and context.');
 
       if (additionalContext != null && additionalContext.isNotEmpty) {
         prompt.writeln();
@@ -193,6 +203,12 @@ class ApiService {
           'risk_score': json['risk_score'] ?? 50,
           'is_urgent': json['is_urgent'] ?? false,
           'analysis': json['analysis'] ?? responseText,
+          'building_element': json['building_element'],
+          'defect_type': json['defect_type'],
+          'diagnosis': json['diagnosis'],
+          'suspected_cause': json['suspected_cause'],
+          'recommendation': json['recommendation'],
+          'defect_size': json['defect_size'],
           'recommendations':
               json['recommendations'] ?? ['Schedule a professional inspection'],
         };
@@ -208,6 +224,12 @@ class ApiService {
         'is_urgent': false,
         'analysis':
             responseText.isNotEmpty ? responseText : 'AI analysis complete',
+        'building_element': null,
+        'defect_type': null,
+        'diagnosis': null,
+        'suspected_cause': null,
+        'recommendation': null,
+        'defect_size': null,
         'recommendations': ['Schedule a professional inspection'],
       };
     } catch (e) {

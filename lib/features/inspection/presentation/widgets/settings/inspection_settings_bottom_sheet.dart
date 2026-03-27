@@ -15,6 +15,7 @@ class InspectionSettingsBottomSheet extends StatelessWidget {
   final Widget Function(UwbAnchor anchor, int index, UwbService uwbService)
       buildAnchorTile;
   final VoidCallback onAddAnchor;
+  final VoidCallback onPlaceAnchorOnMap;
   final String distanceMappingDescription;
   final Widget Function(UwbService uwbService, String label, int i, int j)
       buildDistanceSwapButton;
@@ -29,6 +30,7 @@ class InspectionSettingsBottomSheet extends StatelessWidget {
     required this.buildSectionHeader,
     required this.buildAnchorTile,
     required this.onAddAnchor,
+    required this.onPlaceAnchorOnMap,
     required this.distanceMappingDescription,
     required this.buildDistanceSwapButton,
     required this.onShowRoomDimensions,
@@ -201,6 +203,15 @@ class InspectionSettingsBottomSheet extends StatelessWidget {
                         onPressed: onAddAnchor,
                         icon: const Icon(Icons.add, size: 18),
                         label: const Text('Add Anchor'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: onPlaceAnchorOnMap,
+                        icon: const Icon(Icons.place, size: 18),
+                        label: const Text('Set Anchor on Floor Plan'),
                       ),
                     ),
                     const SizedBox(height: 20),

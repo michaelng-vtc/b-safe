@@ -14,6 +14,7 @@ import 'package:bsafe_app/shared/services/uwb_service.dart';
 import 'package:bsafe_app/shared/services/desktop_serial_service.dart';
 import 'package:bsafe_app/shared/services/mobile_serial_service.dart';
 import 'package:bsafe_app/shared/services/yolo_service.dart';
+import 'package:bsafe_app/features/ai_analysis/presentation/providers/ai_provider.dart';
 import 'package:bsafe_app/features/inspection/presentation/providers/inspection_provider.dart';
 import 'package:bsafe_app/core/theme/app_theme.dart';
 
@@ -44,6 +45,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
   bool _showPinList = true;
   bool _showFullSettings = false;
   int _currentFloor = 1;
+  bool _isAnchorPlacementMode = false;
+  int? _anchorPlacementIndex;
 
   // Serial settings.
   int _baudRate = 115200;
@@ -332,6 +335,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
             buildSectionHeader: _buildSectionHeader,
             buildAnchorTile: _buildAnchorTile,
             onAddAnchor: () => _showAddAnchorDialog(uwbService),
+            onPlaceAnchorOnMap: () => _startAnchorPlacement(),
             distanceMappingDescription:
                 _describeDistanceMapping(uwbService.config.distanceIndexMap),
             buildDistanceSwapButton: _buildDistanceSwapButton,
@@ -688,6 +692,46 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ),
                   ),
 
+                if (_isAnchorPlacementMode)
+                  Positioned(
+                    top: inspection.isPinMode ? 52 : 8,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.shade700,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.teal.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.place,
+                                color: Colors.white, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              _anchorPlacementIndex == null
+                                  ? 'Tap canvas to add Anchor'
+                                  : 'Tap canvas to set Anchor position',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // Loadfloor button ( floor plan ).
                 if (uwbService.floorPlanImage == null &&
                     !uwbService.config.showFloorPlan)
@@ -771,6 +815,18 @@ class _InspectionScreenState extends State<InspectionScreen> {
       builder: (context, constraints) {
         return GestureDetector(
           onTapDown: (details) {
+            if (_isAnchorPlacementMode) {
+              final uwbCoord = _canvasToUwb(
+                details.localPosition,
+                Size(constraints.maxWidth, constraints.maxHeight),
+                uwbService,
+              );
+              if (uwbCoord != null) {
+                _placeAnchorAt(uwbCoord, uwbService);
+              }
+              return;
+            }
+
             if (inspection.isPinMode) {
               // UWB coordinate.
               final uwbCoord = _canvasToUwb(
@@ -1307,6 +1363,23 @@ class _InspectionScreenState extends State<InspectionScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (!_isAnchorPlacementMode)
+          FloatingActionButton.small(
+            heroTag: 'anchor_mode',
+            onPressed: () => _startAnchorPlacement(),
+            backgroundColor: Colors.teal,
+            tooltip: 'Place Anchor on map',
+            child: const Icon(Icons.place, color: Colors.white),
+          ),
+        if (_isAnchorPlacementMode)
+          FloatingActionButton.small(
+            heroTag: 'cancel_anchor',
+            onPressed: _cancelAnchorPlacement,
+            backgroundColor: Colors.grey,
+            tooltip: 'Cancel anchor placement mode',
+            child: const Icon(Icons.close, color: Colors.white),
+          ),
+        const SizedBox(height: 8),
         // Pin modebutton ( ).
         if (!inspection.isPinMode)
           FloatingActionButton.small(
@@ -1752,6 +1825,15 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _startAnchorPlacement,
+                      icon: const Icon(Icons.place, size: 18),
+                      label: const Text('Set Anchor on Floor Plan'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
 
                   const SizedBox(height: 20),
 
@@ -2174,6 +2256,14 @@ class _InspectionScreenState extends State<InspectionScreen> {
             ),
           ),
           IconButton(
+            icon: const Icon(Icons.place, size: 18),
+            color: Colors.teal,
+            onPressed: () => _startAnchorPlacement(anchorIndex: index),
+            tooltip: 'Set on Floor Plan',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+          IconButton(
             icon: const Icon(Icons.edit, size: 18),
             color: AppTheme.primaryColor,
             onPressed: () => _showEditAnchorDialog(anchor, index, uwbService),
@@ -2381,6 +2471,13 @@ class _InspectionScreenState extends State<InspectionScreen> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          OutlinedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _startAnchorPlacement();
+            },
+            child: const Text('Pick on Map'),
+          ),
           ElevatedButton(
             onPressed: () {
               uwbService.addAnchor(UwbAnchor(
@@ -2469,6 +2566,60 @@ class _InspectionScreenState extends State<InspectionScreen> {
         ],
       ),
     );
+  }
+
+  void _startAnchorPlacement({int? anchorIndex}) {
+    setState(() {
+      _isAnchorPlacementMode = true;
+      _anchorPlacementIndex = anchorIndex;
+    });
+  }
+
+  void _cancelAnchorPlacement() {
+    setState(() {
+      _isAnchorPlacementMode = false;
+      _anchorPlacementIndex = null;
+    });
+  }
+
+  void _placeAnchorAt(Offset uwbCoord, UwbService uwbService) {
+    final targetIndex = _anchorPlacementIndex;
+    if (targetIndex != null &&
+        targetIndex >= 0 &&
+        targetIndex < uwbService.anchors.length) {
+      final existing = uwbService.anchors[targetIndex];
+      uwbService.updateAnchor(
+        targetIndex,
+        UwbAnchor(
+          id: existing.id,
+          x: uwbCoord.dx,
+          y: uwbCoord.dy,
+          z: existing.z,
+          isActive: existing.isActive,
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('${existing.id} position updated on floor plan')),
+      );
+    } else {
+      final newId = 'Anchor ${uwbService.anchors.length}';
+      uwbService.addAnchor(UwbAnchor(
+        id: newId,
+        x: uwbCoord.dx,
+        y: uwbCoord.dy,
+        z: 3.0,
+        isActive: true,
+      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$newId added on floor plan')),
+      );
+    }
+
+    setState(() {
+      _isAnchorPlacementMode = false;
+      _anchorPlacementIndex = null;
+    });
   }
 
   Widget _buildNumberField(
@@ -4091,6 +4242,7 @@ class _PhotoAnalysisDialog extends StatefulWidget {
 }
 
 class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
+  late final AiProvider _aiProvider;
   String? _imageBase64;
   String? _imagePath;
   bool _isAnalyzing = false;
@@ -4132,17 +4284,39 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
   bool _isYoloDetecting = false;
   bool _yoloModelLoaded = false;
   bool _showBoundingBoxes = true;
+  double? _photoWidth;
+  double? _photoHeight;
 
   @override
   void initState() {
     super.initState();
+    _aiProvider = AiProvider();
     // Load photo.
     if (widget.pin.imageBase64 != null) {
       _imageBase64 = widget.pin.imageBase64;
       _imagePath = widget.pin.imagePath;
       _photoTaken = true;
+      _updatePhotoDimensions(base64Decode(widget.pin.imageBase64!));
     }
     _initYolo();
+  }
+
+  Future<void> _updatePhotoDimensions(Uint8List imageBytes) async {
+    try {
+      final codec = await ui.instantiateImageCodec(imageBytes);
+      final frame = await codec.getNextFrame();
+      if (!mounted) return;
+      setState(() {
+        _photoWidth = frame.image.width.toDouble();
+        _photoHeight = frame.image.height.toDouble();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _photoWidth = null;
+        _photoHeight = null;
+      });
+    }
   }
 
   Future<void> _initYolo() async {
@@ -4168,6 +4342,7 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     _useOfAboveController.dispose();
     _repetitivePatternController.dispose();
     _remarksController.dispose();
+    _aiProvider.dispose();
     super.dispose();
   }
 
@@ -4247,9 +4422,8 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
                                     return CustomPaint(
                                       painter: _YoloBoundingBoxPainter(
                                         detections: _yoloDetections,
-                                        imageBytes: base64Decode(_imageBase64!),
-                                        canvasWidth: constraints.maxWidth,
-                                        canvasHeight: 200,
+                                        imageWidth: _photoWidth,
+                                        imageHeight: _photoHeight,
                                       ),
                                     );
                                   },
@@ -4766,6 +4940,84 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
     );
   }
 
+  String? _readAiStringValue(
+      Map<String, dynamic> result, List<String> candidateKeys) {
+    for (final key in candidateKeys) {
+      final value = result[key];
+      if (value == null) continue;
+      if (value is String) {
+        final text = value.trim();
+        if (text.isNotEmpty) return text;
+        continue;
+      }
+      if (value is num || value is bool) {
+        return value.toString();
+      }
+    }
+    return null;
+  }
+
+  void _applyAiResultToInspectorFields(Map<String, dynamic> result) {
+    final buildingElement = _readAiStringValue(result, const [
+      'building_element',
+      'buildingElement',
+      'Building Element',
+    ]);
+    final defectType = _readAiStringValue(result, const [
+      'defect_type',
+      'defectType',
+      'Defect Type',
+    ]);
+    final diagnosis = _readAiStringValue(result, const [
+      'diagnosis',
+      'Diagnosis',
+    ]);
+    final suspectedCause = _readAiStringValue(result, const [
+      'suspected_cause',
+      'suspectedCause',
+      'Suspected Cause',
+    ]);
+    String? recommendation = _readAiStringValue(result, const [
+      'recommendation',
+      'Recommendation',
+    ]);
+    final defectSize = _readAiStringValue(result, const [
+      'defect_size',
+      'defectSize',
+      'Defect Size',
+    ]);
+
+    if (recommendation == null) {
+      final recommendations = result['recommendations'];
+      if (recommendations is List && recommendations.isNotEmpty) {
+        final firstRecommendation = recommendations.first;
+        if (firstRecommendation is String &&
+            firstRecommendation.trim().isNotEmpty) {
+          recommendation = firstRecommendation.trim();
+        }
+      }
+    }
+
+    if (buildingElement != null) {
+      _buildingElementController.text = buildingElement;
+    }
+    if (defectType != null) {
+      _defectTypeController.text = defectType;
+    }
+    if (diagnosis != null) {
+      _diagnosisController.text = diagnosis;
+    }
+    if (suspectedCause != null) {
+      _suspectedCauseController.text = suspectedCause;
+    }
+    if (recommendation != null) {
+      _recommendationController.text = recommendation;
+    }
+    if (defectSize != null) {
+      _defectSizeController.text = defectSize;
+    }
+  }
+
   /// Gather surrounding defect context within 5m radius (same floor + floor above)
   String _buildSurroundingContext() {
     final buf = StringBuffer();
@@ -4889,7 +5141,10 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
           _photoTaken = true;
           _analysisResult = null;
           _yoloDetections = []; // Clear result.
+          _photoWidth = null;
+          _photoHeight = null;
         });
+        _updatePhotoDimensions(bytes);
       }
     } catch (e) {
       debugPrint('Image selection failed: $e');
@@ -5013,13 +5268,20 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 
       final additionalContext = contextBuf.toString().trim();
 
-      final result = await ApiService.instance.analyzeImageWithAI(
-        _imageBase64!,
+      await _aiProvider.runVlmAnalysis(
+        imageBase64: _imageBase64!,
         additionalContext:
             additionalContext.isNotEmpty ? additionalContext : null,
       );
 
+      final result = _aiProvider.lastVlmResult?.raw;
+      if (result == null) {
+        throw Exception(_aiProvider.errorMessage ?? 'VLM analysis failed');
+      }
+
       if (!mounted) return;
+
+      _applyAiResultToInspectorFields(result);
 
       setState(() {
         _analysisResult = result;
@@ -5073,29 +5335,42 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 
     try {
       final imageBytes = base64Decode(_imageBase64!);
-      final detections = await YoloService.instance.detect(
-        Uint8List.fromList(imageBytes),
-        confidenceThreshold: 0.25,
-      );
+      await _aiProvider.runYoloDetection(Uint8List.fromList(imageBytes));
+
+      final yoloRaw = _aiProvider.lastYoloResult?.raw;
+      if (yoloRaw == null) {
+        throw Exception(_aiProvider.errorMessage ?? 'YOLO detection failed');
+      }
+
+      final detections =
+          ((yoloRaw['detections'] as List<dynamic>?) ?? const <dynamic>[])
+              .map((item) {
+        final map = Map<String, dynamic>.from(item as Map);
+        return YoloDetection(
+          className: (map['class'] as String?) ?? 'unknown',
+          confidence: (map['confidence'] as num?)?.toDouble() ?? 0.0,
+          x: (map['x'] as num?)?.toDouble() ?? 0.0,
+          y: (map['y'] as num?)?.toDouble() ?? 0.0,
+          width: (map['width'] as num?)?.toDouble() ?? 0.0,
+          height: (map['height'] as num?)?.toDouble() ?? 0.0,
+        );
+      }).toList();
 
       if (!mounted) return;
-
-      // YOLO result analysis.
-      final safetyAnalysis = YoloService.toSafetyAnalysis(detections);
 
       setState(() {
         _yoloDetections = detections;
         _isYoloDetecting = false;
         // AI analysisresult， YOLO result.
         if (_analysisResult == null) {
-          _analysisResult = safetyAnalysis;
+          _analysisResult = yoloRaw;
         } else {
           // YOLO analysisresult.
           _analysisResult = {
             ..._analysisResult!,
-            'yolo_detections': safetyAnalysis['detections'],
-            'yolo_detection_count': safetyAnalysis['detection_count'],
-            'yolo_analysis': safetyAnalysis['analysis'],
+            'yolo_detections': yoloRaw['detections'],
+            'yolo_detection_count': yoloRaw['detection_count'],
+            'yolo_analysis': yoloRaw['analysis'],
           };
         }
       });
@@ -5372,15 +5647,13 @@ class _PhotoAnalysisDialogState extends State<_PhotoAnalysisDialog> {
 // ===== YOLO Bounding Box =====.
 class _YoloBoundingBoxPainter extends CustomPainter {
   final List<YoloDetection> detections;
-  final Uint8List imageBytes;
-  final double canvasWidth;
-  final double canvasHeight;
+  final double? imageWidth;
+  final double? imageHeight;
 
   _YoloBoundingBoxPainter({
     required this.detections,
-    required this.imageBytes,
-    required this.canvasWidth,
-    required this.canvasHeight,
+    this.imageWidth,
+    this.imageHeight,
   });
 
   // Translated legacy note.
@@ -5404,24 +5677,59 @@ class _YoloBoundingBoxPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Image.memory with BoxFit.contain will fit the image within the widget.
-    // We need to compute the same transform to match bounding boxes.
-    // For simplicity, draw boxes relative to the canvas size.
-    // The YOLO predictions return normalized coords (0-1) relative to the image.
-    // With BoxFit.contain, we need to figure out the displayed image region.
+    final sourceWidth = imageWidth;
+    final sourceHeight = imageHeight;
 
-    // Use canvas size to map normalized YOLO coordinates
-    // The image is displayed with BoxFit.contain inside the widget
+    double drawLeft = 0;
+    double drawTop = 0;
+    double drawWidth = size.width;
+    double drawHeight = size.height;
+
+    if (sourceWidth != null && sourceHeight != null && sourceHeight > 0) {
+      final imageAspect = sourceWidth / sourceHeight;
+      final canvasAspect = size.width / size.height;
+      if (imageAspect > canvasAspect) {
+        drawWidth = size.width;
+        drawHeight = size.width / imageAspect;
+        drawTop = (size.height - drawHeight) / 2;
+      } else {
+        drawHeight = size.height;
+        drawWidth = size.height * imageAspect;
+        drawLeft = (size.width - drawWidth) / 2;
+      }
+    }
 
     for (final det in detections) {
       final color = _getColorForClass(det.className);
 
-      // Convert normalized YOLO coords to canvas coords
-      // YOLO returns center_x, center_y, width, height (all normalized 0-1)
-      final left = (det.x - det.width / 2) * size.width;
-      final top = (det.y - det.height / 2) * size.height;
-      final boxWidth = det.width * size.width;
-      final boxHeight = det.height * size.height;
+      final normalized =
+          det.x <= 1.5 && det.y <= 1.5 && det.width <= 1.5 && det.height <= 1.5;
+
+      final nx = normalized
+          ? det.x
+          : ((sourceWidth != null && sourceWidth > 0)
+              ? det.x / sourceWidth
+              : 0);
+      final ny = normalized
+          ? det.y
+          : ((sourceHeight != null && sourceHeight > 0)
+              ? det.y / sourceHeight
+              : 0);
+      final nw = normalized
+          ? det.width
+          : ((sourceWidth != null && sourceWidth > 0)
+              ? det.width / sourceWidth
+              : 0);
+      final nh = normalized
+          ? det.height
+          : ((sourceHeight != null && sourceHeight > 0)
+              ? det.height / sourceHeight
+              : 0);
+
+      final left = drawLeft + (nx - nw / 2) * drawWidth;
+      final top = drawTop + (ny - nh / 2) * drawHeight;
+      final boxWidth = nw * drawWidth;
+      final boxHeight = nh * drawHeight;
 
       final rect = Rect.fromLTWH(left, top, boxWidth, boxHeight);
 
@@ -5449,7 +5757,7 @@ class _YoloBoundingBoxPainter extends CustomPainter {
 
       final bgRect = Rect.fromLTWH(
         left,
-        top - textPainter.height - 4,
+        (top - textPainter.height - 4).clamp(0.0, size.height),
         textPainter.width + 8,
         textPainter.height + 4,
       );
@@ -5468,7 +5776,9 @@ class _YoloBoundingBoxPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _YoloBoundingBoxPainter oldDelegate) {
-    return oldDelegate.detections != detections;
+    return oldDelegate.detections != detections ||
+        oldDelegate.imageWidth != imageWidth ||
+        oldDelegate.imageHeight != imageHeight;
   }
 }
 
