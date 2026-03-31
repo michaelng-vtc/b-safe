@@ -1,31 +1,25 @@
 import 'dart:typed_data';
 
 import 'package:bsafe_app/features/ai_analysis/data/models/detection_result_model.dart';
-import 'package:bsafe_app/shared/services/api_service.dart';
-import 'package:bsafe_app/shared/services/yolo_service.dart';
+import 'package:bsafe_app/features/ai_analysis/data/services/ai_analysis_service.dart';
 import 'package:uuid/uuid.dart';
 
 class AiDatasource {
-  final ApiService _apiService;
-  final YoloService _yoloService;
+  final AiAnalysisService _aiService;
   final Uuid _uuid;
 
   AiDatasource({
-    ApiService? apiService,
-    YoloService? yoloService,
+    AiAnalysisService? aiService,
     Uuid? uuid,
-  })  : _apiService = apiService ?? ApiService.instance,
-        _yoloService = yoloService ?? YoloService.instance,
+  })  : _aiService = aiService ?? AiAnalysisService(),
         _uuid = uuid ?? const Uuid();
 
   Future<DetectionResultModel> runVlm({
     required String imageBase64,
     String? additionalContext,
   }) async {
-    final raw = await _apiService.analyzeImageWithAI(
-      imageBase64,
-      additionalContext: additionalContext,
-    );
+    final raw = await _aiService.analyzeImageWithVlm(
+        imageBase64: imageBase64, additionalContext: additionalContext);
 
     return DetectionResultModel.fromRaw(
       id: _uuid.v4(),
@@ -38,11 +32,11 @@ class AiDatasource {
     required Uint8List imageBytes,
     double confidenceThreshold = 0.25,
   }) async {
-    final detections = await _yoloService.detect(
+    final detections = await _aiService.detectWithYolo(
       imageBytes,
       confidenceThreshold: confidenceThreshold,
     );
-    final raw = YoloService.toSafetyAnalysis(detections);
+    final raw = _aiService.toYoloSafetyAnalysis(detections);
 
     return DetectionResultModel.fromRaw(
       id: _uuid.v4(),

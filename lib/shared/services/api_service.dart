@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -17,6 +18,14 @@ class ApiService {
 
   // ==================== POE AI Analysis API ====================
 
+  bool _isDnsLookupError(Object error) {
+    final text = error.toString().toLowerCase();
+    return error is SocketException ||
+        text.contains('failed host lookup') ||
+        text.contains('no address associated with hostname') ||
+        text.contains('errno = 7');
+  }
+
   /// Send a request to the POE bot (OpenAI-compatible endpoint).
   Future<String> _queryPoeBot({
     required List<Map<String, dynamic>> messages,
@@ -33,16 +42,27 @@ class ApiService {
     debugPrint(
         '[POE] Body preview: ${body.substring(0, body.length.clamp(0, 300))}...');
 
-    final response = await http
-        .post(
-          Uri.parse(poeApiUrl),
-          headers: {
-            'Authorization': 'Bearer $poeApiKey',
-            'Content-Type': 'application/json',
-          },
-          body: body,
-        )
-        .timeout(Duration(seconds: timeoutSeconds));
+    late final http.Response response;
+    try {
+      response = await http
+          .post(
+            Uri.parse(poeApiUrl),
+            headers: {
+              'Authorization': 'Bearer $poeApiKey',
+              'Content-Type': 'application/json',
+            },
+            body: body,
+          )
+          .timeout(Duration(seconds: timeoutSeconds));
+    } catch (e) {
+      if (_isDnsLookupError(e)) {
+        throw Exception(
+          'POE_DNS_LOOKUP_FAILED: Cannot resolve api.poe.com from this device/emulator. '
+          'Check device network/DNS settings or emulator DNS server.',
+        );
+      }
+      rethrow;
+    }
 
     debugPrint('[POE] Response status: ${response.statusCode}');
     debugPrint(
@@ -234,6 +254,20 @@ class ApiService {
       };
     } catch (e) {
       debugPrint('[POE] AI Analysis Error: $e');
+      if (_isDnsLookupError(e)) {
+        final fallback = localAnalysis('moderate', 'structural');
+        return {
+          ...fallback,
+          'analysis':
+              'Poe API DNS lookup failed on current device. Using local offline assessment.',
+          'recommendations': [
+            ...((fallback['recommendations'] as List<dynamic>)
+                .map((e) => e.toString())),
+            'Check device/emulator network DNS for api.poe.com',
+          ],
+          'source': 'local_fallback_dns_error',
+        };
+      }
       rethrow;
     }
   }
@@ -295,6 +329,10 @@ class ApiService {
           : 'AI is temporarily unavailable. Please try again later.';
     } catch (e) {
       debugPrint('[POE Chat] Error: $e');
+      if (_isDnsLookupError(e)) {
+        return 'Poe API is unreachable from this device (DNS lookup failed). '
+            'Please check network/DNS settings and try again.';
+      }
       rethrow;
     }
   }

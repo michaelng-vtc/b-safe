@@ -15,6 +15,7 @@ import 'package:bsafe_app/shared/services/desktop_serial_service.dart';
 import 'package:bsafe_app/shared/services/mobile_serial_service.dart';
 import 'package:bsafe_app/shared/services/yolo_service.dart';
 import 'package:bsafe_app/features/ai_analysis/presentation/providers/ai_provider.dart';
+import 'package:bsafe_app/features/ai_analysis/presentation/screens/ai_analysis_screen.dart';
 import 'package:bsafe_app/features/inspection/presentation/providers/inspection_provider.dart';
 import 'package:bsafe_app/core/theme/app_theme.dart';
 
@@ -29,7 +30,7 @@ import 'package:uuid/uuid.dart';
 
 /// Main inspection workflow screen.
 ///
-/// Supports UWB pin placement, defect capture, AI analysis, and export actions.
+/// Supports UWB pin placement and export actions.
 class InspectionScreen extends StatefulWidget {
   final Project? project;
   const InspectionScreen({super.key, this.project});
@@ -40,7 +41,6 @@ class InspectionScreen extends StatefulWidget {
 
 class _InspectionScreenState extends State<InspectionScreen> {
   late UwbService _uwbService;
-  final ImagePicker _imagePicker = ImagePicker();
   bool _showSettings = false;
   bool _showPinList = true;
   bool _showFullSettings = false;
@@ -836,8 +836,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
               );
               if (uwbCoord != null) {
                 final pin = inspection.addPin(uwbCoord.dx, uwbCoord.dy);
-                // Translated legacy note.
-                _showPhotoCaptureDialog(pin);
+                _openAiAnalysisScreen(pin);
               }
             } else {
               // Pin.
@@ -961,16 +960,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
           canvasSize.height - offsetYCanvas - (pin.y - bounds.minY) * scale;
       final dist = (tapPos - Offset(pinCanvasX, pinCanvasY)).distance;
       if (dist < 20) {
-        // Pin，.
-        if (inspection.selectedPin?.id == pin.id) {
-          if (pin.isAnalyzed || pin.imageBase64 != null) {
-            _showPinDetailDialog(pin);
-          } else {
-            _showPhotoCaptureDialog(pin);
-          }
-        } else {
-          inspection.selectPin(pin);
-        }
+        inspection.selectPin(pin);
+        _openAiAnalysisScreen(pin);
         return;
       }
     }
@@ -1214,11 +1205,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
       child: InkWell(
         onTap: () {
           inspection.selectPin(pin);
-          if (pin.isAnalyzed || pin.imageBase64 != null) {
-            _showPinDetailDialog(pin);
-          } else {
-            _showPhotoCaptureDialog(pin);
-          }
+          _openAiAnalysisScreen(pin);
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -1307,7 +1294,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                     IconButton(
                       icon: const Icon(Icons.camera_alt, size: 20),
                       color: Colors.grey,
-                      onPressed: () => _showPhotoCaptureDialog(pin),
+                      onPressed: () => _openAiAnalysisScreen(pin),
                       tooltip: 'Take Photo',
                     ),
                   // Translated legacy note.
@@ -1405,7 +1392,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
               ? () {
                   final tag = uwbService.currentTag!;
                   final pin = inspection.addPin(tag.x, tag.y);
-                  _showPhotoCaptureDialog(pin);
+                  _openAiAnalysisScreen(pin);
                 }
               : null,
           backgroundColor:
@@ -1420,54 +1407,57 @@ class _InspectionScreenState extends State<InspectionScreen> {
   }
 
   // ===== + AI analysis =====.
-  void _showPhotoCaptureDialog(InspectionPin pin) {
-    final provider = context.read<InspectionProvider>();
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return _PhotoAnalysisDialog(
-          pin: pin,
-          imagePicker: _imagePicker,
-          onComplete: (updatedPin) {
-            context.read<InspectionProvider>().updatePin(updatedPin);
-          },
-          onDelete: () {
-            context.read<InspectionProvider>().removePin(pin.id);
-            if (Navigator.of(dialogContext).canPop()) {
-              Navigator.of(dialogContext).pop();
-            }
-          },
-          allPins: provider.currentPins,
-          allSessions: provider.sessions,
-          currentFloor: provider.currentSession?.floor ?? 1,
-        );
-      },
+  Future<void> _openAiAnalysisScreen(InspectionPin pin) async {
+    final result = await Navigator.push<AiAnalysisScreenResult>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AiAnalysisScreen(
+          imageBase64: pin.imageBase64,
+          additionalContext:
+              'Pin location: (${pin.x.toStringAsFixed(2)}, ${pin.y.toStringAsFixed(2)})',
+          imagePath: pin.imagePath,
+        ),
+      ),
     );
-  }
 
-  // ===== inspection / =====.
-  void _showPinDetailDialog(InspectionPin pin) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return _PinDetailDialog(
-          pin: pin,
-          imagePicker: _imagePicker,
-          onUpdate: (updatedPin) {
-            context.read<InspectionProvider>().updatePin(updatedPin);
-          },
-          onRetakePhoto: () {
-            Navigator.pop(dialogContext);
-            _showPhotoCaptureDialog(pin);
-          },
-          onDelete: () {
-            Navigator.pop(dialogContext);
-            context.read<InspectionProvider>().removePin(pin.id);
-          },
-        );
-      },
+    if (!mounted || result == null) return;
+
+    var updatedPin = pin.copyWith(
+      imageBase64: result.imageBase64 ?? pin.imageBase64,
+      imagePath: result.imagePath ?? pin.imagePath,
     );
+
+    final selected = result.selectedResult;
+    if (selected != null) {
+      final raw = selected.raw;
+      final defect = Defect(
+        id: const Uuid().v4(),
+        imagePath: result.imagePath ?? pin.imagePath,
+        imageBase64: result.imageBase64 ?? pin.imageBase64,
+        aiResult: raw,
+        category: raw['category'] as String?,
+        severity: raw['severity'] as String?,
+        riskScore: selected.riskScore,
+        riskLevel: selected.riskLevel,
+        description: selected.analysis,
+        recommendations: selected.recommendations,
+        status: 'analyzed',
+      );
+
+      updatedPin = updatedPin.copyWith(
+        aiResult: raw,
+        category: raw['category'] as String?,
+        severity: raw['severity'] as String?,
+        riskScore: selected.riskScore,
+        riskLevel: selected.riskLevel,
+        description: selected.analysis,
+        recommendations: selected.recommendations,
+        status: 'analyzed',
+        defects: [...pin.defects, defect],
+      );
+    }
+
+    context.read<InspectionProvider>().updatePin(updatedPin);
   }
 
   // Translated legacy comment.
@@ -4232,9 +4222,9 @@ class _PhotoAnalysisDialog extends StatefulWidget {
     required this.imagePicker,
     required this.onComplete,
     required this.onDelete,
-    this.allPins = const [],
-    this.allSessions = const [],
-    this.currentFloor = 1,
+    required this.allPins,
+    required this.allSessions,
+    required this.currentFloor,
   });
 
   @override
