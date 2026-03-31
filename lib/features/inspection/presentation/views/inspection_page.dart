@@ -1903,7 +1903,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   ),
 
                   // Translated legacy note.
-                  if (uwbService.config.floorPlanImagePath != null) ...[
+                  if (inspection.currentFloorPlans.isNotEmpty) ...[
                     Row(
                       children: [
                         const SizedBox(
