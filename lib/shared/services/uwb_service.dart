@@ -115,24 +115,46 @@ class UwbService extends ChangeNotifier {
 
   // Translated legacy comment.
   static const String _anchorsStorageKey = 'uwb_anchors_config';
+  static const String _anchorScopeGlobal = 'global';
+  String _anchorScopeKey = _anchorScopeGlobal;
+
+  String _anchorsStorageKeyForScope(String scopeKey) {
+    return scopeKey == _anchorScopeGlobal
+        ? _anchorsStorageKey
+        : '${_anchorsStorageKey}_$scopeKey';
+  }
 
   // Save anchor configuration to local storage.
   Future<void> _saveAnchorsToStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final anchorsJson = _anchors.map((a) => a.toJson()).toList();
-      await prefs.setString(_anchorsStorageKey, jsonEncode(anchorsJson));
-      debugPrint('✅ Anchor config saved: ${_anchors.length} anchor(s)');
+      await prefs.setString(
+        _anchorsStorageKeyForScope(_anchorScopeKey),
+        jsonEncode(anchorsJson),
+      );
+      debugPrint(
+          '✅ Anchor config saved [$_anchorScopeKey]: ${_anchors.length} anchor(s)');
     } catch (e) {
       debugPrint('❌ Failed to save anchor config: $e');
     }
   }
 
   // Load anchor configuration from local storage.
-  Future<void> loadAnchorsFromStorage() async {
+  Future<void> loadAnchorsFromStorage({
+    String? scopeKey,
+    bool allowDefaultAnchors = true,
+  }) async {
     try {
+      _anchorScopeKey = scopeKey ?? _anchorScopeKey;
       final prefs = await SharedPreferences.getInstance();
-      final anchorsJsonString = prefs.getString(_anchorsStorageKey);
+      final scopedStorageKey = _anchorsStorageKeyForScope(_anchorScopeKey);
+      String? anchorsJsonString = prefs.getString(scopedStorageKey);
+
+      // Migration: keep backward compatibility for legacy global key.
+      if (anchorsJsonString == null && _anchorScopeKey == _anchorScopeGlobal) {
+        anchorsJsonString = prefs.getString(_anchorsStorageKey);
+      }
 
       if (anchorsJsonString != null && anchorsJsonString.isNotEmpty) {
         final List<dynamic> anchorsJson = jsonDecode(anchorsJsonString);
@@ -147,15 +169,49 @@ class UwbService extends ChangeNotifier {
           return a;
         }).toList();
         debugPrint(
-            '✅ Loaded saved anchor config: ${_anchors.length} anchor(s)');
+            '✅ Loaded saved anchor config [$_anchorScopeKey]: ${_anchors.length} anchor(s)');
         notifyListeners();
       } else {
-        debugPrint('📝 No saved config found, using default anchors');
-        initializeDefaultAnchors();
+        if (allowDefaultAnchors && _anchorScopeKey == _anchorScopeGlobal) {
+          debugPrint('📝 No saved config found, using default anchors');
+          initializeDefaultAnchors();
+        } else {
+          _anchors = [];
+          notifyListeners();
+        }
       }
     } catch (e) {
-      debugPrint('❌ Failed to load anchor config, using defaults: $e');
-      initializeDefaultAnchors();
+      if (allowDefaultAnchors && _anchorScopeKey == _anchorScopeGlobal) {
+        debugPrint('❌ Failed to load anchor config, using defaults: $e');
+        initializeDefaultAnchors();
+      } else {
+        _anchors = [];
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> switchAnchorScope(String? scopeKey) async {
+    if (scopeKey == null || scopeKey.isEmpty) {
+      _anchorScopeKey = _anchorScopeGlobal;
+      _anchors = [];
+      notifyListeners();
+      return;
+    }
+    await loadAnchorsFromStorage(
+        scopeKey: scopeKey, allowDefaultAnchors: false);
+  }
+
+  Future<void> clearAnchorsInScope(String scopeKey) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_anchorsStorageKeyForScope(scopeKey));
+      if (_anchorScopeKey == scopeKey) {
+        _anchors = [];
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to clear anchor scope [$scopeKey]: $e');
     }
   }
 
@@ -402,7 +458,9 @@ class UwbService extends ChangeNotifier {
     _floorPlanImage?.dispose();
     _floorPlanImage = null;
     _config = _config.copyWith(
+      floorPlanImagePath: null,
       showFloorPlan: false,
+      floorPlanFileType: 'image',
     );
     notifyListeners();
   }

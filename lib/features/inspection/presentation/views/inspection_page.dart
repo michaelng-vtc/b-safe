@@ -47,6 +47,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
   int _currentFloor = 1;
   bool _isAnchorPlacementMode = false;
   int? _anchorPlacementIndex;
+  double _gestureStartXScale = 50.0;
+  double _gestureStartYScale = 50.0;
 
   // Serial settings.
   int _baudRate = 115200;
@@ -333,38 +335,27 @@ class _InspectionScreenState extends State<InspectionScreen> {
             uwbService: uwbService,
             buildToggle: _buildToggle,
             buildSectionHeader: _buildSectionHeader,
-            buildAnchorTile: _buildAnchorTile,
+            buildAnchorTile: (anchor, index, service) => _buildAnchorTile(
+              anchor,
+              index,
+              service,
+              onSetOnMap: () {
+                Navigator.pop(ctx);
+                _startAnchorPlacement(anchorIndex: index);
+              },
+            ),
             onAddAnchor: () => _showAddAnchorDialog(uwbService),
-            onPlaceAnchorOnMap: () => _startAnchorPlacement(),
+            onPlaceAnchorOnMap: () {
+              Navigator.pop(ctx);
+              _startAnchorPlacement();
+            },
             distanceMappingDescription:
                 _describeDistanceMapping(uwbService.config.distanceIndexMap),
             buildDistanceSwapButton: _buildDistanceSwapButton,
             onShowRoomDimensions: () => _showRoomDimensionDialog(uwbService),
             showDeleteFloorPlanButton: inspection.currentFloorPlans.isNotEmpty,
             onDeleteFloorPlan: () async {
-              final selectedOrder = inspection.selectedFloorPlanOrder;
-              final fallbackOrder = inspection.currentFloorPlans.isNotEmpty
-                  ? inspection.currentFloorPlans.first.order
-                  : null;
-              final targetOrder = selectedOrder ?? fallbackOrder;
-              if (targetOrder == null) return;
-
-              final removed = inspection.deleteFloorPlanSegment(targetOrder);
-              if (!removed) return;
-
-              final updatedPlans = inspection.currentFloorPlans;
-              if (updatedPlans.isNotEmpty) {
-                final selected = inspection.selectedFloorPlanOrder;
-                final plan = updatedPlans.firstWhere(
-                  (segment) => segment.order == selected,
-                  orElse: () => updatedPlans.first,
-                );
-                await uwbService.loadFloorPlanImage(plan.path);
-                uwbService.updateConfig(
-                    uwbService.config.copyWith(showFloorPlan: true));
-              } else {
-                uwbService.clearFloorPlan();
-              }
+              await _deleteSelectedFloorPlan(inspection, uwbService);
             },
           ),
         ),
@@ -814,6 +805,30 @@ class _InspectionScreenState extends State<InspectionScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return GestureDetector(
+          onScaleStart: (_) {
+            _gestureStartXScale = uwbService.config.xScale;
+            _gestureStartYScale = uwbService.config.yScale;
+          },
+          onScaleUpdate: (details) {
+            if (uwbService.floorPlanImage == null || details.pointerCount < 2) {
+              return;
+            }
+
+            const minScale = 10.0;
+            const maxScale = 500.0;
+            final nextX =
+                (_gestureStartXScale * details.scale).clamp(minScale, maxScale);
+            final nextY =
+                (_gestureStartYScale * details.scale).clamp(minScale, maxScale);
+
+            uwbService.updateConfig(
+              uwbService.config.copyWith(
+                xScale: nextX,
+                yScale: nextY,
+                showFloorPlan: true,
+              ),
+            );
+          },
           onTapDown: (details) {
             if (_isAnchorPlacementMode) {
               final uwbCoord = _canvasToUwb(
@@ -839,13 +854,21 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 _openAiAnalysisScreen(pin);
               }
             } else {
-              // Pin.
-              _checkPinTap(
+              // Pin first, then anchor.
+              final isPinTapped = _checkPinTap(
                 details.localPosition,
                 Size(constraints.maxWidth, constraints.maxHeight),
                 uwbService,
                 inspection,
               );
+              if (!isPinTapped) {
+                _checkAnchorTap(
+                  details.localPosition,
+                  Size(constraints.maxWidth, constraints.maxHeight),
+                  uwbService,
+                  inspection,
+                );
+              }
             }
           },
           child: Container(
@@ -886,14 +909,27 @@ class _InspectionScreenState extends State<InspectionScreen> {
   ({double minX, double maxX, double minY, double maxY}) _computeViewportBounds(
       UwbService uwbService) {
     final anchors = uwbService.anchors;
-    double minX = anchors.map((a) => a.x).reduce(min) - 1;
-    double maxX = anchors.map((a) => a.x).reduce(max) + 1;
-    double minY = anchors.map((a) => a.y).reduce(min) - 1;
-    double maxY = anchors.map((a) => a.y).reduce(max) + 1;
+    double minX;
+    double maxX;
+    double minY;
+    double maxY;
+
+    if (anchors.isNotEmpty) {
+      minX = anchors.map((a) => a.x).reduce(min) - 1;
+      maxX = anchors.map((a) => a.x).reduce(max) + 1;
+      minY = anchors.map((a) => a.y).reduce(min) - 1;
+      maxY = anchors.map((a) => a.y).reduce(max) + 1;
+    } else {
+      // Fallback viewport for first anchor/pin placement on an empty canvas.
+      minX = -5;
+      maxX = 5;
+      minY = -5;
+      maxY = 5;
+    }
 
     final config = uwbService.config;
     final floorPlanImage = uwbService.floorPlanImage;
-    if (config.showFloorPlan && floorPlanImage != null) {
+    if (floorPlanImage != null) {
       final img = floorPlanImage;
       final realWidth = img.width.toDouble() / config.xScale;
       final realHeight = img.height.toDouble() / config.yScale;
@@ -913,8 +949,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
   /// Coordinate UWB coordinate.
   Offset? _canvasToUwb(
       Offset canvasPos, Size canvasSize, UwbService uwbService) {
-    if (uwbService.anchors.isEmpty) return null;
-
     const double padding = 40.0;
     final bounds = _computeViewportBounds(uwbService);
 
@@ -937,9 +971,9 @@ class _InspectionScreenState extends State<InspectionScreen> {
   }
 
   /// Pin.
-  void _checkPinTap(Offset tapPos, Size canvasSize, UwbService uwbService,
+  bool _checkPinTap(Offset tapPos, Size canvasSize, UwbService uwbService,
       InspectionProvider inspection) {
-    if (uwbService.anchors.isEmpty) return;
+    if (inspection.currentPins.isEmpty) return false;
 
     const double padding = 40.0;
     final bounds = _computeViewportBounds(uwbService);
@@ -962,10 +996,45 @@ class _InspectionScreenState extends State<InspectionScreen> {
       if (dist < 20) {
         inspection.selectPin(pin);
         _openAiAnalysisScreen(pin);
-        return;
+        return true;
       }
     }
+    return false;
+  }
+
+  /// Anchor.
+  bool _checkAnchorTap(Offset tapPos, Size canvasSize, UwbService uwbService,
+      InspectionProvider inspection) {
+    if (uwbService.anchors.isEmpty) return false;
+
+    const double padding = 40.0;
+    final bounds = _computeViewportBounds(uwbService);
+
+    final double rangeX = bounds.maxX - bounds.minX;
+    final double rangeY = bounds.maxY - bounds.minY;
+
+    final double scaleX = (canvasSize.width - padding * 2) / rangeX;
+    final double scaleY = (canvasSize.height - padding * 2) / rangeY;
+    final double scale = min(scaleX, scaleY);
+
+    final double offsetXCanvas = (canvasSize.width - rangeX * scale) / 2;
+    final double offsetYCanvas = (canvasSize.height - rangeY * scale) / 2;
+
+    for (int i = 0; i < uwbService.anchors.length; i++) {
+      final anchor = uwbService.anchors[i];
+      final anchorCanvasX = offsetXCanvas + (anchor.x - bounds.minX) * scale;
+      final anchorCanvasY =
+          canvasSize.height - offsetYCanvas - (anchor.y - bounds.minY) * scale;
+      final dist = (tapPos - Offset(anchorCanvasX, anchorCanvasY)).distance;
+      if (dist < 20) {
+        inspection.deselectPin();
+        _showEditAnchorDialog(anchor, i, uwbService);
+        return true;
+      }
+    }
+
     inspection.deselectPin();
+    return false;
   }
 
   // Translated legacy comment.
@@ -1347,18 +1416,25 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
   // ===== button =====.
   Widget _buildFAB(UwbService uwbService, InspectionProvider inspection) {
+    final isContinuousAddMode =
+        _isAnchorPlacementMode && _anchorPlacementIndex == null;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (!_isAnchorPlacementMode)
-          FloatingActionButton.small(
-            heroTag: 'anchor_mode',
-            onPressed: () => _startAnchorPlacement(),
-            backgroundColor: Colors.teal,
-            tooltip: 'Place Anchor on map',
-            child: const Icon(Icons.place, color: Colors.white),
+        FloatingActionButton.small(
+          heroTag: 'anchor_mode',
+          onPressed: () => _startAnchorPlacement(),
+          backgroundColor: isContinuousAddMode ? Colors.grey : Colors.teal,
+          tooltip: isContinuousAddMode
+              ? 'Finish adding anchors'
+              : 'Add anchors on map',
+          child: Icon(
+            isContinuousAddMode ? Icons.check : Icons.place,
+            color: Colors.white,
           ),
-        if (_isAnchorPlacementMode)
+        ),
+        if (_isAnchorPlacementMode && _anchorPlacementIndex != null)
           FloatingActionButton.small(
             heroTag: 'cancel_anchor',
             onPressed: _cancelAnchorPlacement,
@@ -1486,6 +1562,48 @@ class _InspectionScreenState extends State<InspectionScreen> {
   }
 
   // ===== loadfloor =====.
+  Future<void> _deleteSelectedFloorPlan(
+      InspectionProvider inspection, UwbService uwbService) async {
+    final selectedOrder = inspection.selectedFloorPlanOrder;
+    final fallbackOrder = inspection.currentFloorPlans.isNotEmpty
+        ? inspection.currentFloorPlans.first.order
+        : null;
+    final targetOrder = selectedOrder ?? fallbackOrder;
+    if (targetOrder == null) return;
+
+    final scopeKeyToDelete = _anchorScopeKeyFor(
+      inspection.currentSession?.id,
+      targetOrder,
+    );
+    if (scopeKeyToDelete != null) {
+      await uwbService.clearAnchorsInScope(scopeKeyToDelete);
+    }
+
+    final removed = inspection.deleteFloorPlanSegment(targetOrder);
+    if (!removed) return;
+
+    final updatedPlans = inspection.currentFloorPlans;
+    if (updatedPlans.isNotEmpty) {
+      final selected = inspection.selectedFloorPlanOrder;
+      final plan = updatedPlans.firstWhere(
+        (segment) => segment.order == selected,
+        orElse: () => updatedPlans.first,
+      );
+      await uwbService.loadFloorPlanImage(plan.path);
+      await uwbService.switchAnchorScope(
+        _anchorScopeKeyFor(
+          inspection.currentSession?.id,
+          plan.order,
+        ),
+      );
+      uwbService.updateConfig(uwbService.config.copyWith(showFloorPlan: true));
+      return;
+    }
+
+    uwbService.clearFloorPlan();
+    await uwbService.switchAnchorScope(null);
+  }
+
   Future<void> _loadFloorPlan(
       UwbService uwbService, InspectionProvider inspection) async {
     final result = await FilePicker.platform.pickFiles(
@@ -1498,6 +1616,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
       await uwbService.loadFloorPlanImage(path);
       uwbService.updateConfig(uwbService.config.copyWith(showFloorPlan: true));
       inspection.updateFloorPlan(path);
+      await uwbService.switchAnchorScope(_currentAnchorScopeKey(inspection));
     }
   }
 
@@ -1506,10 +1625,14 @@ class _InspectionScreenState extends State<InspectionScreen> {
     final path = session.floorPlanPath;
     if (path == null || path.isEmpty) {
       uwbService.clearFloorPlan();
+      await uwbService.switchAnchorScope(null);
       return;
     }
 
     await uwbService.loadFloorPlanImage(path);
+    await uwbService.switchAnchorScope(
+      _anchorScopeKeyFor(session.id, session.selectedFloorPlanOrder),
+    );
     uwbService.updateConfig(uwbService.config.copyWith(showFloorPlan: true));
   }
 
@@ -1850,16 +1973,14 @@ class _InspectionScreenState extends State<InspectionScreen> {
                               : 'Open Floor Plan'),
                         ),
                       ),
-                      if (uwbService.config.floorPlanImagePath != null) ...[
+                      if (inspection.currentFloorPlans.isNotEmpty) ...[
                         const SizedBox(width: 8),
                         IconButton(
-                          onPressed: () {
-                            uwbService.clearFloorPlan();
-                            setState(() {});
-                          },
+                          onPressed: () =>
+                              _deleteSelectedFloorPlan(inspection, uwbService),
                           icon: const Icon(Icons.delete_outline,
                               color: Colors.red, size: 20),
-                          tooltip: 'Clear Map',
+                          tooltip: 'Delete Floor Plan',
                         ),
                       ],
                     ],
@@ -1879,6 +2000,9 @@ class _InspectionScreenState extends State<InspectionScreen> {
                           onSelected: (_) async {
                             inspection.selectFloorPlanOrder(segment.order);
                             await uwbService.loadFloorPlanImage(segment.path);
+                            await uwbService.switchAnchorScope(
+                              _currentAnchorScopeKey(inspection),
+                            );
                             uwbService.updateConfig(
                               uwbService.config.copyWith(showFloorPlan: true),
                             );
@@ -2214,7 +2338,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
     );
   }
 
-  Widget _buildAnchorTile(UwbAnchor anchor, int index, UwbService uwbService) {
+  Widget _buildAnchorTile(UwbAnchor anchor, int index, UwbService uwbService,
+      {VoidCallback? onSetOnMap}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -2248,7 +2373,8 @@ class _InspectionScreenState extends State<InspectionScreen> {
           IconButton(
             icon: const Icon(Icons.place, size: 18),
             color: Colors.teal,
-            onPressed: () => _startAnchorPlacement(anchorIndex: index),
+            onPressed:
+                onSetOnMap ?? () => _startAnchorPlacement(anchorIndex: index),
             tooltip: 'Set on Floor Plan',
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -2560,6 +2686,18 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
   void _startAnchorPlacement({int? anchorIndex}) {
     setState(() {
+      _showSettings = false;
+      _showFullSettings = false;
+
+      // Continuous add mode toggles off when user presses add action again.
+      final isContinuousAddMode =
+          _isAnchorPlacementMode && _anchorPlacementIndex == null;
+      if (anchorIndex == null && isContinuousAddMode) {
+        _isAnchorPlacementMode = false;
+        _anchorPlacementIndex = null;
+        return;
+      }
+
       _isAnchorPlacementMode = true;
       _anchorPlacementIndex = anchorIndex;
     });
@@ -2592,6 +2730,13 @@ class _InspectionScreenState extends State<InspectionScreen> {
         SnackBar(
             content: Text('${existing.id} position updated on floor plan')),
       );
+
+      // Single-shot mode for updating an existing anchor.
+      setState(() {
+        _isAnchorPlacementMode = false;
+        _anchorPlacementIndex = null;
+      });
+      return;
     } else {
       final newId = 'Anchor ${uwbService.anchors.length}';
       uwbService.addAnchor(UwbAnchor(
@@ -2605,11 +2750,6 @@ class _InspectionScreenState extends State<InspectionScreen> {
         SnackBar(content: Text('$newId added on floor plan')),
       );
     }
-
-    setState(() {
-      _isAnchorPlacementMode = false;
-      _anchorPlacementIndex = null;
-    });
   }
 
   Widget _buildNumberField(
@@ -3099,10 +3239,25 @@ class _InspectionScreenState extends State<InspectionScreen> {
       final selectedSegment =
           session.floorPlans.firstWhere((p) => p.order == targetPlanOrder);
       await uwbService.loadFloorPlanImage(selectedSegment.path);
+      await uwbService.switchAnchorScope(
+        _anchorScopeKeyFor(session.id, targetPlanOrder),
+      );
       uwbService.updateConfig(uwbService.config.copyWith(showFloorPlan: true));
     } else {
       await _applySessionFloorPlan(uwbService, session);
     }
+  }
+
+  String? _currentAnchorScopeKey(InspectionProvider inspection) {
+    return _anchorScopeKeyFor(
+      inspection.currentSession?.id,
+      inspection.selectedFloorPlanOrder,
+    );
+  }
+
+  String? _anchorScopeKeyFor(String? sessionId, int? floorPlanOrder) {
+    if (sessionId == null || floorPlanOrder == null) return null;
+    return 'session_${sessionId}_plan_$floorPlanOrder';
   }
 
   void _showNewSessionDialog(InspectionProvider inspection) {
@@ -3156,8 +3311,10 @@ class _InspectionScreenState extends State<InspectionScreen> {
                       trailing: session.id == inspection.currentSession?.id
                           ? const Icon(Icons.check_circle, color: Colors.green)
                           : null,
-                      onTap: () {
+                      onTap: () async {
                         inspection.switchSession(session.id);
+                        await _applySessionFloorPlan(_uwbService, session);
+                        if (!ctx.mounted) return;
                         Navigator.pop(ctx);
                       },
                     );
@@ -5867,8 +6024,12 @@ class _MobileUsbConnectDialogState extends State<_MobileUsbConnectDialog> {
         children: [
           const Icon(Icons.usb, color: AppTheme.primaryColor),
           const SizedBox(width: 8),
-          const Text('USB Device Connection'),
-          const Spacer(),
+          const Expanded(
+            child: Text(
+              'USB Device Connection',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           if (!_isScanning)
             IconButton(
               onPressed: _scanDevices,
@@ -6064,23 +6225,43 @@ class InspectionCanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (anchors.isEmpty) {
+    final hasAnchors = anchors.isNotEmpty;
+    final hasFloorPlan = floorPlanImage != null;
+    final shouldDrawFloorPlan =
+        hasFloorPlan && (config.showFloorPlan || !hasAnchors);
+
+    if (!hasAnchors && !hasFloorPlan) {
       _drawEmptyState(canvas, size);
       return;
     }
 
-    // Coordinate.
-    double minX = anchors.map((a) => a.x).reduce(min) - 1;
-    double maxX = anchors.map((a) => a.x).reduce(max) + 1;
-    double minY = anchors.map((a) => a.y).reduce(min) - 1;
-    double maxY = anchors.map((a) => a.y).reduce(max) + 1;
+    // Coordinate bounds come from anchors when available, otherwise from floor plan.
+    double minX;
+    double maxX;
+    double minY;
+    double maxY;
+
+    if (hasAnchors) {
+      minX = anchors.map((a) => a.x).reduce(min) - 1;
+      maxX = anchors.map((a) => a.x).reduce(max) + 1;
+      minY = anchors.map((a) => a.y).reduce(min) - 1;
+      maxY = anchors.map((a) => a.y).reduce(max) + 1;
+    } else {
+      final img = floorPlanImage!;
+      final realWidth = img.width.toDouble() / config.xScale;
+      final realHeight = img.height.toDouble() / config.yScale;
+      minX = config.xOffset - 0.5;
+      maxX = config.xOffset + realWidth + 0.5;
+      minY = config.yOffset - 0.5;
+      maxY = config.yOffset + realHeight + 0.5;
+    }
 
     // DEBUG.
     debugPrint(
         '[InspectionCanvas] showFloorPlan=${config.showFloorPlan}, floorPlanImage=${floorPlanImage != null ? "${floorPlanImage!.width}x${floorPlanImage!.height}" : "null"}, xScale=${config.xScale}, yScale=${config.yScale}, xOffset=${config.xOffset}, yOffset=${config.yOffset}');
 
     // Translated legacy comment.
-    if (config.showFloorPlan && floorPlanImage != null) {
+    if (shouldDrawFloorPlan) {
       final img = floorPlanImage!;
       final realWidth = img.width.toDouble() / config.xScale;
       final realHeight = img.height.toDouble() / config.yScale;
@@ -6120,7 +6301,7 @@ class InspectionCanvasPainter extends CustomPainter {
         toCanvas);
 
     // Translated legacy note.
-    if (config.showFloorPlan && floorPlanImage != null) {
+    if (shouldDrawFloorPlan) {
       _drawFloorPlan(canvas, size, minX, minY, scale, offsetX, offsetY);
     }
 

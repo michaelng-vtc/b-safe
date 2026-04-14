@@ -98,7 +98,7 @@ class InspectionSettingsBottomSheet extends StatelessWidget {
                         }),
                       ],
                     ),
-                    if (uwbService.config.floorPlanImagePath != null) ...[
+                    if (showDeleteFloorPlanButton) ...[
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -166,21 +166,19 @@ class InspectionSettingsBottomSheet extends StatelessWidget {
                           ],
                         ),
                       ),
-                      if (showDeleteFloorPlanButton) ...[
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: onDeleteFloorPlan,
-                            icon: const Icon(Icons.delete_outline,
-                                size: 18, color: Colors.red),
-                            label: const Text(
-                              'Delete Floor Plan',
-                              style: TextStyle(color: Colors.red),
-                            ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: onDeleteFloorPlan,
+                          icon: const Icon(Icons.delete_outline,
+                              size: 18, color: Colors.red),
+                          label: const Text(
+                            'Delete Floor Plan',
+                            style: TextStyle(color: Colors.red),
                           ),
                         ),
-                      ],
+                      ),
                     ],
                     const SizedBox(height: 16),
                     SizedBox(

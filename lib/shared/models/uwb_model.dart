@@ -131,6 +131,7 @@ class UwbConfig {
   final String floorPlanFileType; // Floor plan file type (image/svg/pdf/dwg)
   final List<int>
       distanceIndexMap; // Distance index mapping for D0~D3 to anchors
+  static const Object _noChange = Object();
 
   UwbConfig({
     this.positioningMode = '2D Positioning',
@@ -187,7 +188,7 @@ class UwbConfig {
     bool? flipX,
     bool? flipY,
     bool? showOrigin,
-    String? floorPlanImagePath,
+    Object? floorPlanImagePath = _noChange,
     bool? showFloorPlan,
     double? floorPlanOpacity,
     String? floorPlanFileType,
@@ -218,7 +219,9 @@ class UwbConfig {
       flipX: flipX ?? this.flipX,
       flipY: flipY ?? this.flipY,
       showOrigin: showOrigin ?? this.showOrigin,
-      floorPlanImagePath: floorPlanImagePath ?? this.floorPlanImagePath,
+      floorPlanImagePath: identical(floorPlanImagePath, _noChange)
+          ? this.floorPlanImagePath
+          : floorPlanImagePath as String?,
       showFloorPlan: showFloorPlan ?? this.showFloorPlan,
       floorPlanOpacity: floorPlanOpacity ?? this.floorPlanOpacity,
       floorPlanFileType: floorPlanFileType ?? this.floorPlanFileType,
