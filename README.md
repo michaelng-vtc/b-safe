@@ -1,109 +1,130 @@
 # B-SAFE Flutter App
 
-B-SAFE is a Flutter app for building safety inspection with UWB positioning and AI-assisted defect analysis.
+B-SAFE is a Flutter app for building safety inspection with UWB positioning and AI-assisted analysis.
 
-> 中文說明：目前專案已整理為「Feature-First + Clean Architecture 導向」結構，方便後續擴展與分層維護。
+This repository now follows a Feature-Based + Clean Architecture direction:
+- `core`: app-wide infrastructure
+- `features`: business modules, each owning its own domain/data/presentation code where applicable
+- `shared`: only cross-feature models/services that are still used by multiple features
 
-## Architecture / 架構
-
-The `lib/` folder is organized with explicit boundaries: `core` (global infra), `shared` (cross-feature reusable code), and `features` (business modules).
-
-> 中文註解：
-> - `core`：全域基礎層（不依賴特定業務）
-> - `shared`：跨 feature 共用
-> - `features`：業務模組（start / inspection）
+## Current Project Structure
 
 ```text
 lib/
 ├── main.dart
-├── app.dart                          # App 啟動組裝（DI/Theme/入口頁）
-│
-├── core/                             # 全域基礎設施
-│   ├── constants/
-│   ├── di/
-│   ├── extensions/
-│   ├── router/
-│   ├── theme/
-│   │   └── app_theme.dart
-│   └── utils/
-│
-├── shared/                           # 跨 feature 共用
-│   ├── models/
-│   │   ├── inspection_model.dart
-│   │   ├── project_model.dart
-│   │   └── uwb_model.dart
-│   ├── services/
-│   │   ├── api_service.dart
-│   │   ├── desktop_serial_service.dart
-│   │   ├── mobile_serial_service.dart
-│   │   ├── pdf_export_service.dart
-│   │   ├── uwb_service.dart
-│   │   ├── word_export_service.dart
-│   │   └── yolo_service.dart
-│   └── widgets/
-│
-└── features/                         # 業務功能模組
-	├── start/
-	│   ├── data/
-	│   ├── domain/
-	│   └── presentation/
-	│       └── views/
-	│           └── start_page.dart
-	│
-	└── inspection/
-		├── data/
-		│   ├── datasources/
-		│   ├── mappers/
-		│   ├── models/
-		│   └── repositories/
-		├── domain/
-		│   ├── entities/
-		│   ├── repositories/
-		│   └── usecases/
-		└── presentation/
-			├── providers/
-			│   └── inspection_provider.dart
-			├── views/
-			│   └── inspection_page.dart
-			└── widgets/
-				├── pins/
-				│   └── inspection_pin_list_bottom_sheet.dart
-				└── settings/
-					└── inspection_settings_bottom_sheet.dart
+├── app.dart
+├── core/
+│   └── theme/
+│       └── app_theme.dart
+├── features/
+│   ├── start/
+│   │   └── presentation/
+│   │       └── views/
+│   │           └── start_page.dart
+│   ├── inspection/
+│   │   ├── data/
+│   │   │   └── services/
+│   │   │       ├── desktop_serial_service.dart
+│   │   │       ├── mobile_serial_service.dart
+│   │   │       ├── pdf_export_service.dart
+│   │   │       ├── uwb_service.dart
+│   │   │       └── word_export_service.dart
+│   │   ├── domain/
+│   │   │   └── entities/
+│   │   │       ├── inspection_model.dart
+│   │   │       └── uwb_model.dart
+│   │   └── presentation/
+│   │       ├── providers/
+│   │       │   └── inspection_provider.dart
+│   │       ├── views/
+│   │       │   └── inspection_page.dart
+│   │       └── widgets/
+│   │           ├── pins/
+│   │           │   └── inspection_pin_list_bottom_sheet.dart
+│   │           └── settings/
+│   │               └── inspection_settings_bottom_sheet.dart
+│   └── ai_analysis/
+│       ├── data/
+│       │   ├── datasources/
+│       │   │   └── ai_datasource.dart
+│       │   ├── models/
+│       │   │   └── detection_result_model.dart
+│       │   ├── repositories/
+│       │   │   └── ai_repository_impl.dart
+│       │   └── services/
+│       │       └── ai_analysis_service.dart
+│       ├── domain/
+│       │   ├── entities/
+│       │   │   └── detection_result_entity.dart
+│       │   ├── repositories/
+│       │   │   └── ai_repository.dart
+│       │   └── usecases/
+│       │       └── perform_detection_usecase.dart
+│       └── presentation/
+│           ├── providers/
+│           │   └── ai_provider.dart
+│           ├── views/
+│           │   └── ai_analysis_page.dart
+│           └── widgets/
+│               ├── ai_settings_sheet.dart
+│               └── detection_result_overlay.dart
+└── shared/
+    ├── models/
+    │   └── project_model.dart
+    └── services/
+        ├── api_service.dart
+        └── yolo_service.dart
 ```
 
-## Current Runtime Flow / 目前執行流程
+## Feature Ownership
 
-- App entry: `main.dart`
-- App composition: `app.dart`
-- Landing page: `features/start/presentation/views/start_page.dart`
-- Main workflow: `features/inspection/presentation/views/inspection_page.dart`
+- `start`: app entry landing flow.
+- `inspection`: UWB, serial communication (desktop/mobile), floor plan interaction, pin/anchor workflows, report export.
+- `ai_analysis`: AI detection and AI-assisted analysis pipeline with domain/data/presentation layering.
 
-> 中文註解：目前主流程聚焦在 **Start + Inspection**，其餘歷史/儀表板模組已清理。
+## Shared Layer Policy
 
-## Setup / 開發與執行
+`lib/shared` is intentionally small and reserved for cross-feature code only.
 
-### 1) Install dependencies / 安裝依賴
+Current shared assets:
+- `project_model.dart`: consumed across modules.
+- `api_service.dart`: network/AI API utility used by both `inspection` and `ai_analysis`.
+- `yolo_service.dart`: YOLO abstraction used by both `inspection` and `ai_analysis`.
+
+If a file becomes feature-specific, move it into that feature and update imports.
+
+## Getting Started
+
+### Prerequisites
+
+- Flutter SDK (Dart SDK included)
+- Platform toolchains for your target (Android/Linux/Web/etc.)
+
+### Install dependencies
 
 ```bash
 flutter pub get
 ```
 
-### 2) Run app / 執行 App
+### Run
 
 ```bash
 flutter run
 ```
 
-### 3) Analyze / 靜態檢查
+### Static analysis
 
 ```bash
 flutter analyze --no-preamble
 ```
 
-## Notes / 備註
+## Platform Notes
 
-- `data/domain` folders are scaffolded for incremental extraction of entities, repositories, and use cases.
-- Shared models/services are intentionally centralized under `lib/shared` to reduce cross-feature duplication.
+- Desktop serial communication uses `flutter_libserialport`.
+- Android USB serial communication uses `usb_serial`.
+- YOLO runtime currently follows a compatibility-safe implementation path in `yolo_service.dart`.
 
-> 中文補充：下一步建議先從 `inspection` 開始，逐步把 provider 內商業邏輯下沉到 `domain/usecases`。
+## Next Refactor Targets
+
+- Continue moving inspection business logic from presentation/provider into explicit domain use cases.
+- Keep shrinking `shared` to only true cross-feature dependencies.
