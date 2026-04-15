@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:bsafe_app/shared/models/inspection_model.dart';
+import 'package:bsafe_app/features/inspection/domain/entities/inspection_model.dart';
 
 /// Docx (Office Open XML) inspection.
 class WordExportService {
@@ -34,10 +34,10 @@ class WordExportService {
     for (final session in sorted) {
       body.writeln(_heading('${session.floor}F', level: 2));
       body.writeln(_paragraph('Inspection Points: ${session.totalPins}'));
-      body.writeln(_paragraph(
-          'Defect Summary: Low Risk ${session.lowRiskDefects} / '
-          'Medium Risk ${session.mediumRiskDefects} / '
-          'High Risk ${session.highRiskDefects}'));
+      body.writeln(
+          _paragraph('Defect Summary: Low Risk ${session.lowRiskDefects} / '
+              'Medium Risk ${session.mediumRiskDefects} / '
+              'High Risk ${session.highRiskDefects}'));
       body.writeln(_paragraph(''));
 
       int defectNum = 0;
@@ -60,8 +60,10 @@ class WordExportService {
           body.writeln(_paragraph('Risk Level: $riskLabel'));
 
           // Structured fields
-          if (defect.buildingElement != null && defect.buildingElement!.isNotEmpty) {
-            body.writeln(_paragraph('Building Element: ${defect.buildingElement}'));
+          if (defect.buildingElement != null &&
+              defect.buildingElement!.isNotEmpty) {
+            body.writeln(
+                _paragraph('Building Element: ${defect.buildingElement}'));
           }
           if (defect.defectType != null && defect.defectType!.isNotEmpty) {
             body.writeln(_paragraph('Defect Type: ${defect.defectType}'));
@@ -69,11 +71,15 @@ class WordExportService {
           if (defect.diagnosis != null && defect.diagnosis!.isNotEmpty) {
             body.writeln(_paragraph('Diagnosis: ${defect.diagnosis}'));
           }
-          if (defect.suspectedCause != null && defect.suspectedCause!.isNotEmpty) {
-            body.writeln(_paragraph('Suspected Cause: ${defect.suspectedCause}'));
+          if (defect.suspectedCause != null &&
+              defect.suspectedCause!.isNotEmpty) {
+            body.writeln(
+                _paragraph('Suspected Cause: ${defect.suspectedCause}'));
           }
-          if (defect.recommendation != null && defect.recommendation!.isNotEmpty) {
-            body.writeln(_paragraph('Inspector Recommendation: ${defect.recommendation}'));
+          if (defect.recommendation != null &&
+              defect.recommendation!.isNotEmpty) {
+            body.writeln(_paragraph(
+                'Inspector Recommendation: ${defect.recommendation}'));
           }
           if (defect.defectSize != null && defect.defectSize!.isNotEmpty) {
             body.writeln(_paragraph('Defect Size: ${defect.defectSize}'));
@@ -81,34 +87,43 @@ class WordExportService {
 
           // Additional information fields
           if (defect.extentOfDefect != null) {
-            body.writeln(_paragraph('Extent of Defect: ${defect.extentOfDefect == 'locally' ? 'Locally noted' : 'Generally noted'}'));
+            body.writeln(_paragraph(
+                'Extent of Defect: ${defect.extentOfDefect == 'locally' ? 'Locally noted' : 'Generally noted'}'));
           }
           if (defect.currentUse != null && defect.currentUse!.isNotEmpty) {
             body.writeln(_paragraph('Room Current Use: ${defect.currentUse}'));
           }
           if (defect.designedUse != null && defect.designedUse!.isNotEmpty) {
-            body.writeln(_paragraph('Room Designed Use: ${defect.designedUse}'));
+            body.writeln(
+                _paragraph('Room Designed Use: ${defect.designedUse}'));
           }
           if (defect.onlyTypicalFloor != null) {
-            body.writeln(_paragraph('Only Typical Floor: ${defect.onlyTypicalFloor! ? 'Yes' : 'No'}'));
+            body.writeln(_paragraph(
+                'Only Typical Floor: ${defect.onlyTypicalFloor! ? 'Yes' : 'No'}'));
           }
           if (defect.useOfAbove != null && defect.useOfAbove!.isNotEmpty) {
             body.writeln(_paragraph('Use of Above: ${defect.useOfAbove}'));
           }
           if (defect.adjacentWetArea != null) {
-            body.writeln(_paragraph('Adjacent Space is Wet Area: ${defect.adjacentWetArea! ? 'Yes' : 'No'}'));
+            body.writeln(_paragraph(
+                'Adjacent Space is Wet Area: ${defect.adjacentWetArea! ? 'Yes' : 'No'}'));
           }
           if (defect.adjacentExternalWall != null) {
-            body.writeln(_paragraph('Adjacent to External Wall: ${defect.adjacentExternalWall! ? 'Yes' : 'No'}'));
+            body.writeln(_paragraph(
+                'Adjacent to External Wall: ${defect.adjacentExternalWall! ? 'Yes' : 'No'}'));
           }
           if (defect.concealedPipeworks != null) {
-            body.writeln(_paragraph('Concealed Pipeworks: ${defect.concealedPipeworks! ? 'Yes' : 'No'}'));
+            body.writeln(_paragraph(
+                'Concealed Pipeworks: ${defect.concealedPipeworks! ? 'Yes' : 'No'}'));
           }
-          if (defect.repetitivePattern != null && defect.repetitivePattern!.isNotEmpty) {
-            body.writeln(_paragraph('Repetitive Pattern: ${defect.repetitivePattern}'));
+          if (defect.repetitivePattern != null &&
+              defect.repetitivePattern!.isNotEmpty) {
+            body.writeln(
+                _paragraph('Repetitive Pattern: ${defect.repetitivePattern}'));
           }
           if (defect.heavyLoadingAbove != null) {
-            body.writeln(_paragraph('Heavy Loading on Floor Above: ${defect.heavyLoadingAbove! ? 'Yes' : 'No'}'));
+            body.writeln(_paragraph(
+                'Heavy Loading on Floor Above: ${defect.heavyLoadingAbove! ? 'Yes' : 'No'}'));
           }
           if (defect.remarks != null && defect.remarks!.isNotEmpty) {
             body.writeln(_paragraph('Remarks: ${defect.remarks}'));
@@ -172,7 +187,8 @@ class WordExportService {
         _textFile('word/_rels/document.xml.rels', _documentRels(images)));
 
     // word/document.xml
-    archive.addFile(_textFile('word/document.xml', _documentXml(body.toString())));
+    archive
+        .addFile(_textFile('word/document.xml', _documentXml(body.toString())));
 
     // word/styles.xml
     archive.addFile(_textFile('word/styles.xml', _stylesXml()));
@@ -219,7 +235,8 @@ class WordExportService {
     final runs = StringBuffer();
     for (int i = 0; i < lines.length; i++) {
       if (i > 0) runs.writeln('<w:r><w:br/></w:r>');
-      runs.writeln('<w:r><w:t xml:space="preserve">${_xmlEscape(lines[i])}</w:t></w:r>');
+      runs.writeln(
+          '<w:r><w:t xml:space="preserve">${_xmlEscape(lines[i])}</w:t></w:r>');
     }
     return '<w:p>$runs</w:p>';
   }

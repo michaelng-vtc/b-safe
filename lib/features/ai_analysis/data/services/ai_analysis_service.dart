@@ -25,17 +25,14 @@ class AiAnalysisService {
     );
   }
 
-  Future<List<YoloDetection>> detectWithYolo(
+  Future<Map<String, dynamic>> analyzeImageWithYolo(
     Uint8List imageBytes, {
     double confidenceThreshold = 0.25,
-  }) {
-    return _yoloService.detect(
+  }) async {
+    final detections = await _yoloService.detect(
       imageBytes,
       confidenceThreshold: confidenceThreshold,
     );
-  }
-
-  Map<String, dynamic> toYoloSafetyAnalysis(List<YoloDetection> detections) {
     return YoloService.toSafetyAnalysis(detections);
   }
 }

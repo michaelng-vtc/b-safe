@@ -3,15 +3,11 @@ import 'package:flutter/material.dart';
 class AiSettingsSheet extends StatelessWidget {
   final double confidenceThreshold;
   final ValueChanged<double> onConfidenceChanged;
-  final bool showBoundingBoxes;
-  final ValueChanged<bool> onShowBoundingBoxesChanged;
 
   const AiSettingsSheet({
     super.key,
     required this.confidenceThreshold,
     required this.onConfidenceChanged,
-    required this.showBoundingBoxes,
-    required this.onShowBoundingBoxesChanged,
   });
 
   @override
@@ -38,12 +34,6 @@ class AiSettingsSheet extends StatelessWidget {
               max: 0.9,
               divisions: 16,
               onChanged: onConfidenceChanged,
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Show YOLO Bounding Boxes'),
-              value: showBoundingBoxes,
-              onChanged: onShowBoundingBoxesChanged,
             ),
           ],
         ),

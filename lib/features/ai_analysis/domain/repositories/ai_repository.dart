@@ -12,8 +12,4 @@ abstract class AiRepository {
     required Uint8List imageBytes,
     double confidenceThreshold,
   });
-
-  Future<List<DetectionResultEntity>> getDetectionHistory();
-
-  Future<void> saveDetectionResult(DetectionResultEntity result);
 }

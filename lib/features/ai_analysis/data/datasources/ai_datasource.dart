@@ -32,11 +32,10 @@ class AiDatasource {
     required Uint8List imageBytes,
     double confidenceThreshold = 0.25,
   }) async {
-    final detections = await _aiService.detectWithYolo(
+    final raw = await _aiService.analyzeImageWithYolo(
       imageBytes,
       confidenceThreshold: confidenceThreshold,
     );
-    final raw = _aiService.toYoloSafetyAnalysis(detections);
 
     return DetectionResultModel.fromRaw(
       id: _uuid.v4(),

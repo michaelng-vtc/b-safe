@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:bsafe_app/shared/models/inspection_model.dart';
+import 'package:bsafe_app/features/inspection/domain/entities/inspection_model.dart';
 
 class PdfExportService {
   static Future<void> exportReport({
@@ -40,11 +40,9 @@ class PdfExportService {
             pw.Divider(color: PdfColor.fromHex('#2E75B6'), thickness: 2),
             pw.SizedBox(height: 20),
             _infoRow('Project', buildingName),
-            _infoRow('Export Date',
-                DateTime.now().toString().substring(0, 16)),
+            _infoRow('Export Date', DateTime.now().toString().substring(0, 16)),
             _infoRow('Total Floors', '${sorted.length}'),
-            _infoRow(
-                'Total Inspection Points',
+            _infoRow('Total Inspection Points',
                 '${sorted.fold<int>(0, (sum, s) => sum + s.totalPins)}'),
           ],
         ),
@@ -128,16 +126,30 @@ class PdfExportService {
             'Suspected Cause': defect.suspectedCause,
             'Inspector Recommendation': defect.recommendation,
             'Defect Size': defect.defectSize,
-            'Extent of Defect': defect.extentOfDefect != null ? (defect.extentOfDefect == 'locally' ? 'Locally noted' : 'Generally noted') : null,
+            'Extent of Defect': defect.extentOfDefect != null
+                ? (defect.extentOfDefect == 'locally'
+                    ? 'Locally noted'
+                    : 'Generally noted')
+                : null,
             'Room Current Use': defect.currentUse,
             'Room Designed Use': defect.designedUse,
-            'Only Typical Floor': defect.onlyTypicalFloor != null ? (defect.onlyTypicalFloor! ? 'Yes' : 'No') : null,
+            'Only Typical Floor': defect.onlyTypicalFloor != null
+                ? (defect.onlyTypicalFloor! ? 'Yes' : 'No')
+                : null,
             'Use of Above': defect.useOfAbove,
-            'Adjacent Wet Area': defect.adjacentWetArea != null ? (defect.adjacentWetArea! ? 'Yes' : 'No') : null,
-            'Adjacent to External Wall': defect.adjacentExternalWall != null ? (defect.adjacentExternalWall! ? 'Yes' : 'No') : null,
-            'Concealed Pipeworks': defect.concealedPipeworks != null ? (defect.concealedPipeworks! ? 'Yes' : 'No') : null,
+            'Adjacent Wet Area': defect.adjacentWetArea != null
+                ? (defect.adjacentWetArea! ? 'Yes' : 'No')
+                : null,
+            'Adjacent to External Wall': defect.adjacentExternalWall != null
+                ? (defect.adjacentExternalWall! ? 'Yes' : 'No')
+                : null,
+            'Concealed Pipeworks': defect.concealedPipeworks != null
+                ? (defect.concealedPipeworks! ? 'Yes' : 'No')
+                : null,
             'Repetitive Pattern': defect.repetitivePattern,
-            'Heavy Loading on Floor Above': defect.heavyLoadingAbove != null ? (defect.heavyLoadingAbove! ? 'Yes' : 'No') : null,
+            'Heavy Loading on Floor Above': defect.heavyLoadingAbove != null
+                ? (defect.heavyLoadingAbove! ? 'Yes' : 'No')
+                : null,
             'Remarks': defect.remarks,
           };
           for (final entry in structuredFields.entries) {
@@ -205,8 +217,8 @@ class PdfExportService {
               widgets.add(pw.Padding(
                 padding: const pw.EdgeInsets.only(top: 6, left: 8),
                 child: pw.ClipRect(
-                  child: pw.Image(image, width: 240, height: 160,
-                      fit: pw.BoxFit.contain),
+                  child: pw.Image(image,
+                      width: 240, height: 160, fit: pw.BoxFit.contain),
                 ),
               ));
             } catch (_) {

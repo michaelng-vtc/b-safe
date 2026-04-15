@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:bsafe_app/shared/models/inspection_model.dart';
+import 'package:bsafe_app/features/inspection/domain/entities/inspection_model.dart';
 import 'package:bsafe_app/features/inspection/presentation/providers/inspection_provider.dart';
 import 'package:bsafe_app/core/theme/app_theme.dart';
 

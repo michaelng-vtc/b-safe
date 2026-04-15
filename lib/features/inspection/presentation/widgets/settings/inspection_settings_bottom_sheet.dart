@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:bsafe_app/shared/models/uwb_model.dart';
-import 'package:bsafe_app/shared/services/uwb_service.dart';
+import 'package:bsafe_app/features/inspection/domain/entities/uwb_model.dart';
+import 'package:bsafe_app/features/inspection/data/services/uwb_service.dart';
 import 'package:bsafe_app/core/theme/app_theme.dart';
 
 class InspectionSettingsBottomSheet extends StatelessWidget {

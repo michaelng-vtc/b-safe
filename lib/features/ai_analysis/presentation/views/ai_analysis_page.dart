@@ -178,9 +178,6 @@ class _AiAnalysisScreenState extends State<AiAnalysisScreen> {
                       builder: (_) => AiSettingsSheet(
                         confidenceThreshold: ai.yoloConfidenceThreshold,
                         onConfidenceChanged: ai.setYoloConfidenceThreshold,
-                        showBoundingBoxes: ai.showBoundingBoxes,
-                        onShowBoundingBoxesChanged: (_) =>
-                            ai.toggleBoundingBoxes(),
                       ),
                     );
                   },
