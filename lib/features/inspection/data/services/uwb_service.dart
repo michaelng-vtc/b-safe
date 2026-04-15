@@ -8,9 +8,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:bsafe_app/features/inspection/domain/entities/uwb_model.dart';
-import 'package:bsafe_app/features/inspection/data/services/desktop_serial_service.dart';
-import 'package:bsafe_app/features/inspection/data/services/mobile_serial_service.dart';
+import 'package:smartsurvey/features/inspection/domain/entities/uwb_model.dart';
+import 'package:smartsurvey/features/inspection/data/services/desktop_serial_service.dart';
+import 'package:smartsurvey/features/inspection/data/services/mobile_serial_service.dart';
 
 /// Central UWB service.
 ///

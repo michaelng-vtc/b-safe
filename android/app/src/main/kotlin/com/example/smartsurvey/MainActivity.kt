@@ -1,4 +1,4 @@
-package com.example.bsafe_app
+package com.example.smartsurvey
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,6 +1,6 @@
-import 'package:bsafe_app/features/ai_analysis/data/repositories/ai_repository_impl.dart';
-import 'package:bsafe_app/features/ai_analysis/domain/entities/detection_result_entity.dart';
-import 'package:bsafe_app/features/ai_analysis/domain/usecases/perform_detection_usecase.dart';
+import 'package:smartsurvey/features/ai_analysis/data/repositories/ai_repository_impl.dart';
+import 'package:smartsurvey/features/ai_analysis/domain/entities/detection_result_entity.dart';
+import 'package:smartsurvey/features/ai_analysis/domain/usecases/perform_detection_usecase.dart';
 import 'package:flutter/foundation.dart';
 
 class AiProvider extends ChangeNotifier {

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:bsafe_app/features/ai_analysis/data/models/detection_result_model.dart';
-import 'package:bsafe_app/features/ai_analysis/data/services/ai_analysis_service.dart';
+import 'package:smartsurvey/features/ai_analysis/data/models/detection_result_model.dart';
+import 'package:smartsurvey/features/ai_analysis/data/services/ai_analysis_service.dart';
 import 'package:uuid/uuid.dart';
 
 class AiDatasource {

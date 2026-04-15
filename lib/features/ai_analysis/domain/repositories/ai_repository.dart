@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:bsafe_app/features/ai_analysis/domain/entities/detection_result_entity.dart';
+import 'package:smartsurvey/features/ai_analysis/domain/entities/detection_result_entity.dart';
 
 abstract class AiRepository {
   Future<DetectionResultEntity> performVlmAnalysis({

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:bsafe_app/features/inspection/domain/entities/uwb_model.dart';
-import 'package:bsafe_app/features/inspection/data/services/uwb_service.dart';
-import 'package:bsafe_app/core/theme/app_theme.dart';
+import 'package:smartsurvey/features/inspection/domain/entities/uwb_model.dart';
+import 'package:smartsurvey/features/inspection/data/services/uwb_service.dart';
+import 'package:smartsurvey/core/theme/app_theme.dart';
 
 class InspectionSettingsBottomSheet extends StatelessWidget {
   final UwbService uwbService;

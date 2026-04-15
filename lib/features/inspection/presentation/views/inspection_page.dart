@@ -7,23 +7,23 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:bsafe_app/features/inspection/domain/entities/uwb_model.dart';
-import 'package:bsafe_app/features/inspection/domain/entities/inspection_model.dart';
-import 'package:bsafe_app/shared/models/project_model.dart';
-import 'package:bsafe_app/features/inspection/data/services/uwb_service.dart';
-import 'package:bsafe_app/features/inspection/data/services/desktop_serial_service.dart';
-import 'package:bsafe_app/features/inspection/data/services/mobile_serial_service.dart';
-import 'package:bsafe_app/shared/services/yolo_service.dart';
-import 'package:bsafe_app/features/ai_analysis/presentation/providers/ai_provider.dart';
-import 'package:bsafe_app/features/ai_analysis/presentation/views/ai_analysis_page.dart';
-import 'package:bsafe_app/features/inspection/presentation/providers/inspection_provider.dart';
-import 'package:bsafe_app/core/theme/app_theme.dart';
+import 'package:smartsurvey/features/inspection/domain/entities/uwb_model.dart';
+import 'package:smartsurvey/features/inspection/domain/entities/inspection_model.dart';
+import 'package:smartsurvey/shared/models/project_model.dart';
+import 'package:smartsurvey/features/inspection/data/services/uwb_service.dart';
+import 'package:smartsurvey/features/inspection/data/services/desktop_serial_service.dart';
+import 'package:smartsurvey/features/inspection/data/services/mobile_serial_service.dart';
+import 'package:smartsurvey/shared/services/yolo_service.dart';
+import 'package:smartsurvey/features/ai_analysis/presentation/providers/ai_provider.dart';
+import 'package:smartsurvey/features/ai_analysis/presentation/views/ai_analysis_page.dart';
+import 'package:smartsurvey/features/inspection/presentation/providers/inspection_provider.dart';
+import 'package:smartsurvey/core/theme/app_theme.dart';
 
-import 'package:bsafe_app/features/inspection/presentation/widgets/settings/inspection_settings_bottom_sheet.dart';
-import 'package:bsafe_app/features/inspection/presentation/widgets/pins/inspection_pin_list_bottom_sheet.dart';
-import 'package:bsafe_app/shared/services/api_service.dart';
-import 'package:bsafe_app/features/inspection/data/services/word_export_service.dart';
-import 'package:bsafe_app/features/inspection/data/services/pdf_export_service.dart';
+import 'package:smartsurvey/features/inspection/presentation/widgets/settings/inspection_settings_bottom_sheet.dart';
+import 'package:smartsurvey/features/inspection/presentation/widgets/pins/inspection_pin_list_bottom_sheet.dart';
+import 'package:smartsurvey/shared/services/api_service.dart';
+import 'package:smartsurvey/features/inspection/data/services/word_export_service.dart';
+import 'package:smartsurvey/features/inspection/data/services/pdf_export_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
@@ -156,7 +156,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 Icon(Icons.shield_rounded, color: Colors.white, size: 14),
                 SizedBox(width: 3),
                 Text(
-                  'B-SAFE',
+                  'SmartSurvey',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -397,7 +397,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                 Icon(Icons.shield, color: Colors.white, size: 20),
                 SizedBox(width: 6),
                 Text(
-                  'B-SAFE',
+                  'SmartSurvey',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -3350,7 +3350,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
       await Share.shareXFiles(
         [XFile(filePath)],
-        subject: 'B-SAFE Inspection Report (Word)',
+        subject: 'SmartSurvey Inspection Report (Word)',
       );
 
       if (mounted) inspection.markExported();
@@ -3385,7 +3385,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
 
       await Share.shareXFiles(
         [XFile(filePath)],
-        subject: 'B-SAFE Inspection Report (PDF)',
+        subject: 'SmartSurvey Inspection Report (PDF)',
       );
 
       if (mounted) inspection.markExported();

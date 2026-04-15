@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:bsafe_app/shared/services/api_service.dart';
-import 'package:bsafe_app/shared/services/yolo_service.dart';
+import 'package:smartsurvey/shared/services/api_service.dart';
+import 'package:smartsurvey/shared/services/yolo_service.dart';
 
 /// Feature-local service adapter to keep ai_analysis datasource isolated
 /// from shared infrastructure details.

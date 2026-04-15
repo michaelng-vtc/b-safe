@@ -4,7 +4,7 @@
     <!-- USB OTG 權限 -->
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
     <application
-        android:label="bsafe_app"
+        android:label="SmartSurvey"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

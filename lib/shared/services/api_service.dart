@@ -9,7 +9,7 @@ class ApiService {
 
   // POE API for AI image analysis (OpenAI-compatible endpoint)
   static const String poeApiKey = 'HTLbuegNjtBmxNX5rWeH7cyxFfNc1oANBPRtdY_aO4E';
-  static const String poeBotName = 'B-SAFE';
+  static const String poeBotName = 'SmartSurvey';
   static const String poeApiUrl = 'https://api.poe.com/v1/chat/completions';
 
   // Singleton pattern
@@ -127,7 +127,7 @@ class ApiService {
     try {
       final prompt = StringBuffer();
       prompt.writeln(
-          'You are a professional building safety inspection AI assistant (B-SAFE system).');
+          'You are a professional building safety inspection AI assistant (SmartSurvey system).');
       prompt.writeln(
           'Please analyze the following building damage and assess the risk.');
       prompt.writeln();
@@ -285,7 +285,7 @@ class ApiService {
       messages.add({
         'role': 'system',
         'content':
-            'You are the B-SAFE building safety AI assistant. Please respond in English.'
+            'You are the SmartSurvey building safety AI assistant. Please respond in English.'
                 'Your task is to help users analyze building damage, assess risk, and provide maintenance recommendations.'
                 'Keep your answers concise and professional.',
       });

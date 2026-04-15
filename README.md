@@ -1,6 +1,6 @@
-# B-SAFE Flutter App
+# SmartSurvey Flutter App
 
-B-SAFE is a Flutter app for building safety inspection with UWB positioning and AI-assisted analysis.
+SmartSurvey is a Flutter app for building safety inspection with UWB positioning and AI-assisted analysis.
 
 This repository now follows a Feature-Based + Clean Architecture direction:
 - `core`: app-wide infrastructure

@@ -1,6 +1,6 @@
 {
-    "name": "bsafe_app",
-    "short_name": "bsafe_app",
+    "name": "SmartSurvey",
+    "short_name": "SmartSurvey",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

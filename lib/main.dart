@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdfrx/pdfrx.dart';
-import 'package:bsafe_app/app.dart';
+import 'package:smartsurvey/app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

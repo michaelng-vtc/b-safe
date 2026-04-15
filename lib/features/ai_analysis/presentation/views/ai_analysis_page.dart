@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:bsafe_app/features/ai_analysis/domain/entities/detection_result_entity.dart';
-import 'package:bsafe_app/features/ai_analysis/presentation/providers/ai_provider.dart';
-import 'package:bsafe_app/features/ai_analysis/presentation/widgets/ai_settings_sheet.dart';
-import 'package:bsafe_app/features/ai_analysis/presentation/widgets/detection_result_overlay.dart';
+import 'package:smartsurvey/features/ai_analysis/domain/entities/detection_result_entity.dart';
+import 'package:smartsurvey/features/ai_analysis/presentation/providers/ai_provider.dart';
+import 'package:smartsurvey/features/ai_analysis/presentation/widgets/ai_settings_sheet.dart';
+import 'package:smartsurvey/features/ai_analysis/presentation/widgets/detection_result_overlay.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

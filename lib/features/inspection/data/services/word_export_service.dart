@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:bsafe_app/features/inspection/domain/entities/inspection_model.dart';
+import 'package:smartsurvey/features/inspection/domain/entities/inspection_model.dart';
 
 /// Docx (Office Open XML) inspection.
 class WordExportService {
@@ -21,7 +21,7 @@ class WordExportService {
     final body = StringBuffer();
 
     // Title.
-    body.writeln(_heading('B-SAFE Inspection Report', level: 1));
+    body.writeln(_heading('SmartSurvey Inspection Report', level: 1));
     body.writeln(_paragraph('Project: $buildingName'));
     body.writeln(_paragraph(
         'Export Date: ${DateTime.now().toString().substring(0, 16)}'));

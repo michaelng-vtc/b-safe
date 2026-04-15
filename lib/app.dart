@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:bsafe_app/features/inspection/presentation/providers/inspection_provider.dart';
-import 'package:bsafe_app/features/start/presentation/views/start_page.dart';
-import 'package:bsafe_app/core/theme/app_theme.dart';
+import 'package:smartsurvey/features/inspection/presentation/providers/inspection_provider.dart';
+import 'package:smartsurvey/features/start/presentation/views/start_page.dart';
+import 'package:smartsurvey/core/theme/app_theme.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -14,7 +14,7 @@ class App extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => InspectionProvider()),
       ],
       child: MaterialApp(
-        title: 'B-SAFE Building Safety',
+        title: 'SmartSurvey Building Safety',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         home: const StartScreen(),

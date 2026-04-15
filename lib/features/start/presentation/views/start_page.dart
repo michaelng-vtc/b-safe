@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-import 'package:bsafe_app/shared/models/project_model.dart';
-import 'package:bsafe_app/features/inspection/presentation/providers/inspection_provider.dart';
-import 'package:bsafe_app/features/inspection/presentation/views/inspection_page.dart';
-import 'package:bsafe_app/core/theme/app_theme.dart';
+import 'package:smartsurvey/shared/models/project_model.dart';
+import 'package:smartsurvey/features/inspection/presentation/providers/inspection_provider.dart';
+import 'package:smartsurvey/features/inspection/presentation/views/inspection_page.dart';
+import 'package:smartsurvey/core/theme/app_theme.dart';
 
 class StartScreen extends StatefulWidget {
   const StartScreen({super.key});
@@ -18,7 +18,7 @@ class StartScreen extends StatefulWidget {
 class _StartScreenState extends State<StartScreen> {
   List<Project> _projects = [];
   bool _isLoading = true;
-  static const String _projectsKey = 'bsafe_projects';
+  static const String _projectsKey = 'smartsurvey_projects';
   final Uuid _uuid = const Uuid();
 
   @override
@@ -214,7 +214,7 @@ class _StartScreenState extends State<StartScreen> {
                 children: [
                   Icon(Icons.shield_rounded, color: Colors.white, size: 18),
                   SizedBox(width: 5),
-                  Text('B-SAFE',
+                  Text('SmartSurvey',
                       style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,

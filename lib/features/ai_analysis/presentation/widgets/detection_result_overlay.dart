@@ -1,4 +1,4 @@
-import 'package:bsafe_app/features/ai_analysis/domain/entities/detection_result_entity.dart';
+import 'package:smartsurvey/features/ai_analysis/domain/entities/detection_result_entity.dart';
 import 'package:flutter/material.dart';
 
 class DetectionResultOverlay extends StatelessWidget {

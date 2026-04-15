@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:bsafe_app/features/inspection/domain/entities/inspection_model.dart';
-import 'package:bsafe_app/features/inspection/presentation/providers/inspection_provider.dart';
-import 'package:bsafe_app/core/theme/app_theme.dart';
+import 'package:smartsurvey/features/inspection/domain/entities/inspection_model.dart';
+import 'package:smartsurvey/features/inspection/presentation/providers/inspection_provider.dart';
+import 'package:smartsurvey/core/theme/app_theme.dart';
 
 class InspectionPinListBottomSheet extends StatelessWidget {
   final ScrollController scrollController;

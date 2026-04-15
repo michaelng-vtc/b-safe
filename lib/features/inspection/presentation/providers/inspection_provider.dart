@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
-import 'package:bsafe_app/features/inspection/domain/entities/inspection_model.dart';
-import 'package:bsafe_app/shared/services/api_service.dart';
+import 'package:smartsurvey/features/inspection/domain/entities/inspection_model.dart';
+import 'package:smartsurvey/shared/services/api_service.dart';
 
 class InspectionProvider extends ChangeNotifier {
   // Inspection.

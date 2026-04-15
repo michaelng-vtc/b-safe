@@ -4,7 +4,7 @@ import 'dart:typed_data';
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:bsafe_app/features/inspection/domain/entities/inspection_model.dart';
+import 'package:smartsurvey/features/inspection/domain/entities/inspection_model.dart';
 
 class PdfExportService {
   static Future<void> exportReport({
@@ -28,7 +28,7 @@ class PdfExportService {
             pw.SizedBox(height: 80),
             pw.Center(
               child: pw.Text(
-                'B-SAFE Inspection Report',
+                'SmartSurvey Inspection Report',
                 style: pw.TextStyle(
                   fontSize: 28,
                   fontWeight: pw.FontWeight.bold,
