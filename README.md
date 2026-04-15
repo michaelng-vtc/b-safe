@@ -118,6 +118,88 @@ flutter run
 flutter analyze --no-preamble
 ```
 
+## YOLO Model Configuration
+
+This section explains exactly where to change the YOLO model and what each location controls.
+
+### 1) Put your model file in assets
+
+- Folder: `assets/models/`
+- Example model file: `assets/models/my_model.tflite`
+
+The project already includes this asset folder in `pubspec.yaml`:
+
+```yaml
+flutter:
+    assets:
+        - assets/models/
+```
+
+If you add or replace model files, run:
+
+```bash
+flutter pub get
+```
+
+### 2) Change the default model name used by YOLO service
+
+Edit:
+- `lib/shared/services/yolo_service.dart`
+
+Update this constant:
+
+```dart
+static const String _defaultCustomModel = 'best_float32';
+```
+
+Change `'best_float32'` to your model key/name.
+
+Notes:
+- Keep the name consistent with how your YOLO plugin/service resolves model identifiers.
+- In many setups, this value is the model name without extension.
+
+### 3) Override model per screen (optional)
+
+If you want one screen to use a different model than the global default, edit:
+- `lib/features/inspection/presentation/views/inspection_page.dart`
+
+Current call:
+
+```dart
+final loaded = await YoloService.instance.loadModel();
+```
+
+Override call example:
+
+```dart
+final loaded = await YoloService.instance.loadModel(
+    modelPath: 'my_model',
+);
+```
+
+### 4) Verify runtime support
+
+Current compatibility mode in:
+- `lib/shared/services/yolo_service.dart`
+
+This line indicates YOLO runtime is currently disabled:
+
+```dart
+static bool get isSupported => false;
+```
+
+Important:
+- If `isSupported` is `false`, changing model names will not enable live YOLO detection by itself.
+- To actually run a new model, YOLO runtime support must be enabled and implemented for your target platform.
+
+### 5) Quick test checklist after changing model
+
+1. Confirm file exists in `assets/models/`.
+2. Confirm `pubspec.yaml` still includes `assets/models/`.
+3. Run `flutter pub get`.
+4. Run `flutter analyze --no-preamble`.
+5. Run the app with `flutter run` and check YOLO model load logs.
+
 ## Platform Notes
 
 - Desktop serial communication uses `flutter_libserialport`.
