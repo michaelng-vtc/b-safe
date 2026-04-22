@@ -28,17 +28,33 @@ class DetectionResultOverlay extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (vlmResult != null) _buildCard('VLM', vlmResult!, Colors.orange),
+          if (vlmResult != null)
+            _buildCard(
+              'VLM',
+              vlmResult!,
+              Colors.orange,
+              showRiskMark: true,
+            ),
           if (vlmResult != null && yoloResult != null)
             const SizedBox(height: 10),
           if (yoloResult != null)
-            _buildCard('YOLO', yoloResult!, Colors.deepPurple),
+            _buildCard(
+              'YOLO',
+              yoloResult!,
+              Colors.deepPurple,
+              showRiskMark: false,
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildCard(String title, DetectionResultEntity result, Color color) {
+  Widget _buildCard(
+    String title,
+    DetectionResultEntity result,
+    Color color, {
+    required bool showRiskMark,
+  }) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -58,14 +74,16 @@ class DetectionResultOverlay extends StatelessWidget {
                   color: color,
                 ),
               ),
-              const Spacer(),
-              Text(
-                'Risk ${result.riskScore}',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: color,
+              if (showRiskMark) ...[
+                const Spacer(),
+                Text(
+                  'Risk ${result.riskScore}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
           const SizedBox(height: 6),

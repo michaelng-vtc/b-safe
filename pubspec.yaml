@@ -52,6 +52,10 @@ dependencies:
   archive: ^4.0.9
   path_provider: ^2.1.1
 
+  # TFLite inference (YOLO bounding box detection)
+  tflite_flutter: ^0.12.1
+  image: ^4.1.7
+
   web: any
   flutter_libserialport: ^0.6.0
 dev_dependencies:
