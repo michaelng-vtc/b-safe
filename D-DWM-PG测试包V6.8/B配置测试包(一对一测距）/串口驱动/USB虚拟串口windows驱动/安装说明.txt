@@ -1,0 +1,15 @@
+ST虚拟串口安装说明：
+en.stsw-stm32102.zip中含有多个版本的安装软件，务必根据自己的windows系统选择正确的对应版本进行安装，否则可能出问题：
+
+windows7：
+32位选择-->VCP_V1.5.0_Setup_W7_x86_32bits.exe进行安装
+64位选择-->VCP_V1.5.0_Setup_W7_x64_64bits.exe进行安装
+
+windows8~windows10:
+32位选择-->VCP_V1.5.0_Setup_W8_x86_32bits.exe进行安装
+64位选择-->VCP_V1.5.0_Setup_W8_x64_64bits.exe进行安装
+
+1如果选择默认路径安装，在成功安装软件后仍出现黄色感叹号的情况，可以在设备管理器的黄色条目上右键选择更新驱动程序：
+右键→更新驱动程序软件→浏览计算机以查找驱动程序软件→浏览，选择STM32虚拟串口的驱动的默认路径为：
+C:\ProgramFiles(x86)\STMicroelectronics\Software \Virtual comport driver，上述的文件夹下同样有对应对应的WIN7和WIN8版本，
+如果是WIN7以后的windows版本我们选择WIN8的文件夹就可以了。等待自动安装完成即可。

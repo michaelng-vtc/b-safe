@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import 'package:smartsurvey/features/inspection/domain/entities/inspection_model.dart';
-import 'package:smartsurvey/shared/services/api_service.dart';
 
 class InspectionProvider extends ChangeNotifier {
   // Inspection.
@@ -26,11 +25,6 @@ class InspectionProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  // AI analysis.
-  bool _isAnalyzing = false;
-  bool get isAnalyzing => _isAnalyzing;
-
-  final ApiService _api = ApiService.instance;
   final Uuid _uuid = const Uuid();
 
   static const String _sessionsKey = 'inspection_sessions';
@@ -376,133 +370,6 @@ class InspectionProvider extends ChangeNotifier {
   void deselectPin() {
     _selectedPin = null;
     notifyListeners();
-  }
-
-  // ===== AI analysis =====.
-
-  /// Pin AI analysis.
-  Future<InspectionPin> analyzePin(
-    InspectionPin pin, {
-    required String imageBase64,
-    String? imagePath,
-  }) async {
-    _isAnalyzing = true;
-    notifyListeners();
-
-    try {
-      Map<String, dynamic> analysis;
-
-      try {
-        analysis = await _api.analyzeImageWithAI(imageBase64);
-        debugPrint('[InspectionProvider] POE AI analysis success');
-      } catch (e) {
-        // Analysis.
-        debugPrint(
-            '[InspectionProvider] POE AI analysis failed, using local fallback: $e');
-        analysis = ApiService.localAnalysis('moderate', 'structural');
-      }
-
-      final updatedPin = pin.copyWith(
-        imagePath: imagePath,
-        imageBase64: imageBase64,
-        aiResult: analysis,
-        category: analysis['category'] as String?,
-        severity: analysis['severity'] as String?,
-        riskScore: analysis['risk_score'] as int? ?? 50,
-        riskLevel: analysis['risk_level'] as String? ?? 'medium',
-        description: analysis['analysis'] as String?,
-        recommendations: (analysis['recommendations'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [],
-        status: 'analyzed',
-      );
-
-      updatePin(updatedPin);
-      return updatedPin;
-    } catch (e) {
-      debugPrint('AI analysis failed: $e');
-      // Analysis pin.
-      final fallbackPin = pin.copyWith(
-        imagePath: imagePath,
-        imageBase64: imageBase64,
-        riskScore: 50,
-        riskLevel: 'medium',
-        description:
-            'AI analysis service temporarily unavailable. Using local assessment.',
-        recommendations: ['Recommend professional inspection'],
-        status: 'analyzed',
-      );
-      updatePin(fallbackPin);
-      return fallbackPin;
-    } finally {
-      _isAnalyzing = false;
-      notifyListeners();
-    }
-  }
-
-  /// Analysis defect( ).
-  Future<Defect> analyzeDefect(
-    Defect defect, {
-    required String imageBase64,
-    String? imagePath,
-    String? chatContext,
-  }) async {
-    _isAnalyzing = true;
-    notifyListeners();
-
-    try {
-      Map<String, dynamic> analysis;
-
-      try {
-        analysis = await _api.analyzeImageWithAI(
-          imageBase64,
-          additionalContext: chatContext,
-        );
-      } catch (e) {
-        analysis = ApiService.localAnalysis('moderate', 'structural');
-      }
-
-      final chatMessages = List<ChatMessage>.from(defect.chatMessages);
-      // Add AI response as chat message
-      chatMessages.add(ChatMessage(
-        id: _uuid.v4(),
-        role: 'ai',
-        content: analysis['analysis'] as String? ?? 'Analysis complete.',
-      ));
-
-      return defect.copyWith(
-        imagePath: imagePath ?? defect.imagePath,
-        imageBase64: imageBase64,
-        aiResult: analysis,
-        category: analysis['category'] as String?,
-        severity: analysis['severity'] as String?,
-        riskScore: analysis['risk_score'] as int? ?? 50,
-        riskLevel: analysis['risk_level'] as String? ?? 'medium',
-        description: analysis['analysis'] as String?,
-        recommendations: (analysis['recommendations'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [],
-        status: 'analyzed',
-        chatMessages: chatMessages,
-      );
-    } catch (e) {
-      debugPrint('AI defect analysis failed: $e');
-      return defect.copyWith(
-        imagePath: imagePath ?? defect.imagePath,
-        imageBase64: imageBase64,
-        riskScore: 50,
-        riskLevel: 'medium',
-        description:
-            'AI analysis service temporarily unavailable. Using local assessment.',
-        recommendations: ['Recommend professional inspection'],
-        status: 'analyzed',
-      );
-    } finally {
-      _isAnalyzing = false;
-      notifyListeners();
-    }
   }
 
   // Translated legacy comment.

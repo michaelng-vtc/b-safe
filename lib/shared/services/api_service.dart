@@ -7,16 +7,19 @@ class ApiService {
   // Base URL for your PHP API
   static const String baseUrl = 'http://your-server.com/api';
 
-  // POE API for AI image analysis (OpenAI-compatible endpoint)
-  static const String poeApiKey = 'HTLbuegNjtBmxNX5rWeH7cyxFfNc1oANBPRtdY_aO4E';
-  static const String poeBotName = 'SmartSurvey';
-  static const String poeApiUrl = 'https://api.poe.com/v1/chat/completions';
+  // AI API configuration (OpenAI-compatible format)
+  // Get API key: https://aistudio.google.com/apikey
+  static const String aiApiKey = 'YOUR_GEMINI_API_KEY';
+  static const String aiModel = 'gemini-2.0-flash';
+  static const String aiApiBaseUrl =
+      'https://generativelanguage.googleapis.com/v1beta/openai';
+  static const String aiChatCompletionsPath = '/chat/completions';
 
   // Singleton pattern
   static final ApiService instance = ApiService._init();
   ApiService._init();
 
-  // ==================== POE AI Analysis API ====================
+  // ==================== AI Analysis API ====================
 
   bool _isDnsLookupError(Object error) {
     final text = error.toString().toLowerCase();
@@ -26,29 +29,33 @@ class ApiService {
         text.contains('errno = 7');
   }
 
-  /// Send a request to the POE bot (OpenAI-compatible endpoint).
-  Future<String> _queryPoeBot({
+  /// Send a request to an OpenAI-compatible chat completions endpoint.
+  Future<String> _queryAiChatCompletions({
     required List<Map<String, dynamic>> messages,
     int timeoutSeconds = 120,
   }) async {
-    final body = jsonEncode({
-      'model': poeBotName,
+    final uri = Uri.parse('$aiApiBaseUrl$aiChatCompletionsPath');
+
+    final bodyMap = <String, dynamic>{
+      'model': aiModel,
       'messages': messages,
       'temperature': 0.3,
-    });
+    };
 
-    debugPrint('[POE] Sending to $poeApiUrl');
-    debugPrint('[POE] Messages count: ${messages.length}');
+    final body = jsonEncode(bodyMap);
+
+    debugPrint('[AI] Sending to $uri');
+    debugPrint('[AI] Messages count: ${messages.length}');
     debugPrint(
-        '[POE] Body preview: ${body.substring(0, body.length.clamp(0, 300))}...');
+        '[AI] Body preview: ${body.substring(0, body.length.clamp(0, 300))}...');
 
     late final http.Response response;
     try {
       response = await http
           .post(
-            Uri.parse(poeApiUrl),
+            uri,
             headers: {
-              'Authorization': 'Bearer $poeApiKey',
+              'Authorization': 'Bearer $aiApiKey',
               'Content-Type': 'application/json',
             },
             body: body,
@@ -57,37 +64,56 @@ class ApiService {
     } catch (e) {
       if (_isDnsLookupError(e)) {
         throw Exception(
-          'POE_DNS_LOOKUP_FAILED: Cannot resolve api.poe.com from this device/emulator. '
+          'AI_DNS_LOOKUP_FAILED: Cannot resolve generativelanguage.googleapis.com from this device/emulator. '
           'Check device network/DNS settings or emulator DNS server.',
         );
       }
       rethrow;
     }
 
-    debugPrint('[POE] Response status: ${response.statusCode}');
+    debugPrint('[AI] Response status: ${response.statusCode}');
     debugPrint(
-        '[POE] Response body preview: ${response.body.substring(0, response.body.length.clamp(0, 500))}');
+        '[AI] Response body preview: ${response.body.substring(0, response.body.length.clamp(0, 500))}');
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
       // OpenAI-compatible response format: choices[0].message.content
-      if (data is Map &&
-          data['choices'] is List &&
-          (data['choices'] as List).isNotEmpty) {
-        final choice = data['choices'][0];
-        final content = choice['message']?['content'] ?? '';
-        debugPrint('[POE] AI response length: ${content.length}');
-        return content;
+      final choices = data['choices'];
+      if (choices is List && choices.isNotEmpty) {
+        final firstChoice = choices.first;
+        final message = firstChoice['message'];
+        final content = message?['content'];
+
+        if (content is String && content.trim().isNotEmpty) {
+          debugPrint('[AI] AI response length: ${content.length}');
+          return content;
+        }
+
+        // Some OpenAI-compatible implementations may return structured content.
+        if (content is List && content.isNotEmpty) {
+          final textParts = content
+              .map((part) =>
+                  (part is Map ? part['text']?.toString() : null) ?? '')
+              .where((text) => text.isNotEmpty)
+              .toList();
+          final joined = textParts.join('\n').trim();
+          debugPrint('[AI] AI response length: ${joined.length}');
+          if (joined.isNotEmpty) return joined;
+        }
       }
-      // Fallback: try direct text/data fields
-      if (data is Map) {
-        return data['text'] ?? data['data']?.toString() ?? response.body;
+
+      final errorObj = data['error'];
+      if (errorObj is Map && errorObj['message'] != null) {
+        throw Exception('AI request failed: ${errorObj['message']}');
       }
+
+      // Fallback to raw response when text cannot be extracted.
       return response.body;
     }
 
     throw Exception(
-        'POE API error: ${response.statusCode} - ${response.body.substring(0, response.body.length.clamp(0, 300))}');
+        'AI API error: ${response.statusCode} - ${response.body.substring(0, response.body.length.clamp(0, 300))}');
   }
 
   /// Extract JSON from AI text output.
@@ -121,36 +147,17 @@ class ApiService {
     return null;
   }
 
-  /// Analyze a building damage image with POE AI.
+  /// Analyze a building damage image with AI API.
   Future<Map<String, dynamic>> analyzeImageWithAI(String imageBase64,
       {String? additionalContext}) async {
     try {
       final prompt = StringBuffer();
+      prompt.writeln('You are a building safety inspection assistant.');
       prompt.writeln(
-          'You are a professional building safety inspection AI assistant (SmartSurvey system).');
-      prompt.writeln(
-          'Please analyze the following building damage and assess the risk.');
-      prompt.writeln();
-      prompt.writeln('Please perform the following assessment:');
-      prompt.writeln(
-          '1. Identify damage types (cracks, spalling, corrosion, leaks, deformation, etc.)');
-      prompt.writeln('2. Assess damage severity (mild / moderate / severe)');
-      prompt.writeln('3. Determine risk level (low / medium / high)');
-      prompt.writeln('4. Calculate risk score (0-100)');
-      prompt.writeln('5. Whether urgent action is needed (true/false)');
-      prompt.writeln('6. Provide recommendations (at least 2)');
-      prompt.writeln(
-          '7. Return inspector observation fields: Building Element, Defect Type, Diagnosis, Suspected Cause, Recommendation, Defect Size');
-      prompt.writeln();
-      prompt.writeln(
-          'Return in the following JSON schema format (values must be inferred from the image/context, not copied):');
+          'Analyze the image/context and return JSON only with inferred values.');
       prompt.writeln('{');
       prompt.writeln('  "damage_detected": <boolean>,');
       prompt.writeln('  "damage_types": [<string>, ...],');
-      prompt.writeln('  "severity": "mild|moderate|severe",');
-      prompt.writeln('  "risk_level": "low|medium|high",');
-      prompt.writeln('  "risk_score": <integer_0_to_100>,');
-      prompt.writeln('  "is_urgent": <boolean>,');
       prompt.writeln('  "analysis": <string>,');
       prompt.writeln('  "building_element": <string_or_null>,');
       prompt.writeln('  "defect_type": <string_or_null>,');
@@ -160,24 +167,16 @@ class ApiService {
       prompt.writeln('  "defect_size": <string_or_null>,');
       prompt.writeln('  "recommendations": [<string>, ...]');
       prompt.writeln('}');
-      prompt.writeln();
-      prompt
-          .writeln('⚠ IMPORTANT: Return JSON only. No extra text or markdown.');
-      prompt.writeln(
-          '⚠ IMPORTANT: Do NOT reuse any template/example values. Infer every value from the provided image and context.');
+      prompt.writeln('Do not include markdown or extra text.');
 
       if (additionalContext != null && additionalContext.isNotEmpty) {
-        prompt.writeln();
         prompt.writeln('Inspector observations and context:');
         prompt.writeln(additionalContext);
-        prompt.writeln();
-        prompt.writeln(
-            'Use the above inspector observations and surrounding defect data to provide a comprehensive, conclusive analysis. Factor in spatial patterns when determining root cause.');
       }
 
-      // Build messages (OpenAI-compatible vision format).
+      // Build OpenAI-compatible messages payload.
       debugPrint(
-          '[POE] Image base64 length: ${imageBase64.length} chars (~${(imageBase64.length * 3 / 4 / 1024).toStringAsFixed(0)} KB)');
+          '[AI] Image base64 length: ${imageBase64.length} chars (~${(imageBase64.length * 3 / 4 / 1024).toStringAsFixed(0)} KB)');
 
       final messages = <Map<String, dynamic>>[];
 
@@ -196,7 +195,7 @@ class ApiService {
           ],
         });
       } else {
-        debugPrint('[POE] Image too large, sending text-only analysis');
+        debugPrint('[AI] Image too large, sending text-only analysis');
         prompt.writeln(
             '\n(Note: Image too large to attach. Analyze based on user description.)');
         messages.add({
@@ -205,11 +204,11 @@ class ApiService {
         });
       }
 
-      // Query POE bot.
-      final responseText = await _queryPoeBot(messages: messages);
+      // Query AI API.
+      final responseText = await _queryAiChatCompletions(messages: messages);
 
       debugPrint(
-          '[POE] Raw response: ${responseText.substring(0, responseText.length.clamp(0, 500))}');
+          '[AI] Raw response: ${responseText.substring(0, responseText.length.clamp(0, 500))}');
 
       // Parse response.
       final json = _extractJson(responseText);
@@ -218,10 +217,6 @@ class ApiService {
         return {
           'damage_detected': json['damage_detected'] ?? true,
           'damage_types': json['damage_types'] ?? [],
-          'severity': json['severity'] ?? 'moderate',
-          'risk_level': json['risk_level'] ?? 'medium',
-          'risk_score': json['risk_score'] ?? 50,
-          'is_urgent': json['is_urgent'] ?? false,
           'analysis': json['analysis'] ?? responseText,
           'building_element': json['building_element'],
           'defect_type': json['defect_type'],
@@ -235,13 +230,9 @@ class ApiService {
       }
 
       // If JSON cannot be parsed, use plain text as analysis output.
-      debugPrint('[POE] No JSON found, using raw text as analysis');
+      debugPrint('[AI] No JSON found, using raw text as analysis');
       return {
         'damage_detected': true,
-        'severity': 'moderate',
-        'risk_level': 'medium',
-        'risk_score': 50,
-        'is_urgent': false,
         'analysis':
             responseText.isNotEmpty ? responseText : 'AI analysis complete',
         'building_element': null,
@@ -253,17 +244,17 @@ class ApiService {
         'recommendations': ['Schedule a professional inspection'],
       };
     } catch (e) {
-      debugPrint('[POE] AI Analysis Error: $e');
+      debugPrint('[AI] AI Analysis Error: $e');
       if (_isDnsLookupError(e)) {
-        final fallback = localAnalysis('moderate', 'structural');
+        final fallbackRecommendations =
+            _getRecommendations('moderate', 'structural');
         return {
-          ...fallback,
+          'damage_detected': true,
           'analysis':
-              'Poe API DNS lookup failed on current device. Using local offline assessment.',
+              'AI API DNS lookup failed on current device. Using local offline assessment.',
           'recommendations': [
-            ...((fallback['recommendations'] as List<dynamic>)
-                .map((e) => e.toString())),
-            'Check device/emulator network DNS for api.poe.com',
+            ...fallbackRecommendations,
+            'Check device/emulator network DNS for generativelanguage.googleapis.com',
           ],
           'source': 'local_fallback_dns_error',
         };
@@ -272,29 +263,38 @@ class ApiService {
     }
   }
 
-  /// Chat with POE AI (for follow-up defect questions and supplemental analysis).
+  /// Chat with AI API (for follow-up defect questions and supplemental analysis).
   Future<String> chatWithAI({
     required String userMessage,
     String? imageBase64,
     List<Map<String, String>>? chatHistory,
   }) async {
     try {
+      const systemPrompt =
+          'You are the SmartSurvey building safety AI assistant. Please respond in English.'
+          'Your task is to help users analyze building damage and provide maintenance recommendations.'
+          'Keep your answers concise and professional.';
+
       final messages = <Map<String, dynamic>>[];
 
-      // System prompt.
+      // System prompt in OpenAI-compatible format.
       messages.add({
         'role': 'system',
-        'content':
-            'You are the SmartSurvey building safety AI assistant. Please respond in English.'
-                'Your task is to help users analyze building damage, assess risk, and provide maintenance recommendations.'
-                'Keep your answers concise and professional.',
+        'content': systemPrompt,
       });
 
-      // Add chat history.
+      // Add chat history in OpenAI-compatible format.
       if (chatHistory != null) {
         for (final msg in chatHistory) {
+          final originalRole = (msg['role'] ?? 'user').toLowerCase();
+          final role = (originalRole == 'assistant' ||
+                  originalRole == 'model' ||
+                  originalRole == 'bot')
+              ? 'assistant'
+              : 'user';
+
           messages.add({
-            'role': msg['role'] ?? 'user',
+            'role': role,
             'content': msg['content'] ?? '',
           });
         }
@@ -321,56 +321,20 @@ class ApiService {
         });
       }
 
-      // Query POE bot.
-      final responseText = await _queryPoeBot(messages: messages);
+      // Query AI API.
+      final responseText = await _queryAiChatCompletions(messages: messages);
 
       return responseText.isNotEmpty
           ? responseText
           : 'AI is temporarily unavailable. Please try again later.';
     } catch (e) {
-      debugPrint('[POE Chat] Error: $e');
+      debugPrint('[AI Chat] Error: $e');
       if (_isDnsLookupError(e)) {
-        return 'Poe API is unreachable from this device (DNS lookup failed). '
+        return 'AI API is unreachable from this device (DNS lookup failed). '
             'Please check network/DNS settings and try again.';
       }
       rethrow;
     }
-  }
-
-  /// Local fallback analysis when offline or AI unavailable
-  static Map<String, dynamic> localAnalysis(String severity, String category) {
-    // Simple rule-based assessment
-    int riskScore;
-    String riskLevel;
-    bool isUrgent;
-
-    switch (severity) {
-      case 'severe':
-        riskScore = 80 + (category == 'structural' ? 15 : 5);
-        riskLevel = 'high';
-        isUrgent = true;
-        break;
-      case 'moderate':
-        riskScore = 50 + (category == 'structural' ? 20 : 10);
-        riskLevel = riskScore >= 70 ? 'high' : 'medium';
-        isUrgent = category == 'structural';
-        break;
-      case 'mild':
-      default:
-        riskScore = 20 + (category == 'structural' ? 15 : 5);
-        riskLevel = 'low';
-        isUrgent = false;
-    }
-
-    return {
-      'damage_detected': true,
-      'severity': severity,
-      'risk_level': riskLevel,
-      'risk_score': riskScore.clamp(0, 100),
-      'is_urgent': isUrgent,
-      'analysis': 'Local assessment based on user input (offline mode)',
-      'recommendations': _getRecommendations(severity, category),
-    };
   }
 
   static List<String> _getRecommendations(String severity, String category) {

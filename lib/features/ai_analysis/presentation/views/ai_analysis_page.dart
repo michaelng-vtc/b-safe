@@ -850,13 +850,12 @@ class _AiAnalysisScreenState extends State<AiAnalysisScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 ElevatedButton.icon(
                   onPressed: ai.isAnalyzingVlm || _imageBase64 == null
                       ? null
                       : () => _runVlm(ai),
-                  icon: const Icon(Icons.auto_awesome),
-                  label: const Text('Run VLM'),
+                  label: const Text('AI Diagnosis'),
                 ),
                 if (ai.errorMessage != null && !ai.yoloServerOffline) ...[
                   const SizedBox(height: 10),

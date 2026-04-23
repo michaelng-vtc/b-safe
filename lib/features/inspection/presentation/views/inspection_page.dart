@@ -4300,38 +4300,79 @@ class _PinDetailDialogState extends State<_PinDetailDialog> {
     _hasChanges = false;
   }
 
-  /// Photo AI analysis.
   Future<void> _runAiAnalysis() async {
     if (_currentPin.imageBase64 == null) return;
 
     setState(() => _isAnalyzing = true);
 
     try {
-      final provider = context.read<InspectionProvider>();
-      final updatedPin = await provider.analyzePin(
-        _currentPin,
-        imageBase64: _currentPin.imageBase64!,
-        imagePath: _currentPin.imagePath,
+      final result = await Navigator.push<AiAnalysisScreenResult>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AiAnalysisScreen(
+            imageBase64: _currentPin.imageBase64,
+            imagePath: _currentPin.imagePath,
+            additionalContext:
+                'Pin location: (${_currentPin.x.toStringAsFixed(2)}, ${_currentPin.y.toStringAsFixed(2)})',
+          ),
+        ),
       );
 
       if (!mounted) return;
 
+      if (result == null) {
+        setState(() => _isAnalyzing = false);
+        return;
+      }
+
+      var updatedPin = _currentPin.copyWith(
+        imageBase64: result.imageBase64 ?? _currentPin.imageBase64,
+        imagePath: result.imagePath ?? _currentPin.imagePath,
+      );
+
+      final selected = result.selectedResult;
+      if (selected != null) {
+        final raw = selected.raw;
+        final defect = Defect(
+          id: const Uuid().v4(),
+          imagePath: result.imagePath ?? _currentPin.imagePath,
+          imageBase64: result.imageBase64 ?? _currentPin.imageBase64,
+          aiResult: raw,
+          category: raw['category'] as String?,
+          severity: raw['severity'] as String?,
+          riskScore: selected.riskScore,
+          riskLevel: selected.riskLevel,
+          description: selected.analysis,
+          recommendations: selected.recommendations,
+          status: 'analyzed',
+        );
+
+        updatedPin = updatedPin.copyWith(
+          aiResult: raw,
+          category: raw['category'] as String?,
+          severity: raw['severity'] as String?,
+          riskScore: selected.riskScore,
+          riskLevel: selected.riskLevel,
+          description: selected.analysis,
+          recommendations: selected.recommendations,
+          status: 'analyzed',
+          defects: [..._currentPin.defects, defect],
+        );
+      }
+
       setState(() {
-        _aiResult = updatedPin.aiResult ??
-            {
-              'risk_level': updatedPin.riskLevel,
-              'risk_score': updatedPin.riskScore,
-              'analysis': updatedPin.description,
-              'recommendations': updatedPin.recommendations,
-            };
+        _currentPin = updatedPin;
+        _aiResult = updatedPin.aiResult;
         _riskLevel = updatedPin.riskLevel;
         _riskScore = updatedPin.riskScore;
         _description = updatedPin.description;
-        _recommendations = updatedPin.recommendations;
-        _status = 'analyzed';
+        _recommendations = List<String>.from(updatedPin.recommendations);
+        _status = updatedPin.status;
         _isAnalyzing = false;
         _hasChanges = true;
       });
+
+      widget.onUpdate(updatedPin);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isAnalyzing = false);
