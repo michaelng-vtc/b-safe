@@ -58,6 +58,7 @@ dependencies:
 
   web: any
   flutter_libserialport: ^0.6.0
+  flutter_blue_plus: ^1.35.5
 dev_dependencies:
   flutter_test:
     sdk: flutter

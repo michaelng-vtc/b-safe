@@ -201,8 +201,6 @@ class MobileSerialService {
     if (_port == null || !_isConnected) return;
 
     try {
-      List<int> byteBuffer = [];
-
       _port!.inputStream?.listen(
         (Uint8List data) {
           try {
@@ -213,53 +211,14 @@ class MobileSerialService {
                   '[USB] Received $_totalBytesReceived bytes, current chunk: ${data.length} bytes');
             }
 
-            // Append incoming data to the buffer.
-            byteBuffer.addAll(data);
-
             // Emit raw data stream.
             _rawDataController.add(data);
 
-            // BU04 TWR packet format: "CmdM:4[" + 91 bytes data + "]".
-            while (byteBuffer.length >= 100) {
-              final firstCmdM = _findCmdMStart(byteBuffer);
-              if (firstCmdM < 0) {
-                if (byteBuffer.length > 200) {
-                  byteBuffer = byteBuffer.sublist(byteBuffer.length - 100);
-                }
-                break;
-              }
-
-              if (firstCmdM > 0) {
-                byteBuffer = byteBuffer.sublist(firstCmdM);
-              }
-
-              final secondCmdM = _findCmdMStart(byteBuffer.sublist(7));
-              int packetEnd;
-
-              if (secondCmdM > 0) {
-                packetEnd = 7 + secondCmdM;
-              } else if (byteBuffer.length >= 100) {
-                packetEnd = 100;
-              } else {
-                break;
-              }
-
-              final packetBytes =
-                  Uint8List.fromList(byteBuffer.sublist(0, packetEnd));
-              byteBuffer = byteBuffer.sublist(packetEnd);
-
-              if (packetBytes.length >= 20) {
-                final hexData = packetBytes
-                    .map((b) => b.toRadixString(16).padLeft(2, '0'))
-                    .join(' ');
-                _dataController.add('RAWBIN:${packetBytes.length}:$hexData');
-              }
-            }
-
-            // Prevent the buffer from growing too large.
-            if (byteBuffer.length > 500) {
-              byteBuffer = byteBuffer.sublist(byteBuffer.length - 200);
-            }
+            // Forward every chunk as RAWBIN so upper layers can decode both
+            // legacy CmdM and newer Modbus-based hardware protocols.
+            final hexData =
+                data.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+            _dataController.add('RAWBIN:${data.length}:$hexData');
           } catch (e) {
             debugPrint('[USB] Data parse error: $e');
           }
@@ -282,19 +241,6 @@ class MobileSerialService {
     }
   }
 
-  /// Find the start index of a CmdM packet in the buffer.
-  int _findCmdMStart(List<int> buffer) {
-    for (int i = 0; i < buffer.length - 7; i++) {
-      if (buffer[i] == 0x43 &&
-          buffer[i + 1] == 0x6d &&
-          buffer[i + 2] == 0x64 &&
-          buffer[i + 3] == 0x4d) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
   /// Send data to the serial port.
   Future<bool> write(String data) async {
     if (_port == null || !_isConnected) {
@@ -308,6 +254,22 @@ class MobileSerialService {
       return true;
     } catch (e) {
       debugPrint('[USB] Failed to send data: $e');
+      return false;
+    }
+  }
+
+  /// Send raw binary bytes to the USB serial port.
+  Future<bool> writeBytes(Uint8List bytes) async {
+    if (_port == null || !_isConnected) {
+      debugPrint('[USB] Serial port not connected');
+      return false;
+    }
+
+    try {
+      await _port!.write(bytes);
+      return true;
+    } catch (e) {
+      debugPrint('[USB] Failed to send binary data: $e');
       return false;
     }
   }

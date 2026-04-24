@@ -158,6 +158,21 @@ class DesktopSerialService {
     }
   }
 
+  /// Send raw binary data to the serial port.
+  Future<bool> writeBytes(Uint8List bytes) async {
+    if (!_isConnected || _port == null) {
+      return false;
+    }
+
+    try {
+      final written = _port!.write(bytes, timeout: 1000);
+      return written == bytes.length;
+    } catch (e) {
+      debugPrint('Desktop serial binary write failed: $e');
+      return false;
+    }
+  }
+
   /// Dispose resources.
   void dispose() {
     _isConnected = false;

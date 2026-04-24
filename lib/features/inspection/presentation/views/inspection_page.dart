@@ -1669,12 +1669,34 @@ class _InspectionScreenState extends State<InspectionScreen> {
             const SizedBox(height: 8),
             _buildConnectOption(
               icon: Icons.wifi_tethering,
-              title: 'Auto Connect BU04',
-              subtitle: 'Connect AI-Thinker UWB via USB or USB-C OTG',
+              title: 'Auto Connect via USB',
+              subtitle: 'Connect UWB hardware via USB / serial transport',
               color: AppTheme.primaryColor,
               onTap: () {
                 Navigator.pop(ctx);
                 _showSerialConnectDialog(uwbService);
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildConnectOption(
+              icon: Icons.bluetooth,
+              title: 'Auto Connect via Bluetooth',
+              subtitle:
+                  'Use PG4.9 Bluetooth mode and keep firmware-side positioning',
+              color: Colors.indigo,
+              onTap: () async {
+                Navigator.pop(ctx);
+                final ok = await uwbService.connectBle();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(ok
+                        ? 'Bluetooth connected'
+                        : (uwbService.lastError ??
+                            'Bluetooth connection failed')),
+                    backgroundColor: ok ? Colors.green : Colors.red,
+                  ),
+                );
               },
             ),
             const SizedBox(height: 12),
@@ -1702,7 +1724,7 @@ class _InspectionScreenState extends State<InspectionScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'PC: Ensure BU04 is USB-connected with CH340/CP210x driver.\nPhone: Connect BU04 via USB-C; OTG required.',
+                      'USB mode: connect by serial/OTG.\nBluetooth mode: use PG4.9 tag BLE output and firmware-side positioning.',
                       style:
                           TextStyle(color: Colors.blue.shade900, fontSize: 12),
                     ),

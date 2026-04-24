@@ -657,13 +657,13 @@ class _AiAnalysisScreenState extends State<AiAnalysisScreen> {
                           style: _entrySubtitleStyle,
                         ),
                         const SizedBox(height: 6),
-                        Text(
+                        const Text(
                           'Pre-filled from YOLO detect result. Same class is treated as one item, and you can edit it.',
                           style: _entryHelpTextStyle,
                         ),
                         const SizedBox(height: 8),
                         if (_buildingDefects.isEmpty)
-                          Text(
+                          const Text(
                             'No defects detected yet. Run YOLO or add manually below.',
                             style: _entryHelpTextStyle,
                           )

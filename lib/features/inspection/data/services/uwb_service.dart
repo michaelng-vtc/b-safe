@@ -9,6 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartsurvey/features/inspection/domain/entities/uwb_model.dart';
+import 'package:smartsurvey/features/inspection/data/services/ble_uwb_service.dart';
 import 'package:smartsurvey/features/inspection/data/services/desktop_serial_service.dart';
 import 'package:smartsurvey/features/inspection/data/services/mobile_serial_service.dart';
 
@@ -55,6 +56,11 @@ class UwbService extends ChangeNotifier {
   // Serial service (Android mobile platform).
   MobileSerialService? _mobileSerial;
 
+  // BLE transport service.
+  BleUwbService? _bleService;
+  bool _isBleTransport = false;
+  bool get isBleTransport => _isBleTransport;
+
   // Serial settings.
   String _portName = 'COM3';
   int _baudRate = 115200;
@@ -67,6 +73,37 @@ class UwbService extends ChangeNotifier {
 
   // UI refresh timer.
   Timer? _uiRefreshTimer;
+
+  // Polling timer for Modbus-based UWB hardware.
+  Timer? _modbusPollTimer;
+
+  // Rolling raw buffer used to reassemble split binary frames.
+  final List<int> _rawBinaryBuffer = [];
+
+  static const List<int> _modbusPollRequest = [
+    0x01,
+    0x03,
+    0x00,
+    0x00,
+    0x00,
+    0x6A,
+    0xC5,
+    0xE5,
+  ];
+
+  static const List<int> _modbusStartLocateRequest = [
+    0x01,
+    0x10,
+    0x00,
+    0x3B,
+    0x00,
+    0x01,
+    0x02,
+    0x00,
+    0x04,
+    0xA3,
+    0x18,
+  ];
 
   // Last error message.
   String? _lastError;
@@ -515,6 +552,7 @@ class UwbService extends ChangeNotifier {
 
           _isConnected = true;
           _isRealDevice = true;
+          _onSerialConnected();
           notifyListeners();
           return true;
         } else {
@@ -556,6 +594,7 @@ class UwbService extends ChangeNotifier {
           _isConnected = true;
           _isRealDevice = true;
           _startUiRefreshTimer();
+          _onSerialConnected();
           notifyListeners();
           return true;
         } else {
@@ -620,6 +659,7 @@ class UwbService extends ChangeNotifier {
 
           // UI ( ).
           _startUiRefreshTimer();
+          _onSerialConnected();
 
           notifyListeners();
           debugPrint('Connected to $portName');
@@ -669,6 +709,7 @@ class UwbService extends ChangeNotifier {
           _isConnected = true;
           _isRealDevice = true;
           _startUiRefreshTimer();
+          _onSerialConnected();
           notifyListeners();
           debugPrint('Connected to USB device');
           return true;
@@ -714,6 +755,54 @@ class UwbService extends ChangeNotifier {
     return true;
   }
 
+  Future<List<BleDeviceInfo>> scanBleDevices({
+    Duration timeout = const Duration(seconds: 4),
+  }) async {
+    _bleService ??= BleUwbService();
+    return _bleService!.scanDevices(timeout: timeout);
+  }
+
+  Future<bool> connectBle({BleDeviceInfo? device}) async {
+    try {
+      _lastError = null;
+
+      // Ensure previous transport is fully stopped before BLE attach.
+      disconnect();
+
+      _bleService ??= BleUwbService();
+      final connected = device != null
+          ? await _bleService!.connect(device)
+          : await _bleService!.autoConnect();
+
+      if (!connected) {
+        _lastError =
+            'Bluetooth connection failed. Device not found or offline.';
+        notifyListeners();
+        return false;
+      }
+
+      _serialSubscription = _bleService!.dataStream.listen(
+        (data) => processSerialData(data),
+        onError: (error) {
+          _lastError = 'Bluetooth data error: $error';
+          notifyListeners();
+        },
+      );
+
+      _isConnected = true;
+      _isRealDevice = true;
+      _isBleTransport = true;
+      _rawBinaryBuffer.clear();
+      _startUiRefreshTimer();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _lastError = 'Bluetooth connection error: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Disconnectconnect.
   void disconnect() {
     _isConnected = false;
@@ -722,8 +811,12 @@ class UwbService extends ChangeNotifier {
     _simulationTimer = null;
     _uiRefreshTimer?.cancel();
     _uiRefreshTimer = null;
+    _modbusPollTimer?.cancel();
+    _modbusPollTimer = null;
     _serialSubscription?.cancel();
     _serialSubscription = null;
+    _rawBinaryBuffer.clear();
+    _isBleTransport = false;
 
     // Disconnect serial.
     _desktopSerial?.disconnect();
@@ -733,7 +826,47 @@ class UwbService extends ChangeNotifier {
     _mobileSerial?.disconnect();
     _mobileSerial = null;
 
+    // Disconnect BLE transport.
+    _bleService?.disconnect();
+
     notifyListeners();
+  }
+
+  void _onSerialConnected() {
+    _rawBinaryBuffer.clear();
+    _startModbusPolling();
+  }
+
+  void _startModbusPolling() {
+    if (_isBleTransport) {
+      return;
+    }
+    _modbusPollTimer?.cancel();
+
+    // New PG hardware commonly uses request/response Modbus transport. Send a
+    // one-time start command and then poll periodically. Legacy streaming
+    // hardware ignores these commands and continues to work.
+    _sendBinaryCommand(_modbusStartLocateRequest);
+
+    _modbusPollTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+      if (!_isConnected || !_isRealDevice) return;
+      _sendBinaryCommand(_modbusPollRequest);
+    });
+  }
+
+  Future<void> _sendBinaryCommand(List<int> bytes) async {
+    try {
+      final payload = Uint8List.fromList(bytes);
+      if (_desktopSerial?.isConnected == true) {
+        await _desktopSerial!.writeBytes(payload);
+      } else if (_mobileSerial?.isConnected == true) {
+        await _mobileSerial!.writeBytes(payload);
+      } else if (_bleService?.isConnected == true) {
+        await _bleService!.writeBytes(payload);
+      }
+    } catch (e) {
+      debugPrint('Failed to send binary command: $e');
+    }
   }
 
   // UI - ( 50 ， 20fps).
@@ -956,6 +1089,317 @@ class UwbService extends ChangeNotifier {
     }
   }
 
+  UwbTag? _consumeModbusFramesFromBuffer() {
+    UwbTag? latestTag;
+
+    int i = 0;
+    while (i + 5 <= _rawBinaryBuffer.length) {
+      if (_rawBinaryBuffer[i] != 0x01 || _rawBinaryBuffer[i + 1] != 0x03) {
+        i++;
+        continue;
+      }
+
+      final payloadLen = _rawBinaryBuffer[i + 2];
+      final frameLen = payloadLen + 5;
+      if (payloadLen <= 0 || frameLen > 512) {
+        i++;
+        continue;
+      }
+
+      if (i + frameLen > _rawBinaryBuffer.length) {
+        break;
+      }
+
+      final frame = _rawBinaryBuffer.sublist(i, i + frameLen);
+      final calc = _calculateModbusCrc(frame, frameLen - 2);
+      final frameCrc = (frame[frameLen - 2] << 8) | frame[frameLen - 1];
+      if (calc == frameCrc) {
+        final parsed = _parseModbusFrame(frame);
+        if (parsed != null) {
+          latestTag = parsed;
+        }
+        i += frameLen;
+      } else {
+        // Desync protection: advance by one byte and retry frame search.
+        i++;
+      }
+    }
+
+    if (i > 0) {
+      _rawBinaryBuffer.removeRange(0, i);
+    }
+
+    // Keep rolling buffer bounded for long-running sessions.
+    if (_rawBinaryBuffer.length > 4096) {
+      _rawBinaryBuffer.removeRange(0, _rawBinaryBuffer.length - 2048);
+    }
+
+    return latestTag;
+  }
+
+  int _calculateModbusCrc(List<int> data, int length) {
+    int crc = 0xFFFF;
+    for (int i = 0; i < length; i++) {
+      crc ^= data[i] & 0xFF;
+      for (int j = 0; j < 8; j++) {
+        if ((crc & 0x0001) != 0) {
+          crc = (crc >> 1) ^ 0xA001;
+        } else {
+          crc >>= 1;
+        }
+      }
+    }
+
+    // Vendor frames place CRC as high-byte then low-byte.
+    final lo = crc & 0xFF;
+    final hi = (crc >> 8) & 0xFF;
+    return (lo << 8) | hi;
+  }
+
+  UwbTag? _parseModbusFrame(List<int> frame) {
+    if (frame.length < 11) return null;
+    if (frame[0] != 0x01 || frame[1] != 0x03) return null;
+
+    // Frame layout observed in vendor examples: 01 03 len header payload crc.
+    final header0 = frame[3];
+    final header1 = frame[4];
+
+    if (header0 == 0xCA && header1 == 0xDA) {
+      return _parseGatewayModbusPayload(frame);
+    }
+    if (header0 == 0xAC && header1 == 0xDA) {
+      return _parseTagModbusPayload(frame);
+    }
+
+    return null;
+  }
+
+  UwbTag? _parseGatewayModbusPayload(List<int> frame) {
+    int p = 5;
+    final payloadEnd = frame.length - 2;
+    if (p + 8 > payloadEnd) return null;
+
+    final outputProtocol = (frame[p] << 8) | frame[p + 1];
+    p += 2;
+    final tagId = (frame[p] << 8) | frame[p + 1];
+    p += 2;
+
+    final calFlag = (frame[p] << 24) |
+        (frame[p + 1] << 16) |
+        (frame[p + 2] << 8) |
+        frame[p + 3];
+    p += 4;
+
+    double? x;
+    double? y;
+    double z = 0.0;
+
+    // Bit0: RTLS position block.
+    if ((outputProtocol & 0x0001) != 0) {
+      if (p + 6 > payloadEnd) return null;
+      // Firmware variants use different success bits for RTLS valid flag.
+      final hasRtls =
+          ((calFlag >> 16) & 0x01) == 1 || ((calFlag >> 8) & 0x01) == 1;
+      final rawX = _readSignedInt16Be(frame[p], frame[p + 1]);
+      final rawY = _readSignedInt16Be(frame[p + 2], frame[p + 3]);
+      final rawZ = _readSignedInt16Be(frame[p + 4], frame[p + 5]);
+      p += 6;
+      // Use RTLS result when marked valid, or when coordinates are clearly
+      // non-zero (some firmwares forget to set the status bit reliably).
+      final hasNonZeroCoord = rawX != 0 || rawY != 0 || rawZ != 0;
+      if (hasRtls || hasNonZeroCoord) {
+        x = rawX / 100.0;
+        y = rawY / 100.0;
+        z = rawZ / 100.0;
+      }
+    }
+
+    // Bit1: distance block, 16 anchors x 2 bytes.
+    final distances = List<double>.filled(16, -1.0);
+    if ((outputProtocol & 0x0002) != 0) {
+      if (p + 32 > payloadEnd) return null;
+      for (int i = 0; i < 16; i++) {
+        final distCm = (frame[p] << 8) | frame[p + 1];
+        p += 2;
+        final valid = ((calFlag >> i) & 0x01) == 1;
+        if (valid && distCm > 0) {
+          distances[i] = distCm / 100.0;
+        }
+      }
+    }
+
+    // Bit2: rx diag block (16 bytes).
+    if ((outputProtocol & 0x0004) != 0) {
+      if (p + 16 > payloadEnd) return null;
+      p += 16;
+    }
+
+    // Bit3: timestamp block (24 bytes).
+    if ((outputProtocol & 0x0008) != 0) {
+      if (p + 24 > payloadEnd) return null;
+      p += 24;
+    }
+
+    final firstFourDistances = distances.take(4).toList();
+    return _buildTagFromParsedData(
+      tagId: tagId,
+      x: x,
+      y: y,
+      z: z,
+      distances: firstFourDistances,
+    );
+  }
+
+  UwbTag? _parseTagModbusPayload(List<int> frame) {
+    int p = 5;
+    final payloadEnd = frame.length - 2;
+    if (p + 2 > payloadEnd) return null;
+
+    final outputProtocol = (frame[p] << 8) | frame[p + 1];
+    p += 2;
+
+    final distances = List<double>.filled(16, -1.0);
+
+    // Bit0: distance block.
+    if ((outputProtocol & 0x0001) != 0) {
+      if (p + 2 > payloadEnd) return null;
+      final distFlag = (frame[p] << 8) | frame[p + 1];
+      p += 2;
+
+      if (p + 32 > payloadEnd) return null;
+      for (int i = 0; i < 16; i++) {
+        final distCm = (frame[p] << 8) | frame[p + 1];
+        p += 2;
+        if (((distFlag >> i) & 0x01) == 1 && distCm > 0) {
+          distances[i] = distCm / 100.0;
+        }
+      }
+    }
+
+    double? x;
+    double? y;
+    double z = 0.0;
+
+    // Bit1: RTLS block.
+    if ((outputProtocol & 0x0002) != 0) {
+      if (p + 2 > payloadEnd) return null;
+      final ok = ((frame[p] << 8) | frame[p + 1]) == 1;
+      p += 2;
+      if (p + 6 > payloadEnd) return null;
+      final rawX = _readSignedInt16Be(frame[p], frame[p + 1]);
+      final rawY = _readSignedInt16Be(frame[p + 2], frame[p + 3]);
+      final rawZ = _readSignedInt16Be(frame[p + 4], frame[p + 5]);
+      p += 6;
+      if (ok) {
+        x = rawX / 100.0;
+        y = rawY / 100.0;
+        z = rawZ / 100.0;
+      }
+    }
+
+    return _buildTagFromParsedData(
+      tagId: 0,
+      x: x,
+      y: y,
+      z: z,
+      distances: distances.take(4).toList(),
+    );
+  }
+
+  UwbTag? _buildTagFromParsedData({
+    required int tagId,
+    required double? x,
+    required double? y,
+    required double z,
+    required List<double> distances,
+  }) {
+    // Apply distance mapping and correction coefficients consistently.
+    final mapped = List<double>.from(distances);
+    final indexMap = _config.distanceIndexMap;
+    if (mapped.length == 4 &&
+        indexMap.length == 4 &&
+        !(indexMap[0] == 0 &&
+            indexMap[1] == 1 &&
+            indexMap[2] == 2 &&
+            indexMap[3] == 3)) {
+      final original = List<double>.from(mapped);
+      for (int i = 0; i < 4; i++) {
+        if (indexMap[i] >= 0 && indexMap[i] < 4) {
+          mapped[indexMap[i]] = original[i];
+        }
+      }
+    }
+
+    for (int i = 0; i < mapped.length; i++) {
+      if (mapped[i] > 0) {
+        mapped[i] = mapped[i] * _config.correctionA + _config.correctionB;
+      }
+    }
+
+    double finalX;
+    double finalY;
+
+    if (x != null && y != null) {
+      finalX = x;
+      finalY = y;
+    } else {
+      final validCount = mapped.where((d) => d > 0).length;
+      if (validCount >= 3 && _anchors.length >= 3) {
+        final pos = _trilaterationWithDistances(mapped);
+        if (pos != null) {
+          finalX = pos.$1;
+          finalY = pos.$2;
+        } else {
+          return null;
+        }
+      } else if (validCount >= 2) {
+        final pos = _twoCircleIntersection(mapped);
+        if (pos != null) {
+          finalX = pos.$1;
+          finalY = pos.$2;
+        } else if (_currentTag != null) {
+          finalX = _currentTag!.x;
+          finalY = _currentTag!.y;
+        } else {
+          return null;
+        }
+      } else if (validCount == 1) {
+        if (_currentTag != null) {
+          finalX = _currentTag!.x;
+          finalY = _currentTag!.y;
+        } else {
+          // Single distance cannot trilaterate; seed a stable initial point at
+          // the corresponding anchor position instead of dropping the frame.
+          final idx = mapped.indexWhere((d) => d > 0);
+          if (idx >= 0 && idx < _anchors.length) {
+            finalX = _anchors[idx].x;
+            finalY = _anchors[idx].y;
+          } else {
+            return null;
+          }
+        }
+      } else {
+        return null;
+      }
+    }
+
+    return _createTagWithMeasuredDistances(
+      finalX,
+      finalY,
+      z,
+      '$tagId',
+      mapped,
+    );
+  }
+
+  int _readSignedInt16Be(int msb, int lsb) {
+    int value = ((msb & 0xFF) << 8) | (lsb & 0xFF);
+    if ((value & 0x8000) != 0) {
+      value -= 0x10000;
+    }
+    return value;
+  }
+
   // Simulation timer.
   // RAWBIN:length:43 6d 64 4d 3a 34 5b.
   // BU04 TWR mode data ( analysis).
@@ -972,6 +1416,14 @@ class UwbService extends ChangeNotifier {
       // Translated legacy note.
       final bytes =
           hexBytes.map((h) => int.tryParse(h, radix: 16) ?? 0).toList();
+
+      // Accumulate binary chunks to reassemble Modbus frames that may be split
+      // across serial read boundaries.
+      _rawBinaryBuffer.addAll(bytes);
+      final modbusTag = _consumeModbusFramesFromBuffer();
+      if (modbusTag != null) {
+        return modbusTag;
+      }
 
       // '[' (0x5b) data start.
       final bracketStart = bytes.indexOf(0x5b);
