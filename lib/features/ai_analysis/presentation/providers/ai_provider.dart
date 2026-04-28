@@ -50,6 +50,8 @@ class AiProvider extends ChangeNotifier {
   Future<void> runVlmAnalysis({
     required String imageBase64,
     String? additionalContext,
+    Map<String, dynamic>? metadata,
+    String? yoloResultImageBase64,
   }) async {
     _isAnalyzingVlm = true;
     _errorMessage = null;
@@ -60,6 +62,8 @@ class AiProvider extends ChangeNotifier {
         engine: DetectionEngine.vlm,
         imageBase64: imageBase64,
         additionalContext: additionalContext,
+        vlmMetadata: metadata,
+        yoloResultImageBase64: yoloResultImageBase64,
       );
     } catch (e) {
       _errorMessage = 'VLM analysis failed: $e';

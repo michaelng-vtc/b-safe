@@ -14,10 +14,14 @@ class AiRepositoryImpl implements AiRepository {
   Future<DetectionResultEntity> performVlmAnalysis({
     required String imageBase64,
     String? additionalContext,
+    Map<String, dynamic>? metadata,
+    String? yoloResultImageBase64,
   }) async {
     final model = await datasource.runVlm(
       imageBase64: imageBase64,
       additionalContext: additionalContext,
+      metadata: metadata,
+      yoloResultImageBase64: yoloResultImageBase64,
     );
     return model.toEntity();
   }

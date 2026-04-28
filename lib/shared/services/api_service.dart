@@ -1,19 +1,19 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Base URL for your PHP API
-  static const String baseUrl = 'http://your-server.com/api';
-
   // AI API configuration (OpenAI-compatible format)
   // Get API key: https://aistudio.google.com/apikey
-  static const String aiApiKey = 'YOUR_GEMINI_API_KEY';
-  static const String aiModel = 'gemini-2.0-flash';
+  static const String aiModel = 'gemini-3-flash-preview';
   static const String aiApiBaseUrl =
       'https://generativelanguage.googleapis.com/v1beta/openai';
   static const String aiChatCompletionsPath = '/chat/completions';
+  static const String _localPropertiesAsset = 'local.properties';
+
+  String? _cachedAiApiKey;
 
   // Singleton pattern
   static final ApiService instance = ApiService._init();
@@ -29,12 +29,42 @@ class ApiService {
         text.contains('errno = 7');
   }
 
+  Future<String> _resolveAiApiKey() async {
+    if (_cachedAiApiKey != null && _cachedAiApiKey!.trim().isNotEmpty) {
+      return _cachedAiApiKey!;
+    }
+
+    try {
+      final raw = await rootBundle.loadString(_localPropertiesAsset);
+      for (final line in raw.split('\n')) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+
+        final match = RegExp(r'^ai\.apiKey\s*=\s*(.*)$').firstMatch(trimmed);
+        if (match != null) {
+          final resolved = match.group(1)?.trim().replaceAll('"', '') ?? '';
+          if (resolved.isNotEmpty) {
+            _cachedAiApiKey = resolved;
+            return resolved;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[AI] Failed to read API key from $_localPropertiesAsset: $e');
+    }
+
+    throw Exception(
+      'AI_API_KEY_MISSING: Add ai.apiKey=... to $_localPropertiesAsset and include it in pubspec.yaml assets.',
+    );
+  }
+
   /// Send a request to an OpenAI-compatible chat completions endpoint.
   Future<String> _queryAiChatCompletions({
     required List<Map<String, dynamic>> messages,
     int timeoutSeconds = 120,
   }) async {
     final uri = Uri.parse('$aiApiBaseUrl$aiChatCompletionsPath');
+    final aiApiKey = await _resolveAiApiKey();
 
     final bodyMap = <String, dynamic>{
       'model': aiModel,
@@ -149,50 +179,112 @@ class ApiService {
 
   /// Analyze a building damage image with AI API.
   Future<Map<String, dynamic>> analyzeImageWithAI(String imageBase64,
-      {String? additionalContext}) async {
+      {String? additionalContext,
+      Map<String, dynamic>? metadata,
+      String? yoloResultImageBase64}) async {
     try {
       final prompt = StringBuffer();
-      prompt.writeln('You are a building safety inspection assistant.');
       prompt.writeln(
-          'Analyze the image/context and return JSON only with inferred values.');
+          'You are a building defect analysis assistant for SmartSurvey.');
+      prompt.writeln('Inspect the original image and the YOLO overlay image.');
+      prompt.writeln(
+          'Use the provided context and metadata, then return JSON only.');
+      prompt.writeln('Write in short, direct sentences.');
+      prompt.writeln('Keep the observation to 1-2 concise sentences.');
+      prompt.writeln(
+          'Keep the cause section concise, combining Hong Kong construction context and defect cause review in 2-3 sentences total.');
+      prompt.writeln(
+          'Keep recommendations brief and avoid step-by-step wording.');
+      prompt.writeln(
+          'Focus on external defects, relate them to Hong Kong construction details and weather, and do not mention risk score or risk level.');
+      prompt.writeln(
+          'Do not include markdown, code fences, headings, or extra commentary.');
       prompt.writeln('{');
-      prompt.writeln('  "damage_detected": <boolean>,');
-      prompt.writeln('  "damage_types": [<string>, ...],');
-      prompt.writeln('  "analysis": <string>,');
-      prompt.writeln('  "building_element": <string_or_null>,');
-      prompt.writeln('  "defect_type": <string_or_null>,');
-      prompt.writeln('  "diagnosis": <string_or_null>,');
-      prompt.writeln('  "suspected_cause": <string_or_null>,');
-      prompt.writeln('  "recommendation": <string_or_null>,');
-      prompt.writeln('  "defect_size": <string_or_null>,');
-      prompt.writeln('  "recommendations": [<string>, ...]');
+      prompt.writeln('  "observation": <string>,');
+      prompt.writeln('  "hk_construction_context": <string>,');
+      prompt.writeln('  "cause_review": <string>,');
+      prompt.writeln('  "recommendations": <string>');
       prompt.writeln('}');
-      prompt.writeln('Do not include markdown or extra text.');
 
       if (additionalContext != null && additionalContext.isNotEmpty) {
-        prompt.writeln('Inspector observations and context:');
+        prompt.writeln('Additional inspector context:');
         prompt.writeln(additionalContext);
+      }
+
+      if (metadata != null && metadata.isNotEmpty) {
+        prompt.writeln('Structured metadata (JSON):');
+        try {
+          prompt.writeln(jsonEncode(metadata));
+        } catch (_) {
+          prompt.writeln(metadata.toString());
+        }
       }
 
       // Build OpenAI-compatible messages payload.
       debugPrint(
           '[AI] Image base64 length: ${imageBase64.length} chars (~${(imageBase64.length * 3 / 4 / 1024).toStringAsFixed(0)} KB)');
 
+      // Debug: print original image base64 preview (or full if small).
+      try {
+        final previewLen = imageBase64.length < 200 ? imageBase64.length : 200;
+        if (imageBase64.length < 1000) {
+          debugPrint('[AI][DEBUG] Original image base64 (full): $imageBase64');
+        } else {
+          debugPrint(
+              '[AI][DEBUG] Original image base64 preview (${imageBase64.length} chars): ${imageBase64.substring(0, previewLen)}...');
+        }
+      } catch (e) {
+        debugPrint('[AI][DEBUG] Failed to preview original base64: $e');
+      }
+
+      // Debug: print YOLO overlay base64 preview when provided.
+      if (yoloResultImageBase64 != null) {
+        try {
+          final yLen = yoloResultImageBase64.length;
+          final yPreview = yLen < 200
+              ? yoloResultImageBase64
+              : yoloResultImageBase64.substring(0, 200);
+          if (yLen < 1000) {
+            debugPrint(
+                '[AI][DEBUG] YOLO result image base64 (full): $yoloResultImageBase64');
+          } else {
+            debugPrint(
+                '[AI][DEBUG] YOLO result image base64 preview ($yLen chars): $yPreview...');
+          }
+        } catch (e) {
+          debugPrint('[AI][DEBUG] Failed to preview YOLO base64: $e');
+        }
+      }
+
       final messages = <Map<String, dynamic>>[];
 
       // If the image is too large (> 1MB base64 ~ 750KB image), skip image attachment.
       if (imageBase64.length < 1400000) {
+        final content = <dynamic>[
+          {'type': 'text', 'text': prompt.toString()},
+          {
+            'type': 'image_url',
+            'image_url': {
+              'url': 'data:image/jpeg;base64,$imageBase64',
+            },
+          },
+        ];
+
+        // If a YOLO result image is provided, include it as an additional image
+        if (yoloResultImageBase64 != null &&
+            yoloResultImageBase64.isNotEmpty &&
+            yoloResultImageBase64.length < 1400000) {
+          content.add({
+            'type': 'image_url',
+            'image_url': {
+              'url': 'data:image/jpeg;base64,$yoloResultImageBase64',
+            },
+          });
+        }
+
         messages.add({
           'role': 'user',
-          'content': [
-            {'type': 'text', 'text': prompt.toString()},
-            {
-              'type': 'image_url',
-              'image_url': {
-                'url': 'data:image/jpeg;base64,$imageBase64',
-              },
-            },
-          ],
+          'content': content,
         });
       } else {
         debugPrint('[AI] Image too large, sending text-only analysis');
@@ -213,49 +305,50 @@ class ApiService {
       // Parse response.
       final json = _extractJson(responseText);
       if (json != null) {
-        // Ensure required fields exist.
+        final observation = (json['observation'] ?? '').toString().trim();
+        final hkContext =
+            (json['hk_construction_context'] ?? '').toString().trim();
+        final causeReview = (json['cause_review'] ?? '').toString().trim();
+        final recommendations =
+            (json['recommendations'] ?? '').toString().trim();
+
         return {
-          'damage_detected': json['damage_detected'] ?? true,
-          'damage_types': json['damage_types'] ?? [],
-          'analysis': json['analysis'] ?? responseText,
-          'building_element': json['building_element'],
-          'defect_type': json['defect_type'],
-          'diagnosis': json['diagnosis'],
-          'suspected_cause': json['suspected_cause'],
-          'recommendation': json['recommendation'],
-          'defect_size': json['defect_size'],
-          'recommendations':
-              json['recommendations'] ?? ['Schedule a professional inspection'],
+          'observation': observation,
+          'hk_construction_context': hkContext,
+          'cause_review': causeReview,
+          'recommendations': recommendations,
+          'analysis': [
+            if (observation.isNotEmpty) '1. $observation',
+            if (hkContext.isNotEmpty) '2. $hkContext',
+            if (causeReview.isNotEmpty) '3. $causeReview',
+            if (recommendations.isNotEmpty) '4. $recommendations',
+          ].join('\n\n'),
         };
       }
 
       // If JSON cannot be parsed, use plain text as analysis output.
       debugPrint('[AI] No JSON found, using raw text as analysis');
       return {
-        'damage_detected': true,
+        'observation':
+            responseText.isNotEmpty ? responseText : 'AI analysis complete',
+        'hk_construction_context': '',
+        'cause_review': '',
+        'recommendations': '',
         'analysis':
             responseText.isNotEmpty ? responseText : 'AI analysis complete',
-        'building_element': null,
-        'defect_type': null,
-        'diagnosis': null,
-        'suspected_cause': null,
-        'recommendation': null,
-        'defect_size': null,
-        'recommendations': ['Schedule a professional inspection'],
       };
     } catch (e) {
       debugPrint('[AI] AI Analysis Error: $e');
       if (_isDnsLookupError(e)) {
-        final fallbackRecommendations =
-            _getRecommendations('moderate', 'structural');
         return {
-          'damage_detected': true,
-          'analysis':
-              'AI API DNS lookup failed on current device. Using local offline assessment.',
-          'recommendations': [
-            ...fallbackRecommendations,
-            'Check device/emulator network DNS for generativelanguage.googleapis.com',
-          ],
+          'observation':
+              'AI API DNS lookup failed on the current device. Using the available image and metadata for an offline-style summary.',
+          'hk_construction_context':
+              'Hong Kong buildings are exposed to humid weather, heavy rainfall, and coastal conditions that can accelerate external deterioration.',
+          'cause_review':
+              'The defect is likely driven by moisture ingress, weathering, or local detail failure around external building elements.',
+          'recommendations':
+              'Inspect the affected area, check waterproofing and sealing details, and arrange a site assessment if the defect is progressing.',
           'source': 'local_fallback_dns_error',
         };
       }
@@ -335,39 +428,5 @@ class ApiService {
       }
       rethrow;
     }
-  }
-
-  static List<String> _getRecommendations(String severity, String category) {
-    final List<String> recommendations = [];
-
-    if (severity == 'severe') {
-      recommendations.add('Notify relevant departments immediately');
-      recommendations.add('Consider temporarily closing the affected area');
-      recommendations
-          .add('Arrange professional inspection as soon as possible');
-    } else if (severity == 'moderate') {
-      recommendations.add('Arrange professional inspection');
-      recommendations.add('Monitor for further deterioration');
-    } else {
-      recommendations.add('Monitor the situation periodically');
-      recommendations.add('Schedule routine maintenance');
-    }
-
-    switch (category) {
-      case 'structural':
-        recommendations.add('Contact a structural engineer for assessment');
-        break;
-      case 'exterior':
-        recommendations.add('Check exterior wall waterproofing');
-        break;
-      case 'electrical':
-        recommendations.add('Do not touch. Contact an electrician.');
-        break;
-      case 'plumbing':
-        recommendations.add('Shut off the water valve and contact a plumber.');
-        break;
-    }
-
-    return recommendations;
   }
 }

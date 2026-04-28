@@ -17,9 +17,15 @@ class AiDatasource {
   Future<DetectionResultModel> runVlm({
     required String imageBase64,
     String? additionalContext,
+    Map<String, dynamic>? metadata,
+    String? yoloResultImageBase64,
   }) async {
     final raw = await _aiService.analyzeImageWithVlm(
-        imageBase64: imageBase64, additionalContext: additionalContext);
+      imageBase64: imageBase64,
+      additionalContext: additionalContext,
+      metadata: metadata,
+      yoloResultImageBase64: yoloResultImageBase64,
+    );
 
     return DetectionResultModel.fromRaw(
       id: _uuid.v4(),

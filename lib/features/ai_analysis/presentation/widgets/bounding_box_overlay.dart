@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:smartsurvey/features/ai_analysis/presentation/widgets/yolo_color_utils.dart';
 import 'package:smartsurvey/shared/services/yolo_service.dart';
 
 /// Displays an image from raw bytes with YOLO bounding boxes drawn on top.
@@ -91,17 +92,6 @@ class _BoundingBoxPainter extends CustomPainter {
   final List<YoloDetection> detections;
   final Size imageSize;
 
-  static const List<Color> _palette = [
-    Color(0xFFE53935), // red
-    Color(0xFF43A047), // green
-    Color(0xFF1E88E5), // blue
-    Color(0xFFFB8C00), // orange
-    Color(0xFF8E24AA), // purple
-    Color(0xFF00ACC1), // cyan
-    Color(0xFFFFB300), // amber
-    Color(0xFF6D4C41), // brown
-  ];
-
   _BoundingBoxPainter({
     required this.detections,
     required this.imageSize,
@@ -113,7 +103,7 @@ class _BoundingBoxPainter extends CustomPainter {
     // Normalized box coords map directly: normalized * size = pixel coords.
     for (int i = 0; i < detections.length; i++) {
       final det = detections[i];
-      final color = _palette[i % _palette.length];
+      final color = yoloColor(i);
 
       final left = (det.x - det.width / 2) * size.width;
       final top = (det.y - det.height / 2) * size.height;
@@ -122,40 +112,75 @@ class _BoundingBoxPainter extends CustomPainter {
 
       final rect = Rect.fromLTWH(left, top, boxW, boxH);
 
-      // Draw box border.
-      canvas.drawRect(
-        rect,
-        Paint()
-          ..color = color
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.0,
-      );
+      // Draw instance segmentation mask if available (mask is a 2D probability
+      // array cropped to the bbox). We render each mask pixel as a small
+      // rectangle inside the bbox with alpha proportional to probability.
+      final hasMask = det.mask != null;
+      if (hasMask) {
+        final mask = det.mask!;
+        final mH = mask.length;
+        final mW = mask.isNotEmpty ? mask[0].length : 0;
+        if (mH > 0 && mW > 0) {
+          final cellW = boxW / mW;
+          final cellH = boxH / mH;
+          for (int ry = 0; ry < mH; ry++) {
+            for (int rx = 0; rx < mW; rx++) {
+              final p = mask[ry][rx];
+              if (p <= 0.01) continue; // skip near-zero
+              final px = rect.left + rx * cellW;
+              final py = rect.top + ry * cellH;
+              final paint = Paint()
+                ..color = color.withValues(alpha: (p * 0.6).clamp(0.0, 0.6))
+                ..style = PaintingStyle.fill;
+              canvas.drawRect(
+                  Rect.fromLTWH(px, py, cellW + 0.5, cellH + 0.5), paint);
+            }
+          }
+        }
+      }
 
-      // Draw label background.
-      final label =
-          '${det.className} ${(det.confidence * 100).toStringAsFixed(0)}%';
-      const textStyle = TextStyle(
-        color: Colors.white,
-        fontSize: 11,
-        fontWeight: FontWeight.bold,
-      );
-      final tp = TextPainter(
-        text: TextSpan(text: label, style: textStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
+      // Draw box border only when no mask is present. Always draw a small
+      // class-name label so users can identify the detected class even when
+      // the segmentation overlay is shown.
+      if (!hasMask) {
+        canvas.drawRect(
+          rect,
+          Paint()
+            ..color = color
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.0,
+        );
+      }
 
-      final labelRect = Rect.fromLTWH(
-        rect.left,
-        rect.top - tp.height - 2,
-        tp.width + 6,
-        tp.height + 2,
-      );
-      canvas.drawRect(
-        labelRect,
-        Paint()..color = color.withValues(alpha: 0.85),
-      );
+      // Draw class label (name only) on top-left of the bbox. Keep it compact
+      // so it doesn't obscure the mask too much.
+      final label = det.className;
+      if (label.isNotEmpty) {
+        const textStyle = TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        );
+        final tp = TextPainter(
+          text: TextSpan(text: label, style: textStyle),
+          textDirection: TextDirection.ltr,
+        )..layout();
 
-      tp.paint(canvas, Offset(rect.left + 3, labelRect.top + 1));
+        // Place label inside the image bounds; prefer top-left of bbox.
+        final labelLeft = rect.left.clamp(0.0, size.width - tp.width - 6);
+        final labelTop =
+            (rect.top - tp.height - 4).clamp(0.0, size.height - tp.height - 2);
+
+        final labelRect = Rect.fromLTWH(
+          labelLeft,
+          labelTop,
+          tp.width + 6,
+          tp.height + 4,
+        );
+        canvas.drawRect(
+            labelRect, Paint()..color = color.withValues(alpha: 0.85));
+        tp.paint(canvas, Offset(labelRect.left + 3, labelRect.top + 2));
+      }
     }
   }
 

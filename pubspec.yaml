@@ -71,3 +71,4 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/models/
+    - local.properties

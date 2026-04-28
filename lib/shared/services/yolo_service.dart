@@ -14,6 +14,7 @@ class YoloDetection {
   final double y; // center y (normalized 0-1 of image height)
   final double width; // box width (normalized)
   final double height; // box height (normalized)
+  final List<List<double>>? mask; // optional instance segmentation mask (crop)
 
   const YoloDetection({
     required this.className,
@@ -22,6 +23,7 @@ class YoloDetection {
     required this.y,
     required this.width,
     required this.height,
+    this.mask,
   });
 
   /// Bounding box image coordinates (pixel values).
@@ -43,6 +45,8 @@ class YoloDetection {
         'y': y,
         'width': width,
         'height': height,
+        // mask omitted for JSON export by default (heavy), keep flag
+        'has_mask': mask != null,
       };
 }
 
@@ -284,16 +288,25 @@ class YoloService {
       _interpreter!.getInputTensor(0).data = inputBuffer.buffer.asUint8List();
       _interpreter!.invoke();
 
-      // Read first output tensor only (seg model has a second mask-protos
-      // tensor that we ignore — bounding boxes come from output 0).
-      // Uint8List.fromList copies the bytes into a regular Dart heap buffer so
-      // asFloat32List() is guaranteed aligned.
-      final rawBytes =
+      // Read output tensors. For seg models there may be a second proto-mask
+      // tensor. We read both when available.
+      final out0Bytes =
           Uint8List.fromList(_interpreter!.getOutputTensor(0).data);
-      final outputBuffer = rawBytes.buffer.asFloat32List();
+      final outputBuffer = out0Bytes.buffer.asFloat32List();
+
+      List<double>? protoBuffer;
+      List<int>? protoShape;
+      if (_interpreter!.getOutputTensors().length > 1) {
+        final out1 = _interpreter!.getOutputTensor(1);
+        final out1Bytes = Uint8List.fromList(out1.data);
+        protoBuffer = out1Bytes.buffer.asFloat32List().toList();
+        protoShape = out1.shape;
+      }
 
       return _parseDetections(
         outputBuffer,
+        protos: protoBuffer,
+        protoShape: protoShape,
         confidenceThreshold: confidenceThreshold,
         iouThreshold: iouThreshold,
         maxDetections: maxDetections,
@@ -310,29 +323,26 @@ class YoloService {
 
   List<YoloDetection> _parseDetections(
     Float32List rawOutput, {
+    List<double>? protos,
+    List<int>? protoShape,
     required double confidenceThreshold,
     required double iouThreshold,
     required int maxDetections,
   }) {
-    final candidates = <YoloDetection>[];
-
     // Helper: get value[v] for box[b], handles both memory layouts.
-    //   Transposed [numValues, numBoxes]: index = v * numBoxes + b
-    //   Standard   [numBoxes, numValues]: index = b * numValues + v
     double val(int b, int v) => _isTransposedOutput
         ? rawOutput[v * _numBoxes + b]
         : rawOutput[b * _numValues + v];
 
-    // YOLO11/v8 (no objectness): bbox at 0-3, classes at 4..4+nc-1
-    // YOLOv5    (has objectness): bbox at 0-3, objectness at 4, classes at 5..5+nc-1
-    // Seg model: mask coefficients at 4+nc..4+nc+31 — we ignore them here.
-    // Heuristic: standard layout with _numValues>=85 is YOLOv5 (80 COCO classes+5).
     final hasObjectness = !_isTransposedOutput && _numValues >= 85;
     final classStart = hasObjectness ? 5 : 4;
-    final classEnd = classStart + _numClasses; // excludes mask coefficients
+    final classEnd = classStart + _numClasses; // excludes mask coeffs
+
+    // Build parallel lists: normalized detections for NMS and meta info for mask
+    final normCandidates = <YoloDetection>[];
+    final meta = <Map<String, dynamic>>[]; // holds raw coords + maskCoeffs
 
     for (int b = 0; b < _numBoxes; b++) {
-      // Pre-filter: for YOLOv5 use objectness; for YOLO11 scan class scores.
       if (hasObjectness && val(b, 4) < confidenceThreshold) continue;
 
       int bestClass = 0;
@@ -345,19 +355,27 @@ class YoloService {
         }
       }
 
-      // Clamp to [0,1]: mask-coefficient values or raw logits can exceed 1.0.
       final score =
           (hasObjectness ? val(b, 4) * bestScore : bestScore).clamp(0.0, 1.0);
       if (score < confidenceThreshold) continue;
 
-      // Bbox is always in center format (cx, cy, w, h) normalized 0-1.
       final cx = val(b, 0);
       final cy = val(b, 1);
       final bw = val(b, 2);
       final bh = val(b, 3);
       if (bw <= 0 || bh <= 0) continue;
 
-      candidates.add(YoloDetection(
+      // Extract mask coefficients if present
+      List<double>? maskCoeffs;
+      if (_numMaskCoeffs > 0) {
+        maskCoeffs = List<double>.generate(_numMaskCoeffs, (i) {
+          final v = val(b, classEnd + i);
+          // Keep raw value; later clamp when computing mask
+          return v.toDouble();
+        });
+      }
+
+      normCandidates.add(YoloDetection(
         className: bestClass < _labels.length
             ? _labels[bestClass]
             : 'Class_$bestClass',
@@ -366,11 +384,111 @@ class YoloService {
         y: cy,
         width: bw,
         height: bh,
+        mask: null,
       ));
+
+      meta.add({
+        'cx': cx,
+        'cy': cy,
+        'w': bw,
+        'h': bh,
+        'classId': bestClass,
+        'score': score,
+        'maskCoeffs': maskCoeffs,
+      });
     }
 
-    return _nms(candidates,
+    final kept = _nms(normCandidates,
         iouThreshold: iouThreshold, maxDetections: maxDetections);
+
+    // If prototype tensor exists and we have mask coeffs, compute instance masks
+    if (protos != null && protoShape != null && _numMaskCoeffs > 0) {
+      // Decide whether coordinates are normalised (<=1.5 heuristic)
+      double maxCoord = 0.0;
+      for (final m in meta) {
+        maxCoord = math.max(maxCoord, (m['cx'] as double));
+        maxCoord = math.max(maxCoord, (m['cy'] as double));
+        maxCoord = math.max(maxCoord, (m['w'] as double));
+        maxCoord = math.max(maxCoord, (m['h'] as double));
+      }
+      final bool coordsAreNorm = maxCoord <= 1.5;
+
+      // Prepare pixel-space meta (cx,cy,w,h) in pixels for mask computation
+      final metaPx = meta.map((m) {
+        final cx = (m['cx'] as double) * (coordsAreNorm ? _inputWidth : 1.0);
+        final cy = (m['cy'] as double) * (coordsAreNorm ? _inputHeight : 1.0);
+        final w = (m['w'] as double) * (coordsAreNorm ? _inputWidth : 1.0);
+        final h = (m['h'] as double) * (coordsAreNorm ? _inputHeight : 1.0);
+        return {
+          'cx': cx,
+          'cy': cy,
+          'w': w,
+          'h': h,
+          'classId': m['classId'],
+          'score': m['score'],
+          'maskCoeffs': m['maskCoeffs'],
+        };
+      }).toList();
+
+      // For each kept detection, find best matching meta entry (by IoU) and
+      // compute its instance mask using prototype tensor.
+      for (int i = 0; i < kept.length; i++) {
+        final det = kept[i];
+        // find best meta match
+        double bestIoU = -1.0;
+        int bestIndex = -1;
+        for (int j = 0; j < meta.length; j++) {
+          final m = meta[j];
+          final iou = _iou(
+              det,
+              YoloDetection(
+                className: '',
+                confidence: 0,
+                x: m['cx'] as double,
+                y: m['cy'] as double,
+                width: m['w'] as double,
+                height: m['h'] as double,
+                mask: null,
+              ));
+          if (iou > bestIoU) {
+            bestIoU = iou;
+            bestIndex = j;
+          }
+        }
+
+        if (bestIndex >= 0) {
+          final mpx = metaPx[bestIndex];
+          final maskCoeffs = mpx['maskCoeffs'] as List<double>?;
+          if (maskCoeffs != null) {
+            try {
+              final mask = _computeInstanceMaskFromProto(
+                cx: mpx['cx'] as double,
+                cy: mpx['cy'] as double,
+                w: mpx['w'] as double,
+                h: mpx['h'] as double,
+                maskCoeffs: maskCoeffs,
+                protos: protos,
+                protoShape: protoShape,
+              );
+              // attach mask to detection by replacing entry in kept
+              kept[i] = YoloDetection(
+                className: det.className,
+                confidence: det.confidence,
+                x: det.x,
+                y: det.y,
+                width: det.width,
+                height: det.height,
+                mask: mask,
+              );
+            } catch (e) {
+              debugPrint('Mask compute error: $e');
+            }
+          }
+        }
+      }
+    }
+
+    return kept;
   }
 
   /// Greedy NMS – suppresses lower-confidence boxes overlapping above [iouThreshold].
@@ -421,129 +539,144 @@ class YoloService {
     return union <= 0 ? 0.0 : inter / union;
   }
 
-  // ---------------------------------------------------------------------------
-  // Risk analysis
-  // ---------------------------------------------------------------------------
+  // ──────────────────── Instance Mask Decoding (from proto tensor) ───────
 
-  /// Result risk analysis (class-agnostic – works for building defect labels).
-  static Map<String, dynamic> toSafetyAnalysis(List<YoloDetection> detections) {
-    if (detections.isEmpty) {
-      return {
-        'risk_level': 'low',
-        'risk_score': 10,
-        'analysis': 'No objects detected.',
-        'recommendations': ['Regular inspection recommended.'],
-        'detections': [],
-        'detection_count': 0,
-        'person_count': 0,
-      };
+  List<List<double>>? _computeInstanceMaskFromProto({
+    required double cx,
+    required double cy,
+    required double w,
+    required double h,
+    required List<double> maskCoeffs,
+    required List<double> protos,
+    required List<int> protoShape,
+  }) {
+    // Determine proto layout and mask spatial dims
+    final int maskH, maskW;
+    final bool channelFirst;
+    final bool flatSpatial;
+
+    if (protoShape.length == 4) {
+      channelFirst = protoShape[1] == _numMaskCoeffs;
+      maskH = channelFirst ? protoShape[2] : protoShape[1];
+      maskW = channelFirst ? protoShape[3] : protoShape[2];
+      flatSpatial = false;
+    } else if (protoShape.length == 3 && protoShape[1] == _numMaskCoeffs) {
+      final spatial = protoShape[2];
+      final side = math.sqrt(spatial).round();
+      if (side * side != spatial) return null;
+      maskH = side;
+      maskW = side;
+      channelFirst = true;
+      flatSpatial = true;
+    } else {
+      return null;
     }
 
-    final safetyHazards = <String>[];
-    final structuralItems = <String>[];
-    final normalItems = <String>[];
+    final double scaleX = maskW / _inputWidth;
+    final double scaleY = maskH / _inputHeight;
 
-    const hazardClasses = {
-      'fire hydrant',
-      'stop sign',
-      'traffic light',
-      'scissors',
-      'knife',
-    };
-    const structuralClasses = {
-      'chair',
-      'couch',
-      'bed',
-      'dining table',
-      'toilet',
-      'sink',
-      'tv',
-      'laptop',
-      'microwave',
-      'oven',
-      'refrigerator',
-      'door',
-      'window',
-    };
-    const personClasses = {'person'};
+    final int mx1 = ((cx - w / 2) * scaleX).clamp(0, maskW - 1).floor();
+    final int my1 = ((cy - h / 2) * scaleY).clamp(0, maskH - 1).floor();
+    final int mx2 = ((cx + w / 2) * scaleX).clamp(0, maskW - 1).ceil();
+    final int my2 = ((cy + h / 2) * scaleY).clamp(0, maskH - 1).ceil();
 
-    int personCount = 0;
+    if (mx2 <= mx1 || my2 <= my1) return null;
 
-    for (final det in detections) {
-      final cls = det.className.toLowerCase();
-      if (personClasses.contains(cls)) {
-        personCount++;
-      } else if (hazardClasses.contains(cls)) {
-        safetyHazards.add(
-            '${det.className} (${(det.confidence * 100).toStringAsFixed(0)}%)');
-      } else if (structuralClasses.contains(cls)) {
-        structuralItems.add(
-            '${det.className} (${(det.confidence * 100).toStringAsFixed(0)}%)');
+    // Helper to read proto value at channel i, y, x from flat protos list.
+    double protoAt(int ci, int py, int px) {
+      if (flatSpatial) {
+        // layout [1, 32, H*W]
+        final base = ci * (maskH * maskW);
+        return protos[base + py * maskW + px];
+      }
+      if (channelFirst) {
+        // layout [1, C, H, W]
+        final base = ci * (maskH * maskW);
+        return protos[base + py * maskW + px];
       } else {
-        normalItems.add(
-            '${det.className} (${(det.confidence * 100).toStringAsFixed(0)}%)');
+        // layout [1, H, W, C]
+        final base = (py * maskW + px) * _numMaskCoeffs;
+        return protos[base + ci];
       }
     }
 
-    int riskScore = 10;
-    String riskLevel = 'low';
+    final mask = List.generate(my2 - my1, (dy) {
+      final py = my1 + dy;
+      return List.generate(mx2 - mx1, (dx) {
+        final px = mx1 + dx;
+        double sum = 0.0;
+        for (int i = 0; i < _numMaskCoeffs; i++) {
+          final protoVal = protoAt(i, py, px);
+          sum += maskCoeffs[i] * protoVal;
+        }
+        return _sigmoid(sum).clamp(0.0, 1.0);
+      });
+    });
 
-    if (safetyHazards.isNotEmpty) {
-      riskScore += safetyHazards.length * 20;
-    }
-    if (personCount > 3) {
-      riskScore += 15;
-    }
-    riskScore = riskScore.clamp(0, 100);
+    return mask;
+  }
 
-    if (riskScore >= 70) {
-      riskLevel = 'high';
-    } else if (riskScore >= 40) {
-      riskLevel = 'medium';
+  static double _sigmoid(double x) => 1.0 / (1.0 + math.exp(-x));
+
+  /// Render a simple overlay image for VLM input using the current YOLO detections.
+  Uint8List? renderOverlayImage(
+    Uint8List imageBytes,
+    List<YoloDetection> detections,
+  ) {
+    final source = img.decodeImage(imageBytes);
+    if (source == null) return null;
+
+    final canvas = img.Image.from(source);
+    const maskColor = (0xFF, 0xD6, 0x28, 0x28);
+    const boxColor = (0xFF, 0xD6, 0x28, 0x28);
+
+    for (final det in detections) {
+      final box =
+          det.toPixelBox(canvas.width.toDouble(), canvas.height.toDouble());
+      final left = box['left']!.clamp(0.0, canvas.width - 1).round();
+      final top = box['top']!.clamp(0.0, canvas.height - 1).round();
+      final right = box['right']!.clamp(0.0, canvas.width - 1).round();
+      final bottom = box['bottom']!.clamp(0.0, canvas.height - 1).round();
+
+      if (det.mask != null && det.mask!.isNotEmpty) {
+        final maskH = det.mask!.length;
+        final maskW = det.mask!.first.length;
+        for (int my = 0; my < maskH; my++) {
+          final y = top + ((bottom - top) * (my / maskH)).round();
+          if (y < 0 || y >= canvas.height) continue;
+          for (int mx = 0; mx < maskW; mx++) {
+            final x = left + ((right - left) * (mx / maskW)).round();
+            if (x < 0 || x >= canvas.width) continue;
+            final alpha = (det.mask![my][mx] * 180).clamp(0, 180).round();
+            if (alpha <= 0) continue;
+            final pixel = canvas.getPixel(x, y);
+            final blended = img.ColorRgba8(
+              ((pixel.r * (255 - alpha)) + (maskColor.$2 * alpha)) ~/ 255,
+              ((pixel.g * (255 - alpha)) + (maskColor.$3 * alpha)) ~/ 255,
+              ((pixel.b * (255 - alpha)) + (maskColor.$4 * alpha)) ~/ 255,
+              255,
+            );
+            canvas.setPixel(x, y, blended);
+          }
+        }
+      }
+
+      final paint = img.ColorRgba8(boxColor.$2, boxColor.$3, boxColor.$4, 255);
+      for (int x = left; x <= right; x++) {
+        if (top >= 0 && top < canvas.height) canvas.setPixel(x, top, paint);
+        if (bottom >= 0 && bottom < canvas.height) {
+          canvas.setPixel(x, bottom, paint);
+        }
+      }
+      for (int y = top; y <= bottom; y++) {
+        if (left >= 0 && left < canvas.width) canvas.setPixel(left, y, paint);
+        if (right >= 0 && right < canvas.width) {
+          canvas.setPixel(right, y, paint);
+        }
+      }
     }
 
-    final analysisLines = <String>[];
-    analysisLines.add('YOLO detected ${detections.length} object(s):');
-    if (personCount > 0) {
-      analysisLines.add('- People: $personCount person(s)');
-    }
-    if (safetyHazards.isNotEmpty) {
-      analysisLines.add('- Safety-related: ${safetyHazards.join(', ')}');
-    }
-    if (structuralItems.isNotEmpty) {
-      analysisLines
-          .add('- Facilities/Furniture: ${structuralItems.join(', ')}');
-    }
-    if (normalItems.isNotEmpty) {
-      analysisLines.add('- Other objects: ${normalItems.join(', ')}');
-    }
-
-    final recommendations = <String>[];
-    if (safetyHazards.isNotEmpty) {
-      recommendations.add(
-          'Safety-related objects detected. Verify fire equipment status.');
-    }
-    if (personCount > 3) {
-      recommendations
-          .add('High occupancy. Ensure evacuation routes are clear.');
-    }
-    if (structuralItems.isNotEmpty) {
-      recommendations.add('Check facility conditions.');
-    }
-    if (recommendations.isEmpty) {
-      recommendations
-          .add('Environment normal. Regular inspection recommended.');
-    }
-
-    return {
-      'risk_level': riskLevel,
-      'risk_score': riskScore,
-      'analysis': analysisLines.join('\n'),
-      'recommendations': recommendations,
-      'detections': detections.map((d) => d.toJson()).toList(),
-      'detection_count': detections.length,
-      'person_count': personCount,
-    };
+    return Uint8List.fromList(img.encodeJpg(canvas, quality: 90));
   }
 
   Future<void> dispose() async {

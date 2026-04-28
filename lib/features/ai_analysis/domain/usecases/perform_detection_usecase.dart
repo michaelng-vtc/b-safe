@@ -18,6 +18,8 @@ class PerformDetectionUsecase {
     String? imageBase64,
     Uint8List? imageBytes,
     String? additionalContext,
+    Map<String, dynamic>? vlmMetadata,
+    String? yoloResultImageBase64,
     double confidenceThreshold = 0.25,
   }) async {
     switch (engine) {
@@ -28,6 +30,8 @@ class PerformDetectionUsecase {
         return repository.performVlmAnalysis(
           imageBase64: imageBase64,
           additionalContext: additionalContext,
+          metadata: vlmMetadata,
+          yoloResultImageBase64: yoloResultImageBase64,
         );
       case DetectionEngine.yolo:
         if (imageBytes == null || imageBytes.isEmpty) {

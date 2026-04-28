@@ -18,10 +18,14 @@ class AiAnalysisService {
   Future<Map<String, dynamic>> analyzeImageWithVlm({
     required String imageBase64,
     String? additionalContext,
+    Map<String, dynamic>? metadata,
+    String? yoloResultImageBase64,
   }) {
     return _apiService.analyzeImageWithAI(
       imageBase64,
       additionalContext: additionalContext,
+      metadata: metadata,
+      yoloResultImageBase64: yoloResultImageBase64,
     );
   }
 
@@ -33,6 +37,9 @@ class AiAnalysisService {
       imageBytes,
       confidenceThreshold: confidenceThreshold,
     );
-    return YoloService.toSafetyAnalysis(detections);
+    return {
+      'detections': detections.map((d) => d.toJson()).toList(),
+      'detection_count': detections.length,
+    };
   }
 }

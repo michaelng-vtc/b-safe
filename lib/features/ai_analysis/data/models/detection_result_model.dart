@@ -26,16 +26,30 @@ class DetectionResultModel {
     required String source,
     required Map<String, dynamic> raw,
   }) {
+    final observation = (raw['observation'] ?? raw['analysis'] ?? '').toString();
+    final hkConstructionContext =
+        (raw['hk_construction_context'] ?? '').toString();
+    final causeReview = (raw['cause_review'] ?? '').toString();
+    final recommendations = (raw['recommendations'] ?? '').toString();
+
+    final formattedAnalysis = [
+      if (observation.isNotEmpty) '1. $observation',
+      if (hkConstructionContext.isNotEmpty) '2. $hkConstructionContext',
+      if (causeReview.isNotEmpty) '3. $causeReview',
+      if (recommendations.isNotEmpty) '4. $recommendations',
+    ].join('\n\n');
+
     return DetectionResultModel(
       id: id,
       source: source,
       riskLevel: (raw['risk_level'] as String?) ?? 'low',
       riskScore: (raw['risk_score'] as int?) ?? 0,
-      analysis: (raw['analysis'] as String?) ?? 'No analysis result',
-      recommendations: (raw['recommendations'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          const [],
+      analysis: formattedAnalysis.isNotEmpty
+          ? formattedAnalysis
+          : observation.isNotEmpty
+              ? observation
+              : 'No analysis result',
+      recommendations: recommendations.isNotEmpty ? [recommendations] : const [],
       raw: raw,
       createdAt: DateTime.now(),
     );

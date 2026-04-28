@@ -344,9 +344,42 @@ class _AiAnalysisScreenState extends State<AiAnalysisScreen> {
       _buildEntryFormContext(),
     ].whereType<String>().where((part) => part.isNotEmpty).join('\n');
 
+    // Build structured metadata to send to the VLM.
+    final metadata = <String, dynamic>{
+      'building_element': _resolvedBuildingElement() ?? '',
+      'building_defects': _buildingDefects,
+      'defect_size': _defectSizeController.text.trim(),
+      'defect_location': _resolvedDefectLocation() ?? '',
+      'room_use': _resolvedRoomUse() ?? '',
+      'water_risk': _waterRiskOtherSide,
+    };
+
+    // Include YOLO detections if available.
+    final yoloDetections =
+        ai.lastYoloDetections?.map((d) => d.toJson()).toList(growable: false) ??
+            [];
+
+    metadata['yolo_detections'] = yoloDetections;
+
+    String? yoloOverlayImageBase64;
+    final yoloBytes = _imageBase64 == null ? null : base64Decode(_imageBase64!);
+    if (yoloBytes != null &&
+        ai.lastYoloDetections != null &&
+        ai.lastYoloDetections!.isNotEmpty) {
+      final overlay = YoloService.instance.renderOverlayImage(
+        Uint8List.fromList(yoloBytes),
+        ai.lastYoloDetections!,
+      );
+      if (overlay != null && overlay.isNotEmpty) {
+        yoloOverlayImageBase64 = base64Encode(overlay);
+      }
+    }
+
     await ai.runVlmAnalysis(
       imageBase64: _imageBase64!,
       additionalContext: contextText.isEmpty ? null : contextText,
+      metadata: metadata,
+      yoloResultImageBase64: yoloOverlayImageBase64,
     );
   }
 
