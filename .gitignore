@@ -59,6 +59,14 @@ D-DWM-PG测试包V6.8/**/.vs/
 D-DWM-PG测试包V6.8/**/bin/
 D-DWM-PG测试包V6.8/**/obj/
 
+# Large binary files in hardware documentation folders (exceed GitHub 100MB limit)
+D-DWM-PG4.9#C配置资料包V6.8/**/*.mp4
+D-DWM-PG4.9#C配置资料包V6.8/**/*.rar
+D-DWM-PG测试包V6.8/**/*.mp4
+D-DWM-PG测试包V6.8/**/*.rar
+# J-LINK installer (55 MB, exceeds GitHub recommended 50 MB)
+D-DWM-PG4.9#C配置资料包V6.8/J-LINK驱动安装包及说明/
+
 # iOS/XCode related
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3
