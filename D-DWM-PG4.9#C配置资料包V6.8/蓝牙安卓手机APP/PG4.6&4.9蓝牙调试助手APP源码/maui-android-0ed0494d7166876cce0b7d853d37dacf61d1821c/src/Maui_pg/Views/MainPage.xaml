@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Maui_pg.Views.MainPage"
+             xmlns:vm="clr-namespace:Maui_pg.ViewModels"
+             x:DataType="vm:MainPage_ViewModel"
+             xmlns:models="clr-namespace:Maui_pg.Models" NavigationPage.HasBackButton="False">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior />
+    </Shell.BackButtonBehavior>
+
+    <Grid RowDefinitions="*,10*"
+          RowSpacing="2">
+
+        <Button x:Name="Btn_Search" 
+                Text="搜索设备" 
+                SemanticProperties.Hint="搜索附近蓝牙设备"
+                Command="{Binding ScanBLEDevicesAsyncCommand}"
+                Grid.Row="0" 
+                WidthRequest="100"
+                HeightRequest="40"/>
+
+        <ScrollView Grid.Row="1">
+
+            <CollectionView SelectionMode="None"
+                            ItemsSource="{Binding Discovered_device_List}">
+
+                <CollectionView.EmptyView>
+                    <Label Text="{Binding Scan_txt}"
+                                HorizontalOptions="CenterAndExpand"
+                                VerticalOptions="StartAndExpand"/>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout  Orientation="Vertical"/>
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:DeviceCandidate">
+                        <Border>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainPage_ViewModel}}, 
+                                                                    Path=SelectBLEDeviceAsyncCommand}"
+                                                                    CommandParameter="{Binding .}"/>
+                            </Border.GestureRecognizers>
+
+                            <VerticalStackLayout Padding="8">
+                                <Label Style="{StaticResource BaseLabel}" Text="{Binding Name}" />
+                                <Label Style="{StaticResource MicroLabel}" Text="{Binding Show_ID}" />
+                                <HorizontalStackLayout>
+                                    <Label Style="{StaticResource MicroLabel}" Text="Rssi:" />
+                                    <Label Style="{StaticResource MicroLabel}" Text="{Binding Rssi}" Margin="5,0,0,0"/>
+                                    <Label Style="{StaticResource MicroLabel}" Text="dbm" Margin="5,0,0,0"/>
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+
+        </ScrollView>
+
+        <ActivityIndicator x:Name="MainActivityIndicator"
+                           IsRunning="{Binding Is_scanning}"
+                           IsVisible="{Binding Is_scanning}"
+                           HorizontalOptions="CenterAndExpand"
+                           VerticalOptions="StartAndExpand"
+                           Margin="0,20,0,0"
+                           Grid.Row="1"/>
+
+    </Grid>
+    
+</ContentPage>

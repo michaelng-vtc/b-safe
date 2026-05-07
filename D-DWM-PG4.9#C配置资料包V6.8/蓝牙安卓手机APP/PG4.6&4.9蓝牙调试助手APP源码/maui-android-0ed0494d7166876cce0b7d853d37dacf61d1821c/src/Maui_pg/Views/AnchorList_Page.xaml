@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Maui_pg.Views.AnchorList_Page"
+             xmlns:vm="clr-namespace:Maui_pg.ViewModels"
+             xmlns:models="clr-namespace:Maui_pg.Models"
+             x:DataType="vm:AnchorList_ViewModel"
+             Title="基站列表">
+    <Grid RowDefinitions="*,Auto">
+        <CollectionView 
+                  VerticalOptions="Fill"
+                  SelectionMode="None"
+                  ItemsSource="{Binding Anc_List}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:UWBAnchor">
+                    <SwipeView HeightRequest="50" >
+                        <SwipeView.RightItems>
+                            <SwipeItems >
+                                <SwipeItem Text="删除" BackgroundColor="Red"
+                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AnchorList_ViewModel}}, 
+                                                             Path=DeleteItem_Command}" CommandParameter="{Binding .}"/>
+                                <SwipeItem Text="更改" BackgroundColor="Teal" 
+                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:AnchorList_ViewModel}}, 
+                                                             Path=ChangeItem_Command}" CommandParameter="{Binding .}"/>
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+                        <Border Stroke="teal">
+                            <Label Text="{Binding ID}"
+                                   FontSize="18"
+                                   VerticalTextAlignment="Center"
+                                   Margin="10,0,0,0"/>
+                        </Border>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+        
+        
+        <Button Grid.Row="1" Text="添加新基站" Margin="20" Command="{Binding Add_newItem_Command}"/>
+    </Grid>
+
+</ContentPage>

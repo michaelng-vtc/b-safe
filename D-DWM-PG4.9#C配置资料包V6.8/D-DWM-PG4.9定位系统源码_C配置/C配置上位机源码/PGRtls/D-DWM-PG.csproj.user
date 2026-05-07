@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PublishUrlHistory>E:\在做项目\PG4.5系统\上位机安装包\|C:\Users\Administrator\Desktop\|E:\开发产品项目\UWB定位系统\D-DWM-PG开发资料\D-DWM-PG2.5\程序\V2.1\上位机安装包\|E:\开发产品项目\UWB定位系统\D-DWM-PG开发资料\D-DWM-PG2.5\程序\V2.1\|E:\开发产品项目\UWB定位系统\D-DWM-PG开发资料\资料包\D-DWM-PG2.5#C配置资料包V2.0\D-D-WM-PG2.5 V2.0二维定位系统源码\V2.0系统上位机软件安装包\</PublishUrlHistory>
+    <InstallUrlHistory />
+    <SupportUrlHistory />
+    <UpdateUrlHistory />
+    <BootstrapperUrlHistory />
+    <ErrorReportUrlHistory />
+    <FallbackCulture>zh-CN</FallbackCulture>
+    <VerifyUploadedFiles>false</VerifyUploadedFiles>
+  </PropertyGroup>
+  <PropertyGroup>
+    <EnableSecurityDebugging>false</EnableSecurityDebugging>
+  </PropertyGroup>
+</Project>

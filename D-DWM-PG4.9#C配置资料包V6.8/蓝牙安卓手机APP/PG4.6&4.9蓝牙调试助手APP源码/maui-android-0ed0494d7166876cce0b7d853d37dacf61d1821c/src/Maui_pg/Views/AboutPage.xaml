@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Maui_pg.Views.AboutPage"
+             Title="AboutPage">
+    <VerticalStackLayout>
+        <Label 
+            Text="MauiPG v1.0.0"
+            VerticalOptions="Center" 
+            HorizontalOptions="Center" />
+        <Label Text="[功能说明]"/>
+        <Label Text="可通过蓝牙对接连接到PG4.6/4.9 并且实现蓝牙通信"/>
+        <Label Text="目前实现连接标签并显示标签2D定位动画效果，基站需要自行输入位置，使用sqlite保存"/>
+        <Label Text="[作者]"/>
+        <Label Text="广州联网科技有限公司 www.gzlwkj.com"/>
+        
+    </VerticalStackLayout>
+</ContentPage>

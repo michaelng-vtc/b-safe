@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Maui_pg.Views.CommuPage"
+             xmlns:vm ="clr-namespace:Maui_pg.ViewModels"
+             x:DataType="vm:CommuPage_ViewModel"
+             Title="{Binding Page_Title}" >
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior Command="{Binding BackCommand}"/>
+    </Shell.BackButtonBehavior>
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="5.5*"/>
+            <RowDefinition Height="0.4*"/>
+            <RowDefinition Height="0.25*"/>
+            <RowDefinition Height="1.75*"/>
+        </Grid.RowDefinitions>
+
+        <HorizontalStackLayout Grid.Row="0" HorizontalOptions="Center">
+            <Button Text="连接设备" 
+                    WidthRequest="85"
+                    HeightRequest="40"
+                    Command="{Binding Connect2DeviceAsyncCommand}"/>
+            
+            <Button Text="断开连接"
+                    Margin="20,0,0,0"
+                    WidthRequest="85"
+                    HeightRequest="40"
+                    Command="{Binding DisconnectFromDeviceAsyncCommand}"/>
+
+            <Button Text="定位显示" 
+                    WidthRequest="85"
+                    HeightRequest="40"
+                    Margin="20,0,0,0"
+                    Command="{Binding Go2DisplayAsyncCommand}"/>
+        </HorizontalStackLayout>
+        
+
+        <Border Grid.Row="1"
+                Margin="8">
+            <Editor IsReadOnly="True"
+                    Text="{Binding Log_txt}"/>
+        </Border>
+
+        <HorizontalStackLayout Grid.Row="2" VerticalOptions="Center">
+            <Label Text="ModbusID:" Margin="10,0,0,0"/>
+            <Label Text="{Binding ModbusId}" Margin="10,0,0,0"/>
+            <Button Text="更改ID" Margin="10,-5,0,5" FontSize="Micro" Command="{Binding ChangeModbusIDCommand}"/>
+        </HorizontalStackLayout>
+        
+        <HorizontalStackLayout Grid.Row="3" VerticalOptions="Center">
+            <RadioButton Content="Ascii码发送" IsChecked="{Binding Data_format_ascii}"/>
+            <RadioButton Content="Hex发送" IsChecked="{Binding Data_format_ascii,Converter={StaticResource Boolean2BooleanReConverter}}"  Margin="10,0,0,0"/>
+        </HorizontalStackLayout>
+   
+        
+        <Grid Grid.Row="4" ColumnDefinitions="4*,1*" Margin="0,0,0,40">
+            <Border Grid.Column="0"
+                        Margin="5,2">
+                <Entry Text="{Binding Send_txt}"/>
+            </Border>
+            <Button Grid.Column="1"
+                    Text="发送"
+                    Margin="5"
+                    Command="{Binding SendDataCommand}"/>
+        </Grid>
+
+    </Grid>
+</ContentPage>

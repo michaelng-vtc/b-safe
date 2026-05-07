@@ -45,6 +45,20 @@ app.*.map.json
 # ML model artifacts
 *.tflite
 
+# Keil MDK build cache (inside hardware source folders)
+D-DWM-PG4.9#C配置资料包V6.8/**/Listings/
+D-DWM-PG4.9#C配置资料包V6.8/**/Output/
+D-DWM-PG测试包V6.8/**/Listings/
+D-DWM-PG测试包V6.8/**/Output/
+
+# Visual Studio build cache (inside hardware source folders)
+D-DWM-PG4.9#C配置资料包V6.8/**/.vs/
+D-DWM-PG4.9#C配置资料包V6.8/**/bin/
+D-DWM-PG4.9#C配置资料包V6.8/**/obj/
+D-DWM-PG测试包V6.8/**/.vs/
+D-DWM-PG测试包V6.8/**/bin/
+D-DWM-PG测试包V6.8/**/obj/
+
 # iOS/XCode related
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3

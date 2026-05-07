@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Maui_pg.Views.AnchorItem_Page"
+             xmlns:vm="clr-namespace:Maui_pg.ViewModels"
+             x:DataType="vm:AnchorItem_ViewModel"
+             Title="基站参数">
+    <ScrollView>
+        <VerticalStackLayout Padding="20"
+                             Spacing="10"
+                             VerticalOptions="StartAndExpand">
+            <Label Text="基站ID" FontSize="Medium"/>
+
+            <Border Style="{StaticResource RoundText_Border}">
+                <Entry Text="{Binding Edit_anc.ID}"/>
+            </Border>
+
+            <Label Text="X(cm)" FontSize="Medium"/>
+            <Border Style="{StaticResource RoundText_Border}">
+                <Entry Text="{Binding Edit_anc.X}"/>
+            </Border>
+            <Label Text="Y(cm)" FontSize="Medium"/>
+            <Border Style="{StaticResource RoundText_Border}">
+                <Entry Text="{Binding Edit_anc.Y}"/>
+            </Border>
+            <Button Text="确认" Margin="0,10,0,0" Command="{Binding Save_AncCommand}"/>
+            <Button Text="取消" BackgroundColor="Red" Command="{Binding Cancel_Command}"/>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

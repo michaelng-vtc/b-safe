@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Maui_pg.Views.DisplayPage" 
+             xmlns:draw ="clr-namespace:Maui_pg.Drawables"
+             NavigationPage.HasBackButton="False"
+             xmlns:vm ="clr-namespace:Maui_pg.ViewModels"
+             xmlns:views="clr-namespace:Maui_pg.Views"
+             xmlns:models="clr-namespace:Maui_pg.Models"
+             x:DataType="vm:DisplayPage_ViewModel">
+
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior/>
+    </Shell.BackButtonBehavior>
+
+  
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="0.5*"/>
+            <RowDefinition Height="5*"/>
+        </Grid.RowDefinitions>
+        
+        <ScrollView Grid.Row="0">
+            <CollectionView ItemsSource="{Binding Tag_List}">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout  Orientation="Vertical"/>
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:UWBTag">
+                        <Border HeightRequest="35">
+                            <Border.GestureRecognizers>
+                                
+                            </Border.GestureRecognizers>
+
+                            <HorizontalStackLayout>
+                                <Label Style="{StaticResource LargeLabel}" Text="ID:" Margin="10,0,0,0"/>
+                                <Label Style="{StaticResource LargeLabel}" Text="{Binding Id}" />
+                                <Label Style="{StaticResource LargeLabel}" Text="x:" Margin="10,0,0,0"/>
+                                <Label Style="{StaticResource LargeLabel}" Text="{Binding X}" Margin="5,0,0,0"/>
+                                <Label Style="{StaticResource LargeLabel}" Text="Y:" Margin="10,0,0,0"/>
+                                <Label Style="{StaticResource LargeLabel}" Text="{Binding Y}" Margin="5,0,0,0"/>
+                                <Label Style="{StaticResource LargeLabel}" Text="Z:" Margin="10,0,0,0"/>
+                                <Label Style="{StaticResource LargeLabel}" Text="{Binding Z}" Margin="5,0,0,0"/>
+                            </HorizontalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </ScrollView>
+
+        <HorizontalStackLayout Grid.Row="1" 
+                               VerticalOptions="Center">
+            <CheckBox VerticalOptions="Center"
+                      IsChecked="{Binding Has_trace}"/>
+            <Label Text="显示轨迹" 
+                   Margin="0,9,0,0"/>
+            <Label Text="显示比例:" 
+                   Margin="5,8,0,0"/>
+            <Label Text="{Binding Draw_scale}" 
+                   Margin="2,8,0,0"/>
+            <Button Text="更改" 
+                    WidthRequest="55" 
+                    FontSize="12"
+                    Margin="5,0,0,0"
+                    Command="{Binding ChangeScale_Command}"/>
+            <Button Text="写入基站位置" 
+                    WidthRequest="100" 
+                    Margin="10,0,0,0"
+                    FontSize="12"
+                    Command="{Binding Add_ancCommand}"/>
+            
+        </HorizontalStackLayout>
+
+        
+        <Border x:Name="Border_Draw"
+                Grid.Row="2" 
+                Margin="2"
+                Padding="5"
+                Stroke="Red">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="5"/>
+            </Border.StrokeShape>
+
+            <Grid>
+                <GraphicsView  x:Name="Graphic_draw" HorizontalOptions="Fill" VerticalOptions="Fill"/>
+                <views:PanContainer>
+                    <Image Opacity="0"/>
+                </views:PanContainer>
+            </Grid>
+           
+        </Border>
+        
+    </Grid>
+    
+</ContentPage>
