@@ -1,0 +1,32 @@
+# ========== KEEP ONLY RECOMPILABLE SOURCE FILES ==========
+
+# Ignore everything by default
+*
+
+# Keep source code files
+!*.c
+!*.h
+!*.cpp
+!*.hpp
+!*.ino
+!*.S
+!*.s
+!*.asm
+
+# Keep project/build configuration files
+!*.mk
+!Makefile
+!CMakeLists.txt
+!*.cmake
+!*.pro
+
+# Keep documentation
+!*.pdf
+!*.txt
+!*.md
+!*.doc
+!*.docx
+
+# Keep directories with source code
+!*/
+!.gitignore

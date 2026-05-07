@@ -81,7 +81,7 @@ class DetectionResultOverlay extends StatelessWidget {
           ].join('\n\n'),
         ),
       if (recommendations.isNotEmpty)
-        _buildSection('4. Recommendation', recommendations),
+        _buildSection('Recommendation', recommendations),
     ];
 
     return Container(

@@ -1,0 +1,38 @@
+# ========== KEEP ONLY SOURCE AND CONFIGS ==========
+
+# Ignore executables and libraries
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+
+# Ignore everything by default
+*
+
+# Keep config files
+!*.cfg
+!*.ini
+!*.conf
+!*.xml
+
+# Keep source code if present
+!*.c
+!*.h
+!*.cpp
+!*.hpp
+!*.py
+!*.js
+!*.ts
+
+# Keep documentation
+!*.pdf
+!*.txt
+!*.md
+!*.doc
+!*.docx
+
+# Keep directory structure
+!*/
+!.gitignore
