@@ -59,6 +59,7 @@ dependencies:
   web: any
   flutter_libserialport: ^0.6.0
   flutter_blue_plus: ^1.35.5
+  permission_handler: ^11.3.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -71,4 +72,3 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/models/
-    - local.properties

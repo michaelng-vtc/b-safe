@@ -12,6 +12,8 @@ import 'package:smartsurvey/features/inspection/domain/entities/uwb_model.dart';
 import 'package:smartsurvey/features/inspection/data/services/ble_uwb_service.dart';
 import 'package:smartsurvey/features/inspection/data/services/desktop_serial_service.dart';
 import 'package:smartsurvey/features/inspection/data/services/mobile_serial_service.dart';
+import 'package:smartsurvey/features/inspection/data/services/pg_data_handler.dart';
+import 'package:smartsurvey/features/inspection/data/services/pg_modbus_rtu.dart';
 
 /// Central UWB service.
 ///
@@ -60,6 +62,25 @@ class UwbService extends ChangeNotifier {
   BleUwbService? _bleService;
   bool _isBleTransport = false;
   bool get isBleTransport => _isBleTransport;
+
+  // BLE diagnostic counters (reset on each connectBle call).
+  int _bleBytesReceived = 0;
+  int get bleBytesReceived => _bleBytesReceived;
+  int get bleFramesReceived => _pgDataHandler?.framesReceived ?? 0;
+  int get bleRtlsFrames => _pgDataHandler?.rtlsFramesReceived ?? 0;
+  String get bleLastHex => _pgDataHandler?.lastHex ?? '';
+  // RTLS frame diagnostics (show why tag may be missing).
+  int get bleLastFlags => _pgDataHandler?.lastFlags ?? -1;
+  int get bleLastValidFlag => _pgDataHandler?.lastValidFlag ?? -1;
+  int get bleLastTagId => _pgDataHandler?.lastTagId ?? -1;
+  int get bleNoPositioningCount => _pgDataHandler?.noPositioningCount ?? 0;
+  int get bleValidFlagZeroCount => _pgDataHandler?.validFlagZeroCount ?? 0;
+
+  // PG4.9 Modbus/RTLS protocol handler (BLE transport path).
+  PgDataHandler? _pgDataHandler;
+
+  // Raw-bytes subscription for PG4.9 BLE path.
+  StreamSubscription<Uint8List>? _pgBleSubscription;
 
   // Serial settings.
   String _portName = 'COM3';
@@ -781,8 +802,47 @@ class UwbService extends ChangeNotifier {
         return false;
       }
 
-      _serialSubscription = _bleService!.dataStream.listen(
-        (data) => processSerialData(data),
+      // Initialise the PG4.9 Modbus/RTLS handler for this connection.
+      _pgDataHandler = PgDataHandler(
+        modbusId: 1,
+        onTagRtlsUpdate: (tag) {
+          // When the device's own solver hasn't converged (validFlag=0, so x=y=0)
+          // but we have distance measurements from ≥3 anchors, compute position
+          // client-side.  In PG4.9 C-config the MAIN ANCHOR computes position
+          // (not the tag), so validFlag via BLE may always be 0.  We use the
+          // distances the tag DID send to trilaterate on the phone.
+          UwbTag resolvedTag = tag;
+          final bool deviceHasPosition = tag.x != 0.0 || tag.y != 0.0;
+          if (!deviceHasPosition && tag.anchorDistances.length >= 3) {
+            final pos = _trilateratePg(tag.anchorDistances);
+            if (pos != null) {
+              resolvedTag = UwbTag(
+                id: tag.id,
+                x: pos.$1,
+                y: pos.$2,
+                z: tag.z,
+                anchorDistances: tag.anchorDistances,
+              );
+            } else {
+              debugPrint(
+                  '[UwbService] trilateratePg returned null – tag stays at origin');
+            }
+          }
+          _currentTag = resolvedTag;
+          notifyListeners(); // immediate UI refresh on every new position
+        },
+      );
+      _pgDataHandler!.reset();
+      _bleBytesReceived = 0;
+
+      // Subscribe to raw BLE bytes → feed directly into PgDataHandler.
+      _pgBleSubscription = _bleService!.rawBytesStream.listen(
+        (bytes) {
+          _bleBytesReceived += bytes.length;
+          debugPrint(
+              '[UwbService] BLE notify ${bytes.length}B total=$_bleBytesReceived');
+          _pgDataHandler!.addRxData(bytes);
+        },
         onError: (error) {
           _lastError = 'Bluetooth data error: $error';
           notifyListeners();
@@ -794,6 +854,7 @@ class UwbService extends ChangeNotifier {
       _isBleTransport = true;
       _rawBinaryBuffer.clear();
       _startUiRefreshTimer();
+      _startModbusPolling();
       notifyListeners();
       return true;
     } catch (e) {
@@ -818,6 +879,11 @@ class UwbService extends ChangeNotifier {
     _rawBinaryBuffer.clear();
     _isBleTransport = false;
 
+    // Clean up PG4.9 BLE path.
+    _pgBleSubscription?.cancel();
+    _pgBleSubscription = null;
+    _pgDataHandler?.reset();
+
     // Disconnect serial.
     _desktopSerial?.disconnect();
     _desktopSerial = null;
@@ -838,19 +904,54 @@ class UwbService extends ChangeNotifier {
   }
 
   void _startModbusPolling() {
-    if (_isBleTransport) {
-      return;
-    }
     _modbusPollTimer?.cancel();
 
-    // New PG hardware commonly uses request/response Modbus transport. Send a
-    // one-time start command and then poll periodically. Legacy streaming
-    // hardware ignores these commands and continues to work.
-    _sendBinaryCommand(_modbusStartLocateRequest);
+    if (_isBleTransport) {
+      // BLE transport: mirrors the reference app CheckPG_Config + keep-alive
+      // flow (BlueToothFlutterApp bluetooth_providers.dart).
+      //
+      //  1. Send FC-03 config read (115 registers from 0x0000) immediately.
+      //  2. Retry every 500 ms until the device starts pushing RTLS data
+      //     (up to 20 retries = 10 seconds), matching reference retry logic.
+      //  3. Once RTLS data flows (currentTag != null), cancel retry and
+      //     start 10-second keep-alive (1 register) to prevent BLE timeout.
+      debugPrint('[UwbService] BLE: sending FC-03 config read (115 regs)');
+      _sendBinaryCommand(PgModbusRtu.buildRead03(1, 0x0000, 115));
 
+      int configRetries = 0;
+      const int maxConfigRetries = 20; // 20 × 500 ms = 10 s
+
+      _modbusPollTimer =
+          Timer.periodic(const Duration(milliseconds: 500), (timer) {
+        if (!_isConnected || !_isRealDevice) return;
+
+        if (_currentTag != null || configRetries >= maxConfigRetries) {
+          // RTLS data flowing (or timed out) → cancel retry, start keep-alive.
+          timer.cancel();
+          debugPrint(
+              '[UwbService] BLE: switching to 10 s keep-alive (RTLS flowing: ${_currentTag != null})');
+          _modbusPollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+            if (!_isConnected || !_isRealDevice) return;
+            debugPrint('[UwbService] BLE: keep-alive (1 reg)');
+            _sendBinaryCommand(PgModbusRtu.buildRead03(1, 0x0000, 1));
+          });
+        } else {
+          configRetries++;
+          debugPrint(
+              '[UwbService] BLE: config retry $configRetries/$maxConfigRetries');
+          _sendBinaryCommand(PgModbusRtu.buildRead03(1, 0x0000, 115));
+        }
+      });
+      return;
+    }
+
+    // Serial transport: send startLocate (FC-10) once, then poll at 500 ms.
+    final startCmd = Uint8List.fromList(_modbusStartLocateRequest);
+    final pollCmd = Uint8List.fromList(_modbusPollRequest);
+    _sendBinaryCommand(startCmd);
     _modbusPollTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
       if (!_isConnected || !_isRealDevice) return;
-      _sendBinaryCommand(_modbusPollRequest);
+      _sendBinaryCommand(pollCmd);
     });
   }
 
@@ -2193,6 +2294,92 @@ class UwbService extends ChangeNotifier {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Trilateration for PG4.9 BLE RTLS data.
+  ///
+  /// Unlike [_trilaterate], this method uses **index-based** anchor lookup:
+  /// `anchorDistances['Anchor$i']` is matched to `_anchors[i]` by position,
+  /// not by ID string — so it works regardless of how the user has named their
+  /// anchors in the app.
+  ///
+  /// Falls back to the built-in default anchor positions if the current scope
+  /// has no anchors configured (e.g., when a floor plan scope is active but
+  /// anchor positions were never saved for that scope).
+  ///
+  /// Uses weighted least-squares over all available anchor measurements for
+  /// better accuracy than the exact 3-anchor formula.
+  (double, double)? _trilateratePg(Map<String, double> anchorDistances) {
+    // Use the current scope anchors; fall back to defaults if empty.
+    List<UwbAnchor> anchors = _anchors;
+    if (anchors.length < 3) {
+      anchors = [
+        UwbAnchor(id: 'Anchor0', x: 0.00, y: 0.00, z: 3.00),
+        UwbAnchor(id: 'Anchor1', x: -6.84, y: 0.00, z: 3.00),
+        UwbAnchor(id: 'Anchor2', x: 0.00, y: -5.51, z: 3.00),
+        UwbAnchor(id: 'Anchor3', x: -5.34, y: -5.51, z: 3.00),
+      ];
+      debugPrint('[UwbService] trilateratePg: _anchors empty, using defaults');
+    }
+
+    // Collect anchor-distance pairs using index-based key 'Anchor$i'.
+    final pts = <({double ax, double ay, double d})>[];
+    for (int i = 0; i < anchors.length; i++) {
+      final d = anchorDistances['Anchor$i'];
+      if (d != null && d > 0) {
+        pts.add((ax: anchors[i].x, ay: anchors[i].y, d: d));
+      }
+    }
+
+    if (pts.length < 3) {
+      debugPrint(
+          '[UwbService] trilateratePg: only ${pts.length} valid distances, need ≥3');
+      return null;
+    }
+
+    debugPrint('[UwbService] trilateratePg: using ${pts.length} anchors');
+
+    // Weighted linearised least-squares trilateration.
+    // Subtract anchor[0]'s equation from each of the rest → linear system A·x = b.
+    final ref = pts[0];
+    // Accumulate A^T·A and A^T·b for 2-unknown (x,y) system.
+    double ata00 = 0, ata01 = 0, ata11 = 0;
+    double atb0 = 0, atb1 = 0;
+
+    for (int i = 1; i < pts.length; i++) {
+      final p = pts[i];
+      // Row: 2*(p.ax - ref.ax)*x + 2*(p.ay - ref.ay)*y
+      //    = p.ax²-ref.ax² + p.ay²-ref.ay² + ref.d²-p.d²
+      final row0 = 2 * (p.ax - ref.ax);
+      final row1 = 2 * (p.ay - ref.ay);
+      final rhs = p.ax * p.ax -
+          ref.ax * ref.ax +
+          p.ay * p.ay -
+          ref.ay * ref.ay +
+          ref.d * ref.d -
+          p.d * p.d;
+      // Weight = 1/d² to favour nearer (more accurate) measurements.
+      final w = 1.0 / (p.d * p.d + 0.01);
+      ata00 += w * row0 * row0;
+      ata01 += w * row0 * row1;
+      ata11 += w * row1 * row1;
+      atb0 += w * row0 * rhs;
+      atb1 += w * row1 * rhs;
+    }
+
+    final det = ata00 * ata11 - ata01 * ata01;
+    if (det.abs() < 1e-10) {
+      debugPrint(
+          '[UwbService] trilateratePg: singular matrix (anchors collinear?)');
+      return null;
+    }
+
+    final x = (ata11 * atb0 - ata01 * atb1) / det;
+    final y = (ata00 * atb1 - ata01 * atb0) / det;
+
+    debugPrint(
+        '[UwbService] trilateratePg → x=${x.toStringAsFixed(2)}m  y=${y.toStringAsFixed(2)}m');
+    return (x, y);
   }
 
   // JSON.

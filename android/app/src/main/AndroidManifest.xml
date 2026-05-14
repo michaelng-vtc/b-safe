@@ -3,6 +3,15 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- USB OTG 權限 -->
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <!-- BLE 權限 (Android 12+) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- BLE 權限 (Android 11 以下) -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
     <application
         android:label="SmartSurvey"
         android:name="${applicationName}"

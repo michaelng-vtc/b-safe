@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'pg_service_uuids.dart';
 
 class BleDeviceInfo {
   final BluetoothDevice device;
@@ -19,17 +21,42 @@ class BleDeviceInfo {
   String toString() => '$name ($id), RSSI=$rssi';
 }
 
+/// BLE transport service for PG4.9 UWB module.
+///
+/// Uses the Nordic UART Service (NUS) UUIDs to locate the correct
+/// characteristics, which avoids false matches on multi-service devices.
+///
+/// Two data streams are exposed:
+///   • [rawBytesStream] – primary stream (Uint8List), used by Phase-3
+///     PgDataHandler for full Modbus frame parsing.
+///   • [dataStream]     – legacy string stream (RAWBIN:len:hex format),
+///     kept for backward compatibility with the existing UwbService parser.
 class BleUwbService {
   static final BleUwbService _instance = BleUwbService._internal();
   factory BleUwbService() => _instance;
   BleUwbService._internal();
 
   BluetoothDevice? _device;
-  BluetoothCharacteristic? _notifyCharacteristic;
-  BluetoothCharacteristic? _writeCharacteristic;
-  StreamSubscription<List<int>>? _notifySubscription;
+
+  /// RX characteristic: write commands TO the device.
+  BluetoothCharacteristic? _rxCharacteristic;
+
+  /// TX characteristic: receive notifications FROM the device.
+  BluetoothCharacteristic? _txCharacteristic;
+
+  StreamSubscription<List<int>>? _txSubscription;
+  StreamSubscription<BluetoothConnectionState>? _connStateSubscription;
   bool _isConnected = false;
 
+  // ── Streams ────────────────────────────────────────────────────────────────
+
+  /// Primary raw-bytes stream (Phase 3 entry point).
+  final StreamController<Uint8List> _rawBytesController =
+      StreamController<Uint8List>.broadcast();
+  Stream<Uint8List> get rawBytesStream => _rawBytesController.stream;
+
+  /// Legacy string stream for backward compatibility with UwbService.
+  /// Emits 'RAWBIN:<len>:<hex>' frames derived from raw BLE notifications.
   final StreamController<String> _dataController =
       StreamController<String>.broadcast();
   Stream<String> get dataStream => _dataController.stream;
@@ -37,10 +64,43 @@ class BleUwbService {
   bool get isConnected => _isConnected;
   String? get connectedDeviceName => _device?.platformName;
 
+  // ── Permissions (Android) ──────────────────────────────────────────────────
+
+  /// Request Android BLE permissions (BLUETOOTH_SCAN + BLUETOOTH_CONNECT +
+  /// ACCESS_FINE_LOCATION).  Returns true when all are granted.
+  /// On non-Android platforms this is a no-op and always returns true.
+  Future<bool> requestPermissions() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
+
+    final results = await [
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+      Permission.locationWhenInUse,
+    ].request();
+
+    final granted = results.values.every((s) => s.isGranted);
+    if (!granted) {
+      debugPrint('[BLE] Permission denied: $results');
+    }
+    return granted;
+  }
+
+  // ── Scan ───────────────────────────────────────────────────────────────────
+
   Future<List<BleDeviceInfo>> scanDevices({
     Duration timeout = const Duration(seconds: 4),
   }) async {
     final found = <String, BleDeviceInfo>{};
+
+    // Include already-connected system devices first (mirrors BluetoothService).
+    for (final d in FlutterBluePlus.connectedDevices) {
+      found[d.remoteId.str] = BleDeviceInfo(
+        device: d,
+        name: d.platformName.isNotEmpty ? d.platformName : '(Unknown)',
+        id: d.remoteId.str,
+        rssi: 0,
+      );
+    }
 
     final sub = FlutterBluePlus.scanResults.listen((results) {
       for (final r in results) {
@@ -90,54 +150,140 @@ class BleUwbService {
     return connect(target);
   }
 
+  // ── Connect ────────────────────────────────────────────────────────────────
+
   Future<bool> connect(BleDeviceInfo deviceInfo) async {
     await disconnect();
 
     try {
       _device = deviceInfo.device;
       await _device!.connect(
-        timeout: const Duration(seconds: 12),
+        timeout: const Duration(seconds: 15),
         autoConnect: false,
       );
 
       final services = await _device!.discoverServices();
 
+      // Locate the Nordic UART service by UUID.
+      BluetoothService? uartService;
       for (final s in services) {
-        for (final c in s.characteristics) {
-          if (_notifyCharacteristic == null &&
-              (c.properties.notify || c.properties.indicate)) {
-            _notifyCharacteristic = c;
+        if (s.serviceUuid.str128.toLowerCase() ==
+            PgServiceUuids.nordicUartService) {
+          uartService = s;
+          break;
+        }
+      }
+
+      if (uartService == null) {
+        // Fall back: accept the first service with both notify and write chars.
+        debugPrint(
+            '[BLE] Nordic UART service not found, attempting fallback discovery');
+        for (final s in services) {
+          bool hasNotify = false;
+          bool hasWrite = false;
+          for (final c in s.characteristics) {
+            if (c.properties.notify || c.properties.indicate) hasNotify = true;
+            if (c.properties.write || c.properties.writeWithoutResponse) {
+              hasWrite = true;
+            }
           }
-          if (_writeCharacteristic == null &&
-              (c.properties.write || c.properties.writeWithoutResponse)) {
-            _writeCharacteristic = c;
+          if (hasNotify && hasWrite) {
+            uartService = s;
+            break;
           }
         }
       }
 
-      if (_notifyCharacteristic == null) {
-        debugPrint('[BLE] notify characteristic not found');
+      if (uartService == null) {
+        debugPrint('[BLE] No suitable UART service found');
         await disconnect();
         return false;
       }
 
-      await _notifyCharacteristic!.setNotifyValue(true);
-      _notifySubscription = _notifyCharacteristic!.lastValueStream.listen(
+      // Locate RX (write) and TX (notify) characteristics.
+      for (final c in uartService.characteristics) {
+        final uuid = c.characteristicUuid.str128.toLowerCase();
+        if (uuid == PgServiceUuids.nordicUartRx) {
+          _rxCharacteristic = c;
+        } else if (uuid == PgServiceUuids.nordicUartTx) {
+          _txCharacteristic = c;
+        }
+      }
+
+      // Fallback: if UUIDs didn't match (firmware variant), use property flags.
+      for (final c in uartService.characteristics) {
+        if (_txCharacteristic == null &&
+            (c.properties.notify || c.properties.indicate)) {
+          _txCharacteristic = c;
+        }
+        if (_rxCharacteristic == null &&
+            (c.properties.write || c.properties.writeWithoutResponse)) {
+          _rxCharacteristic = c;
+        }
+      }
+
+      if (_txCharacteristic == null) {
+        debugPrint('[BLE] TX characteristic (notify) not found');
+        await disconnect();
+        return false;
+      }
+
+      // Subscribe to TX notifications BEFORE MTU negotiation.
+      // Reference app order: setNotifyValue → requestMtu → requestConnectionPriority.
+      // Doing MTU first on some Android stacks can cause the characteristic to
+      // become stale, silently dropping subsequent notifications.
+      await _txCharacteristic!.setNotifyValue(true);
+
+      // Request larger MTU to support long config responses (115 regs × 2 bytes).
+      try {
+        await _device!.requestMtu(512);
+      } catch (e) {
+        debugPrint('[BLE] MTU request failed (non-critical): $e');
+      }
+
+      // Request HIGH connection priority for continuous RTLS streaming.
+      try {
+        await _device!.requestConnectionPriority(
+          connectionPriorityRequest: ConnectionPriority.high,
+        );
+      } catch (e) {
+        debugPrint(
+            '[BLE] Connection priority request failed (non-critical): $e');
+      }
+
+      // Use onValueReceived (fires on every notification) instead of
+      // lastValueStream (BehaviorSubject – deduplicates identical frames).
+      _txSubscription = _txCharacteristic!.onValueReceived.listen(
         (value) {
           if (value.isEmpty) return;
           final bytes = Uint8List.fromList(value);
+
+          // Emit raw bytes for Phase-3 PgDataHandler.
+          _rawBytesController.add(bytes);
+
+          // Emit legacy RAWBIN string for backward compat with UwbService.
           final hex =
               bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
           _dataController.add('RAWBIN:${bytes.length}:$hex');
         },
         onError: (e) {
-          debugPrint('[BLE] notify error: $e');
+          debugPrint('[BLE] TX notify error: $e');
           _isConnected = false;
         },
       );
 
       _isConnected = true;
       debugPrint('[BLE] Connected to ${deviceInfo.name} (${deviceInfo.id})');
+
+      // Monitor for unexpected disconnects.
+      _connStateSubscription = _device!.connectionState.listen((state) {
+        if (state == BluetoothConnectionState.disconnected && _isConnected) {
+          debugPrint('[BLE] Unexpected disconnect from ${deviceInfo.name}');
+          _isConnected = false;
+          _cleanupSubscriptions();
+        }
+      });
+
       return true;
     } catch (e) {
       debugPrint('[BLE] connect failed: $e');
@@ -146,13 +292,15 @@ class BleUwbService {
     }
   }
 
+  // ── Write ──────────────────────────────────────────────────────────────────
+
   Future<bool> writeBytes(Uint8List bytes) async {
-    if (!_isConnected || _writeCharacteristic == null) return false;
+    if (!_isConnected || _rxCharacteristic == null) return false;
 
     try {
-      await _writeCharacteristic!.write(
+      await _rxCharacteristic!.write(
         bytes,
-        withoutResponse: _writeCharacteristic!.properties.writeWithoutResponse,
+        withoutResponse: _rxCharacteristic!.properties.writeWithoutResponse,
       );
       return true;
     } catch (e) {
@@ -161,22 +309,22 @@ class BleUwbService {
     }
   }
 
+  // ── Disconnect ─────────────────────────────────────────────────────────────
+
   Future<void> disconnect() async {
     _isConnected = false;
-
-    await _notifySubscription?.cancel();
-    _notifySubscription = null;
+    _cleanupSubscriptions();
 
     try {
-      if (_notifyCharacteristic != null) {
-        await _notifyCharacteristic!.setNotifyValue(false);
+      if (_txCharacteristic != null) {
+        await _txCharacteristic!.setNotifyValue(false);
       }
     } catch (_) {
-      // Ignore notify disable errors during disconnect.
+      // Ignore notify-disable errors during disconnect.
     }
 
-    _notifyCharacteristic = null;
-    _writeCharacteristic = null;
+    _rxCharacteristic = null;
+    _txCharacteristic = null;
 
     try {
       await _device?.disconnect();
@@ -186,8 +334,16 @@ class BleUwbService {
     _device = null;
   }
 
+  void _cleanupSubscriptions() {
+    _txSubscription?.cancel();
+    _txSubscription = null;
+    _connStateSubscription?.cancel();
+    _connStateSubscription = null;
+  }
+
   void dispose() {
     disconnect();
+    _rawBytesController.close();
     _dataController.close();
   }
 }

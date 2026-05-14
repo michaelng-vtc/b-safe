@@ -11,6 +11,7 @@ import 'package:smartsurvey/features/inspection/domain/entities/uwb_model.dart';
 import 'package:smartsurvey/features/inspection/domain/entities/inspection_model.dart';
 import 'package:smartsurvey/shared/models/project_model.dart';
 import 'package:smartsurvey/features/inspection/data/services/uwb_service.dart';
+import 'package:smartsurvey/features/inspection/data/services/ble_uwb_service.dart';
 import 'package:smartsurvey/features/inspection/data/services/desktop_serial_service.dart';
 import 'package:smartsurvey/features/inspection/data/services/mobile_serial_service.dart';
 import 'package:smartsurvey/shared/services/yolo_service.dart';
@@ -633,7 +634,54 @@ class _InspectionScreenState extends State<InspectionScreen> {
         // Translated legacy note.
         if (_showSettings) _buildQuickSettings(uwbService),
 
-        // Translated legacy note.
+        // BLE debug status bar – shown when BLE is connected.
+        if (uwbService.isConnected && uwbService.isBleTransport)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            color: uwbService.currentTag != null
+                ? Colors.green.shade100
+                : Colors.orange.shade100,
+            child: Row(
+              children: [
+                Icon(
+                  uwbService.currentTag != null
+                      ? Icons.my_location
+                      : (uwbService.bleBytesReceived > 0
+                          ? Icons.bluetooth_connected
+                          : Icons.bluetooth_searching),
+                  size: 14,
+                  color: uwbService.currentTag != null
+                      ? Colors.green.shade700
+                      : Colors.orange.shade700,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    uwbService.currentTag != null
+                        ? 'Tag${uwbService.bleLastTagId >= 0 ? uwbService.bleLastTagId : "?"}  '
+                            'x=${uwbService.currentTag!.x.toStringAsFixed(2)} m  '
+                            'y=${uwbService.currentTag!.y.toStringAsFixed(2)} m  '
+                            '[${uwbService.bleLastValidFlag == 1 ? "device" : "trilat vf=${uwbService.bleLastValidFlag}"}]'
+                        : 'Wait  '
+                            'r=${uwbService.bleRtlsFrames}  '
+                            'vf=${uwbService.bleLastValidFlag}  '
+                            'noPos=${uwbService.bleNoPositioningCount}  '
+                            'vf0=${uwbService.bleValidFlagZeroCount}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: uwbService.currentTag != null
+                          ? (uwbService.bleLastValidFlag == 1
+                              ? Colors.green.shade800
+                              : Colors.orange.shade800)
+                          : Colors.orange.shade800,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(8),
@@ -1680,22 +1728,14 @@ class _InspectionScreenState extends State<InspectionScreen> {
             const SizedBox(height: 12),
             _buildConnectOption(
               icon: Icons.bluetooth,
-              title: 'Auto Connect via Bluetooth',
-              subtitle:
-                  'Use PG4.9 Bluetooth mode and keep firmware-side positioning',
+              title: 'Connect via Bluetooth',
+              subtitle: 'Scan and select a PG4.9 Bluetooth device to connect',
               color: Colors.indigo,
-              onTap: () async {
+              onTap: () {
                 Navigator.pop(ctx);
-                final ok = await uwbService.connectBle();
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(ok
-                        ? 'Bluetooth connected'
-                        : (uwbService.lastError ??
-                            'Bluetooth connection failed')),
-                    backgroundColor: ok ? Colors.green : Colors.red,
-                  ),
+                showDialog(
+                  context: context,
+                  builder: (_) => _BleScanConnectDialog(uwbService: uwbService),
                 );
               },
             ),
@@ -6258,6 +6298,286 @@ class _MobileUsbConnectDialogState extends State<_MobileUsbConnectDialog> {
           label: Text(_isConnecting ? 'Connecting...' : 'Connect'),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ===== Bluetooth BLE scan-and-connect dialog =====.
+class _BleScanConnectDialog extends StatefulWidget {
+  final UwbService uwbService;
+  const _BleScanConnectDialog({required this.uwbService});
+
+  @override
+  State<_BleScanConnectDialog> createState() => _BleScanConnectDialogState();
+}
+
+class _BleScanConnectDialogState extends State<_BleScanConnectDialog> {
+  List<BleDeviceInfo> _devices = [];
+  bool _isScanning = true;
+  bool _isConnecting = false;
+  int _selectedIndex = 0;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _scanDevices();
+  }
+
+  Future<void> _scanDevices() async {
+    setState(() {
+      _isScanning = true;
+      _error = null;
+      _devices = [];
+    });
+    try {
+      final devices = await widget.uwbService.scanBleDevices(
+        timeout: const Duration(seconds: 5),
+      );
+      if (mounted) {
+        setState(() {
+          _devices = devices;
+          _isScanning = false;
+          if (devices.isEmpty) {
+            _error =
+                'No Bluetooth devices found.\nPlease ensure:\n• PG4.9 module is powered on\n• Bluetooth is enabled on this device\n• Device is within range';
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isScanning = false;
+          _error = 'Scan error: \$e';
+        });
+      }
+    }
+  }
+
+  Future<void> _connectDevice() async {
+    if (_devices.isEmpty || _selectedIndex >= _devices.length) return;
+    setState(() {
+      _isConnecting = true;
+      _error = null;
+    });
+
+    final device = _devices[_selectedIndex];
+    final success = await widget.uwbService.connectBle(device: device);
+
+    if (mounted) {
+      if (success) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Connected to \${device.name}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        setState(() {
+          _isConnecting = false;
+          _error = widget.uwbService.lastError ?? 'Connection failed';
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          const Icon(Icons.bluetooth, color: Colors.indigo),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text('搜索蓝牙设备', overflow: TextOverflow.ellipsis),
+          ),
+          if (!_isScanning)
+            IconButton(
+              onPressed: _scanDevices,
+              icon: const Icon(Icons.refresh, size: 20),
+              tooltip: '重新搜索',
+            ),
+        ],
+      ),
+      content: SizedBox(
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_isScanning)
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(
+                  child: Column(
+                    children: [
+                      CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.indigo)),
+                      SizedBox(height: 12),
+                      Text('搜索蓝牙设备...'),
+                    ],
+                  ),
+                ),
+              )
+            else if (_error != null && _devices.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.bluetooth_disabled,
+                        color: Colors.red.shade400, size: 40),
+                    const SizedBox(height: 8),
+                    Text(
+                      _error!,
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 13),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              Text(
+                '发现 \${_devices.length} 个设备',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 280),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: List.generate(_devices.length, (i) {
+                      final d = _devices[i];
+                      final isSelected = i == _selectedIndex;
+                      return InkWell(
+                        onTap: () => setState(() => _selectedIndex = i),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.indigo.withValues(alpha: 0.1)
+                                : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.indigo
+                                  : Colors.grey.shade200,
+                              width: isSelected ? 2 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.bluetooth,
+                                color: isSelected
+                                    ? Colors.indigo
+                                    : Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      d.name,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isSelected
+                                            ? Colors.indigo
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                    Text(
+                                      d.id,
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade600,
+                                          fontFamily: 'monospace'),
+                                    ),
+                                    if (d.rssi != 0)
+                                      Text(
+                                        'RSSI: \${d.rssi} dBm',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade500),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (isSelected)
+                                const Icon(Icons.check_circle,
+                                    color: Colors.indigo),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ),
+              if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(_error!,
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 12)),
+                ),
+            ],
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.indigo.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline,
+                      color: Colors.indigo.shade700, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '请确保 PG4.9 模块已开机并在蓝牙范围内。',
+                      style: TextStyle(
+                          color: Colors.indigo.shade900, fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        ElevatedButton.icon(
+          onPressed:
+              (_devices.isEmpty || _isConnecting) ? null : _connectDevice,
+          icon: _isConnecting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white))
+              : const Icon(Icons.bluetooth_connected),
+          label: Text(_isConnecting ? '连接中...' : '连接'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.indigo,
             foregroundColor: Colors.white,
           ),
         ),
