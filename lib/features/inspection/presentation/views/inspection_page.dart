@@ -6372,7 +6372,7 @@ class _BleScanConnectDialogState extends State<_BleScanConnectDialog> {
       if (success) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('✅ Connected to \${device.name}'),
             backgroundColor: Colors.green,
           ),
